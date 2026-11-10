@@ -346,3 +346,24 @@ def test_same_isin_in_another_currency_raises() -> None:
 def test_kind_must_be_enum() -> None:
     with pytest.raises(ValidationError, match="TransactionKind"):
         tx("x", D0, "deposit", amount=money(1))  # type: ignore[arg-type]
+
+
+def test_fx_conversion_spread_is_a_cost() -> None:
+    # EUR 4,000 -> USD 4,950 while the reference rate gives USD 5,000: 4,950 / 1.25 = 3,960,
+    # so 40 EUR of value is lost in the conversion.
+    transactions = [
+        tx("a", D0, K.DEPOSIT, amount=money(10000)),
+        tx(
+            "b",
+            D0,
+            K.FX_CONVERSION,
+            amount=money(4000),
+            fx_counter=money(4950, "USD"),
+            fees=money(2),
+        ),
+    ]
+    history = replay(transactions, base=EUR, to_base=RATES)
+    assert [(c.kind, c.amount_base) for c in history.costs] == [
+        (K.FX_CONVERSION, Decimal(40)),
+        (K.FX_CONVERSION, Decimal(2)),
+    ]
