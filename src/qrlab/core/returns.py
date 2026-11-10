@@ -30,6 +30,7 @@ __all__ = [
     "ReturnKind",
     "aggregate_returns",
     "compound",
+    "convert_return_currency",
     "excess_returns",
     "log_to_simple",
     "prices_to_returns",
@@ -140,6 +141,43 @@ def excess_returns(returns: _T, risk_free: pd.Series, *, kind: ReturnKind) -> _T
     rf = validate_series(risk_free, nan_policy=NanPolicy.KEEP, name="risk_free")
     require_same_index(valid, rf)
     return _restore(_as_frame(valid).sub(rf, axis=0), like=valid)
+
+
+def convert_return_currency(returns: _T, fx: pd.Series, *, kind: ReturnKind) -> _T:
+    r"""Re-express returns in another currency with dated exchange rates.
+
+    ``fx`` is the price of one unit of the returns' currency in the target currency (e.g. USD
+    per EUR to turn EUR returns into USD returns), observed at the same dates as the returns
+    **plus one earlier date** (the start of the first period):
+
+    - simple: :math:`1 + r^{tgt}_t = (1 + r^{src}_t)\, fx_t / fx_{t-1}`;
+    - log: :math:`r^{tgt}_t = r^{src}_t + \ln(fx_t / fx_{t-1})`.
+
+    Raises
+    ------
+    ValidationError
+        If ``fx`` does not have exactly one more observation than ``returns``, contains NaN,
+        or is not strictly positive.
+    AlignmentError
+        If ``fx`` without its first observation does not have the returns' index.
+    """
+    _check_kind(kind)
+    valid = _validate(returns, NanPolicy.KEEP, "returns")
+    rates = validate_series(fx, nan_policy=NanPolicy.RAISE, name="fx")
+    if len(rates) != len(valid) + 1:
+        raise ValidationError(
+            f"fx must have one more observation than returns ({len(rates)} vs {len(valid)})"
+        )
+    if (rates.to_numpy() <= 0).any():
+        raise ValidationError("fx rates must be strictly positive")
+    require_same_index(valid, rates.iloc[1:])
+    relative = pd.Series(rates.to_numpy()[1:] / rates.to_numpy()[:-1], index=valid.index)
+    frame = _as_frame(valid)
+    if kind is ReturnKind.SIMPLE:
+        converted = (1.0 + frame).mul(relative, axis=0) - 1.0
+    else:
+        converted = frame.add(_ufunc(np.log, relative), axis=0)
+    return _restore(converted, like=valid)
 
 
 @overload

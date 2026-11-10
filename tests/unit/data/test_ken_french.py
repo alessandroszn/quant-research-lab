@@ -255,6 +255,12 @@ def test_catalogue_and_urls() -> None:
         "F-F_Research_Data_5_Factors_2x3_daily",
         "F-F_Momentum_Factor",
         "F-F_Momentum_Factor_daily",
+        "Developed_3_Factors",
+        "Developed_5_Factors",
+        "Developed_Mom_Factor",
+        "Europe_3_Factors",
+        "Europe_5_Factors",
+        "Europe_Mom_Factor",
     }
     assert ken_french_url("F-F_Momentum_Factor") == (
         "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip"
@@ -286,3 +292,18 @@ def test_two_sections_of_the_same_frequency_raise() -> None:
     )
     with pytest.raises(ParseError, match="found 2"):
         _parse(text, frequency=Frequency.MONTHLY)
+
+
+def test_international_momentum_file_uses_wml() -> None:
+    text = MOMENTUM.replace(",Mom", ",WML")
+    data = _parse(text, frequency=Frequency.MONTHLY, dataset="Europe_Mom_Factor")
+    assert list(data.columns) == ["WML"]
+    assert data["WML"].tolist() == pytest.approx([0.02, -0.015])
+    with pytest.raises(ParseError, match="columns"):
+        _parse(MOMENTUM, frequency=Frequency.MONTHLY, dataset="Europe_Mom_Factor")
+
+
+def test_international_daily_frequency_is_not_offered() -> None:
+    content = _zip(MONTHLY_FF3)
+    with pytest.raises(ParseError, match="not DAILY"):
+        parse_ken_french(content, _prov(content, "Developed_3_Factors"), frequency=Frequency.DAILY)
