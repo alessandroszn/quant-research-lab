@@ -112,6 +112,12 @@ class Dataset:
         How and when the values became known (point-in-time information).
     notes
         Transformations applied while parsing and other caveats.
+    available_from
+        Optional point-in-time information: for each row, the date from which the value was
+        publicly known. Same index as ``data``; never earlier than the reference date.
+    status
+        Optional observation status codes as published (e.g. ECB ``A`` normal, ``E``
+        estimate, ``Q`` missing). Same index as ``data``.
     """
 
     data: pd.DataFrame
@@ -122,6 +128,8 @@ class Dataset:
     currency: Currency | None
     availability: str
     notes: tuple[str, ...] = field(default_factory=tuple)
+    available_from: pd.Series | None = None
+    status: pd.Series | None = None
 
     def __post_init__(self) -> None:
         """Validate the data and the consistency of the metadata."""
@@ -129,6 +137,20 @@ class Dataset:
         object.__setattr__(self, "data", valid)
         if (self.unit is Unit.RETURN) != (self.return_kind is not None):
             raise ValidationError("return_kind is required for returns and only for returns")
+        if self.available_from is not None:
+            available = self.available_from
+            _require_aligned(available, valid, "available_from")
+            if not pd.api.types.is_datetime64_dtype(available.dtype) or available.hasnans:
+                raise ValidationError("available_from must hold dates without NaT")
+            if (available.to_numpy() < valid.index.to_numpy()).any():
+                raise ValidationError("available_from is before the reference date for some rows")
+        if self.status is not None:
+            _require_aligned(self.status, valid, "status")
+
+
+def _require_aligned(series: object, data: pd.DataFrame, name: str) -> None:
+    if not isinstance(series, pd.Series) or not series.index.equals(data.index):
+        raise ValidationError(f"{name} must be a Series with the same index as data")
 
 
 def _is_safe_name(value: object) -> bool:
