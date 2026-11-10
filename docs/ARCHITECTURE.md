@@ -19,8 +19,8 @@
 
 ## Target module map
 
-Status: `core`, `data`, `stats`, `validation`, `metrics`, `backtest`, `reporting` exist as
-documented stubs. The others are planned (see `ROADMAP.md`); each one is added together with its
+Status: `core` is implemented (phase 1.1: errors, series validation, calendars, returns, money).
+`data`, `stats`, `validation`, `metrics`, `backtest`, `reporting` exist as documented stubs. The others are planned (see `ROADMAP.md`); each one is added together with its
 layering rule.
 
 | Layer | Module | Responsibility |

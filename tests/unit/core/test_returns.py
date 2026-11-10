@@ -232,7 +232,7 @@ def test_aggregate_frame_nan_is_per_column() -> None:
     r = pd.DataFrame({"a": _jan_feb(), "b": _jan_feb()})
     r.iloc[0, 0] = np.nan
     agg = aggregate_returns(r, kind=SIMPLE, to=Frequency.MONTHLY, min_periods=1)
-    assert np.isnan(agg.returns.iloc[0, 0])
+    assert agg.returns.isna().iloc[0, 0]
     assert agg.returns.iloc[0, 1] == pytest.approx(0.030301, abs=1e-15)
 
 
