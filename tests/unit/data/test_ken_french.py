@@ -118,8 +118,8 @@ def test_monthly_hand_example() -> None:
 
 def test_missing_value_codes_become_nan() -> None:
     data = _parse(MONTHLY_FF3, frequency=Frequency.MONTHLY)
-    assert np.isnan(data.loc["2026-02-28", "Mkt-RF"])
-    assert np.isnan(data.loc["2026-03-31", "SMB"])
+    assert data.isna().loc["2026-02-28", "Mkt-RF"]
+    assert data.isna().loc["2026-03-31", "SMB"]
     assert data.loc["2026-02-28", "SMB"] == pytest.approx(0.0020)
 
 
