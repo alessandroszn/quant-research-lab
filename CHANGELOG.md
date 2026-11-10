@@ -35,6 +35,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
     staleness) and the explicit `normalised_weights`.
   - `io`: TOML master data and issuer holdings CSVs through a declared mapping
     (`configs/instruments/example.toml`, `configs/csv_mappings/example_holdings.toml`).
+- `qrlab.metrics` (phase 1.4):
+  - `performance`: arithmetic and geometric annualised return, volatility, Sharpe ratio with
+    Lo (2002) or Mertens (2002) standard errors, Sortino, downside deviation, hit rate,
+    gain/loss ratio.
+  - `drawdown`: drawdown series and episodes from initial wealth, maximum drawdown, Ulcer
+    index, Calmar ratio.
+  - `moments`: bias-corrected skewness and excess kurtosis.
+  - `risk`: historical (Acerbi-Tasche ES) and normal VaR and ES, as positive one-period losses.
+  - `relative`: tracking error, information ratio, CAPM regression with OLS standard errors,
+    up/down capture, active share.
+  - `UndefinedMetricError` instead of silent NaN or infinity.
+- `examples/m1_analytics_core.py`: end-to-end M1 example on synthetic data, with an
+  integration test.
+- Dev dependency `scipy-stubs`.
 - `data.user_csv.parse_number`, shared by the CSV readers.
 - Design notes `docs/design/1.1-core.md`, `1.2-data.md` and `1.3-instruments.md`;
   `docs/IDEAS.md` for out-of-scope ideas.
