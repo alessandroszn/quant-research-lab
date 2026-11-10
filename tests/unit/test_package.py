@@ -15,6 +15,7 @@ SUBPACKAGES = [
     "core",
     "data",
     "instruments",
+    "portfolio",
     "stats",
     "validation",
     "metrics",

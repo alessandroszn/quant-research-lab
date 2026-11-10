@@ -24,6 +24,7 @@ ALLOWED: dict[str, set[str]] = {
     # files through data's raw store and provenance. data never imports instruments.
     "instruments": {"core", "data"},
     "stats": {"core"},
+    "portfolio": {"core", "data", "instruments", "metrics"},
     "metrics": {"core", "stats"},
     "validation": {"core"},
     "backtest": {"core", "data", "metrics", "validation"},
