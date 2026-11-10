@@ -40,6 +40,7 @@ __all__ = [
     "PriceType",
     "import_local_file",
     "load_csv_mapping",
+    "parse_number",
     "parse_price_csv",
 ]
 
@@ -131,8 +132,10 @@ class CsvMapping:
                 )
             if self.thousands_separator == self.decimal_separator:
                 raise ValidationError("decimal and thousands separators must differ")
-        if self.delimiter in {self.decimal_separator, self.thousands_separator}:
-            raise ValidationError("delimiter must differ from the decimal and thousands separators")
+        # A thousands separator equal to the delimiter is fine when numbers are quoted
+        # ("1,234.50"); an unquoted one changes the field count and is rejected per row.
+        if self.delimiter == self.decimal_separator:
+            raise ValidationError("delimiter must differ from the decimal separator")
         if not all(token in self.date_format for token in ("%d", "%m")) or not (
             "%Y" in self.date_format or "%y" in self.date_format
         ):
@@ -183,7 +186,7 @@ def parse_price_csv(content: bytes, provenance: Provenance, mapping: CsvMapping)
             raise ParseError(f"line {line}: expected {len(header)} fields, got {len(row)}")
         dates.append(_parse_date(row[date_position].strip(), mapping.date_format, line))
         values.append(
-            [_parse_number(row[positions[name]], mapping, line) for name in mapping.columns]
+            [_parse_price(row[positions[name]], mapping, line) for name in mapping.columns]
         )
     if not values:
         raise ParseError("file has no rows")
@@ -304,11 +307,28 @@ def _parse_date(text: str, fmt: str, line: int) -> pd.Timestamp:
         raise ParseError(f"line {line}: invalid date {text!r} for format {fmt!r}") from None
 
 
-def _parse_number(raw: str, mapping: CsvMapping, line: int) -> float:
+def parse_number(
+    raw: str, *, decimal_separator: str, thousands_separator: str | None, line: int
+) -> float:
+    """Parse one number written with declared separators; an empty cell is NaN.
+
+    Only digits, a leading minus, the decimal separator and the thousands separator are
+    allowed, and thousands groups must have three digits. Anything else raises, so ``1.5`` in
+    a file with decimal ``,`` and thousands ``.`` is an error rather than 1.5 or 15.
+
+    Parameters
+    ----------
+    raw
+        Cell text.
+    decimal_separator, thousands_separator
+        As declared in the mapping.
+    line
+        Line number used in error messages.
+    """
     text = raw.strip()
     if not text:
         return float("nan")
-    decimal, thousands = mapping.decimal_separator, mapping.thousands_separator
+    decimal, thousands = decimal_separator, thousands_separator
     allowed = set("0123456789-") | {decimal} | ({thousands} if thousands else set())
     for char in text:
         if char not in allowed:
@@ -321,7 +341,16 @@ def _parse_number(raw: str, mapping: CsvMapping, line: int) -> float:
     normalised = text.replace(decimal, ".")
     if not re.match(r"^-?\d+(?:\.\d+)?$", normalised):
         raise ParseError(f"line {line}: {raw.strip()!r} is not a number in the declared format")
-    value = float(normalised)
+    return float(normalised)
+
+
+def _parse_price(raw: str, mapping: CsvMapping, line: int) -> float:
+    value = parse_number(
+        raw,
+        decimal_separator=mapping.decimal_separator,
+        thousands_separator=mapping.thousands_separator,
+        line=line,
+    )
     if value <= 0:
         raise ParseError(f"line {line}: prices must be positive, got {value}")
     return value
