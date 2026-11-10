@@ -99,7 +99,7 @@ def test_fx_hand_example_and_ascending_order() -> None:
     assert list(data.columns) == ["USD", "JPY", "ISK", "CYP"]
     assert list(data.index) == list(pd.DatetimeIndex(["1999-01-04", "2026-11-06", "2026-11-09"]))
     assert data.loc["2026-11-09", "USD"] == pytest.approx(1.1193)
-    assert np.isnan(data.loc["2026-11-09", "ISK"])
+    assert data.isna().loc["2026-11-09", "ISK"]
     assert data.loc["1999-01-04", "CYP"] == pytest.approx(0.58231)
 
 
