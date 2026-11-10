@@ -60,3 +60,20 @@ def test_portfolio_example_reproduces_the_hand_values() -> None:
     assert "480.00" in out
     assert "185.00" in out
     assert "not investment advice" in out
+
+
+@pytest.mark.integration
+def test_factor_example_recovers_the_synthetic_loadings() -> None:
+    result = subprocess.run(
+        [sys.executable, str(EXAMPLES / "factor_exposures.py")],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=180,
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "Newey-West" in out
+    assert "Mkt-RF    0.944" in out  # true 0.95
+    assert "SMB       0.200" in out  # true 0.20
+    assert "No significance claims" in out

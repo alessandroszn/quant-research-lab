@@ -135,6 +135,7 @@ fully analysed with verified metrics.
   return when there are no flows; XIRR agrees with closed-form cases.
 
 ### 2.2 `stats` (20–25 h)
+*Status: implemented and verified locally on 2026-11-10; pending CI and review.*
 - OLS with Newey–West standard errors (wrapping statsmodels); rolling regressions.
 - Factor exposures (CAPM, FF3, FF5, momentum); stationary block bootstrap for confidence
   intervals.

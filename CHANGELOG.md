@@ -58,6 +58,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
     effect.
   - `broker_import`: broker exports through explicit TOML mappings
     (`configs/csv_mappings/example_broker.toml`).
+- `qrlab.stats` (phase 2.2): `ols` with classical, White and Newey-West standard errors
+  (statsmodels, cross-checked with an independent implementation), `rolling_ols` without
+  look-ahead, `factor_exposures` (CAPM, FF3, FF5, momentum), `stationary_bootstrap`.
+- `core.returns.convert_return_currency` and the Developed/Europe Ken French factor files.
+- `examples/factor_exposures.py`, with an integration test.
 - `examples/portfolio_toy.py`: the hand-reconciled toy portfolio end to end, with an
   integration test.
 - `data.user_csv.parse_decimal` for exact money and quantities.

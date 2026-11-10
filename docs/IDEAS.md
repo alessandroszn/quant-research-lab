@@ -17,3 +17,6 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | FIFO and specific-lot cost basis | 2.1 `portfolio` | Average cost (Italian regime amministrato) is implemented; other methods for other tax regimes. |
 | Original cost on transfers in | 2.1 `portfolio` | Transfers in take market value as cost basis; carrying the original cost from another broker matters for taxes. |
 | Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |
+| Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
+| International daily factors | 2.2 `stats` | French publishes daily Developed and Europe factors; only monthly and annual are parsed. |
+| Fama-MacBeth regressions | 2.2 `stats` | Cross-sectional asset pricing tests, needed for the factor-zoo study (5.3). |
