@@ -1,0 +1,40 @@
+# --- Personal and research data: never committed --------------------------
+# Everything under data/ is local only. Only the README describing the layout is tracked.
+data/*
+!data/README.md
+results/
+reports/
+*.xlsx
+*.xls
+
+# --- Secrets ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python / tooling ------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# --- Notebooks -------------------------------------------------------------
+.ipynb_checkpoints/
+
+# --- OS / editors ----------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

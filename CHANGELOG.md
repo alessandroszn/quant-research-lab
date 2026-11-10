@@ -1,0 +1,24 @@
+# Changelog
+
+All notable changes to this project are documented here.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-11-10
+
+### Added
+
+- Project skeleton with `src/` layout and the `qrlab` package: documented stubs for `core`,
+  `data`, `stats`, `metrics`, `validation`, `backtest` and `reporting`.
+- Layering test (`tests/unit/test_architecture.py`) enforcing downward-only dependencies.
+- Package and installation smoke tests; seeded `rng` fixture for deterministic tests.
+- Tooling: uv with `uv.lock`, Ruff (lint and format), mypy (strict), pytest with warnings as
+  errors and coverage; LF line endings enforced by `.gitattributes`.
+- `.gitignore` that excludes everything under `data/` except its README.
+- GitHub Actions CI on Linux and Windows for Python 3.11 and 3.13.
+- Project documentation: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
+
+[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/alessandroszn/quant-research-lab/releases/tag/v0.1.0

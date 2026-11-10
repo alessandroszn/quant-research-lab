@@ -1,0 +1,106 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quant-research-lab"
+version = "0.1.0"
+description = "A rigorous Python framework for quantitative financial research, portfolio analytics and backtesting."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Alessandro Zanichelli" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Typing :: Typed",
+    "Private :: Do Not Upload",
+]
+dependencies = [
+    "numpy>=2.1",
+    "pandas>=2.2",
+    "scipy>=1.14",
+    "statsmodels>=0.14",
+    "matplotlib>=3.9",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qrlab"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/qrlab", "tests", "README.md", "CHANGELOG.md"]
+
+# --------------------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # isort
+    "B",       # flake8-bugbear
+    "UP",      # pyupgrade
+    "N",       # pep8-naming
+    "SIM",     # flake8-simplify
+    "C4",      # flake8-comprehensions
+    "PT",      # flake8-pytest-style
+    "NPY",     # NumPy-specific rules (e.g. legacy np.random)
+    "PD",      # pandas-vet
+    "RUF",     # Ruff-specific rules
+    "D",       # pydocstyle (NumPy convention)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests document intent through names and module docstrings; per-function docstrings optional.
+"tests/**" = ["D100", "D101", "D102", "D103", "D104"]
+
+# --------------------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src", "tests"]
+mypy_path = "src"
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+[[tool.mypy.overrides]]
+# statsmodels ships no type information.
+module = ["statsmodels", "statsmodels.*"]
+ignore_missing_imports = true
+
+# --------------------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+minversion = "8.3"
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+markers = [
+    "integration: end-to-end checks that spawn processes or touch the installed package",
+]
+
+# --------------------------------------------------------------------------- coverage
+[tool.coverage.run]
+source = ["qrlab"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_also = ["if TYPE_CHECKING:", "pragma: no cover"]
