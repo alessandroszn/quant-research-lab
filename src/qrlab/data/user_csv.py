@@ -20,6 +20,7 @@ import tomllib
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 
@@ -40,6 +41,7 @@ __all__ = [
     "PriceType",
     "import_local_file",
     "load_csv_mapping",
+    "parse_decimal",
     "parse_number",
     "parse_price_csv",
 ]
@@ -325,10 +327,26 @@ def parse_number(
     line
         Line number used in error messages.
     """
+    text = _normalised(raw, decimal_separator, thousands_separator, line)
+    return float("nan") if text is None else float(text)
+
+
+def parse_decimal(
+    raw: str, *, decimal_separator: str, thousands_separator: str | None, line: int
+) -> Decimal | None:
+    """Parse one number exactly as a ``Decimal`` (``None`` for an empty cell).
+
+    Same rules as :func:`parse_number`; used for money and quantities, which must be exact.
+    """
+    text = _normalised(raw, decimal_separator, thousands_separator, line)
+    return None if text is None else Decimal(text)
+
+
+def _normalised(raw: str, decimal: str, thousands: str | None, line: int) -> str | None:
+    """Return the number in plain ``-123.45`` form, ``None`` if empty; raise if ambiguous."""
     text = raw.strip()
     if not text:
-        return float("nan")
-    decimal, thousands = decimal_separator, thousands_separator
+        return None
     allowed = set("0123456789-") | {decimal} | ({thousands} if thousands else set())
     for char in text:
         if char not in allowed:
@@ -341,7 +359,7 @@ def parse_number(
     normalised = text.replace(decimal, ".")
     if not re.match(r"^-?\d+(?:\.\d+)?$", normalised):
         raise ParseError(f"line {line}: {raw.strip()!r} is not a number in the declared format")
-    return float(normalised)
+    return normalised
 
 
 def _parse_price(raw: str, mapping: CsvMapping, line: int) -> float:

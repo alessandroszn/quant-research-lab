@@ -277,3 +277,19 @@ def test_dataframe_index_is_dates_only() -> None:
     assert _parse(CSV).dataset.data.index.equals(
         pd.DatetimeIndex(["2026-12-01", "2026-12-02", "2026-12-03"])
     )
+
+
+def test_parse_decimal_is_exact() -> None:
+    from decimal import Decimal
+
+    from qrlab.data.user_csv import parse_decimal
+
+    value = parse_decimal("1.234,10", decimal_separator=",", thousands_separator=".", line=1)
+    assert value == Decimal("1234.10")
+    assert str(value) == "1234.10"
+    assert parse_decimal("  ", decimal_separator=",", thousands_separator=".", line=1) is None
+    assert parse_decimal(
+        "-0,1", decimal_separator=",", thousands_separator=None, line=1
+    ) == Decimal("-0.1")
+    with pytest.raises(ParseError, match="character"):
+        parse_decimal("1.5", decimal_separator=",", thousands_separator=None, line=3)
