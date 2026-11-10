@@ -6,6 +6,7 @@
 #
 # ter is a quoted decimal FRACTION: "0.0020" means 0.20 % per year.
 # hedged_to is a currency for hedged share classes, or "none".
+# fund_size is the fund's assets as { amount = "...", currency = "..." }, or "unknown".
 
 [IE0000000012]
 name = "Example World Equity UCITS ETF"
@@ -20,6 +21,7 @@ ter = "0.0020"
 benchmark = "Example World Index"
 hedged_to = "none"
 inception = 2009-09-25
+fund_size = { amount = "85000000000", currency = "USD" }   # fund assets, or "unknown"
 source = "KID dated 2026-03"
 
 [LU0000000025]
@@ -35,6 +37,7 @@ ter = "0.0015"
 benchmark = "unknown"
 hedged_to = "EUR"
 inception = "unknown"
+fund_size = "unknown"
 source = "issuer factsheet 2026-09"
 
 [US0000000044]
@@ -50,4 +53,5 @@ ter = "unknown"
 benchmark = "unknown"
 hedged_to = "none"
 inception = "unknown"
+fund_size = "unknown"
 source = "manual entry"

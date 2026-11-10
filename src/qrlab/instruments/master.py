@@ -15,7 +15,7 @@ from decimal import Decimal
 from enum import Enum
 
 from qrlab.core.errors import ValidationError
-from qrlab.core.money import Currency
+from qrlab.core.money import Currency, Money
 from qrlab.instruments.identifiers import Isin, validate_country
 
 __all__ = [
@@ -106,6 +106,8 @@ class Instrument:
         Currency a hedged share class is hedged to; ``None`` for unhedged instruments.
     inception
         Launch date, or ``None`` if unknown.
+    fund_size
+        Fund assets (fund-only), positive ``Money``, or ``None`` if unknown.
     source
         Where the record comes from, e.g. ``"KID 2026-03"``.
     """
@@ -123,6 +125,7 @@ class Instrument:
     benchmark: str | None
     hedged_to: Currency | None
     inception: date | None
+    fund_size: Money | None
     source: str
 
     def __post_init__(self) -> None:
@@ -152,8 +155,12 @@ class Instrument:
             _require_date(self.inception, "inception")
             if self.as_of < self.inception:
                 raise ValidationError("as_of is before the inception date")
+        if self.fund_size is not None:
+            _require_type(self.fund_size, Money, "fund_size")
+            if self.fund_size.amount <= 0:
+                raise ValidationError("fund_size must be positive")
         if self.instrument_type not in FUND_TYPES:
-            for field in ("replication", "distribution", "ter"):
+            for field in ("replication", "distribution", "ter", "fund_size"):
                 if getattr(self, field) is not None:
                     raise ValidationError(
                         f"{field} applies to fund types only, not {self.instrument_type.value}"
@@ -225,7 +232,7 @@ def master_data_issues(
             )
         required = ["domicile"]
         if record.is_fund:
-            required += ["replication", "distribution", "ter", "benchmark"]
+            required += ["replication", "distribution", "ter", "benchmark", "fund_size"]
         issues.extend(
             Issue(subject, field, IssueKind.MISSING, f"{field} is unknown")
             for field in required

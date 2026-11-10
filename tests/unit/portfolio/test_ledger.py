@@ -367,3 +367,13 @@ def test_fx_conversion_spread_is_a_cost() -> None:
         (K.FX_CONVERSION, Decimal(40)),
         (K.FX_CONVERSION, Decimal(2)),
     ]
+
+
+def test_trade_charges_are_listed_for_drag() -> None:
+    history = replay(toy_transactions(), base=EUR, to_base=eur_only)
+    assert [(c.trade_date, c.kind, c.amount_base) for c in history.trade_charges] == [
+        (D0, K.BUY, Decimal(10)),
+        (D3, K.SELL, Decimal(10)),
+    ]
+    multi = replay(_multi(), base=EUR, to_base=RATES)
+    assert [c.amount_base for c in multi.trade_charges] == [Decimal("0.8"), Decimal("0.625")]
