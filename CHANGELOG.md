@@ -18,11 +18,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - `returns`: `ReturnKind`, prices to returns, simple/log conversion, excess returns,
     compounding, wealth index and aggregation with required `min_periods` and per-bucket counts.
   - `money`: `Currency`, exact `Decimal`-based `Money`, dated `FxRate` and explicit `convert`.
-- Design note `docs/design/1.1-core.md`; `docs/IDEAS.md` for out-of-scope ideas.
+- `qrlab.data` (phase 1.2):
+  - `store`, `provenance`, `fetch`: append-only raw store with SHA-256-verified vintages and
+    JSON provenance; HTTPS-only fetcher; `Dataset` with unit, frequency, currency and
+    point-in-time availability.
+  - `ken_french`: FF3, FF5 and momentum factors (monthly, annual, daily), strict parser.
+  - `ecb`: euro reference FX rates (with a no-forward-fill bridge to `FxRate`), €STR and
+    euro-area HICP from the ECB Data Portal.
+  - `user_csv`: user price files read through explicit TOML mappings
+    (`configs/csv_mappings/example_prices.toml`).
+- Design notes `docs/design/1.1-core.md` and `docs/design/1.2-data.md`; `docs/IDEAS.md` for
+  out-of-scope ideas.
 - Dev dependency `pandas-stubs`, so mypy strict type-checks pandas code.
 
 ### Changed
 
+- Roadmap: FRED dropped (its terms prohibit storing or caching data); ECB Data Portal used for
+  rates and inflation. Broker transaction import moved from 1.2 to 2.1.
 - pytest uses `--import-mode=importlib`, so test files in different folders may share names.
 
 ## [0.1.0] - 2026-11-10
