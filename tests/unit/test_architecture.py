@@ -28,7 +28,16 @@ ALLOWED: dict[str, set[str]] = {
     "metrics": {"core", "stats"},
     "validation": {"core"},
     "backtest": {"core", "data", "metrics", "validation"},
-    "reporting": {"core", "data", "stats", "metrics", "validation", "backtest"},
+    "reporting": {
+        "core",
+        "data",
+        "instruments",
+        "stats",
+        "metrics",
+        "validation",
+        "portfolio",
+        "backtest",
+    },
 }
 
 
