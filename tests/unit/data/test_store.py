@@ -77,6 +77,9 @@ def test_provenance_requires_utc(at: datetime) -> None:
         ("source", "../escape"),
         ("dataset", "a/b"),
         ("url", "ftp://example.org/x"),
+        ("url", "file:C:/Users/someone/prices.csv"),
+        ("url", "file:"),
+        ("url", None),
     ],
 )
 def test_provenance_rejects_invalid_fields(field: str, value: object) -> None:

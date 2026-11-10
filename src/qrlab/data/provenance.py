@@ -33,7 +33,8 @@ class Provenance:
     dataset
         Identifier of the dataset within the source. A safe path component.
     url
-        HTTPS URL the bytes were downloaded from.
+        HTTPS URL the bytes were downloaded from, or ``file:<name>`` for a user-supplied file
+        (the file name only: machine-specific paths are never recorded).
     retrieved_at
         Time of download, timezone-aware and in UTC.
     sha256
@@ -58,8 +59,10 @@ class Provenance:
             value = getattr(self, name)
             if not _is_safe_name(value):
                 raise ValidationError(f"provenance {name} {value!r} is not a safe identifier")
-        if not _is_https(self.url):
-            raise ValidationError(f"provenance url must be https, got {self.url!r}")
+        if not _is_valid_url(self.url):
+            raise ValidationError(
+                f"provenance url must be https:// or file:<name> without a path, got {self.url!r}"
+            )
         if not _is_utc(self.retrieved_at):
             raise ValidationError("provenance retrieved_at must be timezone-aware UTC")
         if not _is_sha256(self.sha256):
@@ -161,8 +164,13 @@ def _is_sha256(value: object) -> bool:
     return isinstance(value, str) and bool(_SHA256.match(value))
 
 
-def _is_https(value: object) -> bool:
-    return isinstance(value, str) and value.startswith("https://")
+def _is_valid_url(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    if value.startswith("https://"):
+        return True
+    name = value.removeprefix("file:")
+    return value.startswith("file:") and bool(name) and not any(c in name for c in ("/", "\\", ":"))
 
 
 def _is_utc(value: object) -> bool:
