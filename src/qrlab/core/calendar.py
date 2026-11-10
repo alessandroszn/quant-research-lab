@@ -154,7 +154,8 @@ class BusinessCalendar:
                 raise ValidationError(f"{self.name}: holidays must be datetime.date objects")
             if self.years is not None and holiday.year not in self.years:
                 raise ValidationError(
-                    f"{self.name}: holiday {holiday} is outside the covered years {self._span()}"
+                    f"{self.name}: holiday {holiday} is outside the covered years "
+                    f"{_span(self.years)}"
                 )
 
     def is_business_day(self, day: date) -> bool:
@@ -178,12 +179,7 @@ class BusinessCalendar:
 
     def _check_covered(self, day: date) -> None:
         if self.years is not None and day.year not in self.years:
-            raise ValidationError(f"{self.name}: calendar covers {self._span()}, not {day}")
-
-    def _span(self) -> str:
-        if self.years is None:
-            return "all years"
-        return f"{self.years.start}-{self.years.stop - 1}"
+            raise ValidationError(f"{self.name}: calendar covers {_span(self.years)}, not {day}")
 
 
 def weekday_calendar() -> BusinessCalendar:
@@ -218,6 +214,10 @@ def target2_calendar(years: range) -> BusinessCalendar:
             date(year, 12, 26),
         }
     return BusinessCalendar(name="TARGET2", holidays=frozenset(holidays), years=years)
+
+
+def _span(years: range) -> str:
+    return f"{years.start}-{years.stop - 1}"
 
 
 def _as_date(day: date) -> date:

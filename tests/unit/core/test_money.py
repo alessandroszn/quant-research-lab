@@ -189,3 +189,29 @@ def test_round_trip_conversion_is_exact_for_terminating_rates() -> None:
     rate = FxRate(EUR, USD, D("1.0825"), DAY)
     eur = Money.of("1234.56", "EUR")
     assert convert(convert(eur, rate, to=USD), rate, to=EUR) == eur
+
+
+def test_unsupported_operand_types_raise_type_error() -> None:
+    a = Money.of("1.00", "EUR")
+    with pytest.raises(TypeError):
+        _ = a - 1  # type: ignore[operator]
+    with pytest.raises(TypeError):
+        _ = a / 1.5  # type: ignore[operator]
+    with pytest.raises(TypeError, match="compare"):
+        _ = a < 1  # type: ignore[operator]
+
+
+def test_amount_must_be_decimal_in_the_dataclass() -> None:
+    with pytest.raises(CurrencyError, match="Decimal"):
+        Money(1, EUR)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("bad", ["ten", "1,50", ""])
+def test_unparseable_strings_raise(bad: str) -> None:
+    with pytest.raises(CurrencyError, match="parse"):
+        Money.of(bad, "EUR")
+
+
+def test_unsupported_amount_type_raises() -> None:
+    with pytest.raises(CurrencyError, match="unsupported"):
+        Money.of([1], "EUR")  # type: ignore[arg-type]

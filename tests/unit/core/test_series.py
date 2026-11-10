@@ -223,3 +223,8 @@ def test_naive_vs_aware_raises() -> None:
 def test_require_same_index_with_fewer_than_two_objects() -> None:
     require_same_index()
     require_same_index(_series([1.0]))
+
+
+def test_validate_frame_wrong_type_raises() -> None:
+    with pytest.raises(ValidationError, match="DataFrame"):
+        validate_frame(_series([1.0]), nan_policy=NanPolicy.RAISE)  # type: ignore[arg-type]
