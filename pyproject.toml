@@ -32,6 +32,7 @@ dev = [
     "pytest-cov>=6.0",
     "ruff>=0.8",
     "mypy>=1.13",
+    "pandas-stubs>=3.1.0.261029",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -88,7 +89,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 minversion = "8.3"
 testpaths = ["tests"]
-addopts = ["-ra", "--strict-markers", "--strict-config"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
 xfail_strict = true
 filterwarnings = ["error"]
 markers = [
