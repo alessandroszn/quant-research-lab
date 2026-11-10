@@ -42,3 +42,21 @@ def test_m1_example_is_deterministic() -> None:
         for _ in range(2)
     ]
     assert runs[0] == runs[1]
+
+
+@pytest.mark.integration
+def test_portfolio_example_reproduces_the_hand_values() -> None:
+    result = subprocess.run(
+        [sys.executable, str(EXAMPLES / "portfolio_toy.py")],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "3.1656%" in out  # TWR = 11,863 / 374,750
+    assert "15.7293%" in out  # XIRR from the design note
+    assert "480.00" in out
+    assert "185.00" in out
+    assert "not investment advice" in out

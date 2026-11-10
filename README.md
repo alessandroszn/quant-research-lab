@@ -61,6 +61,13 @@ Synthetic prices in an Italian broker CSV format are imported with provenance, c
 returns and analysed (CAGR, volatility, Sharpe with standard error, drawdown, VaR/ES, tracking
 error, CAPM, capture ratios). Offline and deterministic.
 
+```bash
+uv run python examples/portfolio_toy.py
+```
+
+A synthetic broker export is imported, replayed into positions and cash, valued, and measured
+with a time-weighted return, a money-weighted return (XIRR) and an exact P&L decomposition.
+
 ## Data and privacy
 
 Real portfolio data lives only in the git-ignored `data/` folder and never appears in tests,

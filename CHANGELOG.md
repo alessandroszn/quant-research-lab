@@ -46,6 +46,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - `relative`: tracking error, information ratio, CAPM regression with OLS standard errors,
     up/down capture, active share.
   - `UndefinedMetricError` instead of silent NaN or infinity.
+- `qrlab.portfolio` (phase 2.1):
+  - `transactions` and `ledger`: validated transactions per kind; replay into positions and
+    cash per account and currency with average cost including charges (Italian "costo medio
+    ponderato"); realised gains, income, costs (including FX conversion spreads), external
+    flows; impossible states raise.
+  - `valuation`: valuation in the base currency with explicit staleness limits for prices
+    and ECB FX rates (`EcbConverter`); total-return prices refused.
+  - `performance`: TWR with explicit flow timing, MWR (XIRR) with every root reported, exact
+    P&L decomposition with the cash FX effect, money contribution by position, currency
+    effect.
+  - `broker_import`: broker exports through explicit TOML mappings
+    (`configs/csv_mappings/example_broker.toml`).
+- `examples/portfolio_toy.py`: the hand-reconciled toy portfolio end to end, with an
+  integration test.
+- `data.user_csv.parse_decimal` for exact money and quantities.
 - `examples/m1_analytics_core.py`: end-to-end M1 example on synthetic data, with an
   integration test.
 - Dev dependency `scipy-stubs`.
@@ -58,7 +73,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Roadmap: FRED dropped (its terms prohibit storing or caching data); ECB Data Portal used for
   rates and inflation. Broker transaction import moved from 1.2 to 2.1.
-- Layering: `instruments` may import `data` (documented exception).
+- Layering: `instruments` may import `data` (documented exception); `portfolio` may import
+  `core`, `data`, `instruments` and `metrics`.
+- Test helpers live in `tests/support` (pytest `pythonpath` and mypy path include `tests/`).
 - CSV mappings accept a thousands separator equal to the delimiter (quoted numbers).
 - pytest uses `--import-mode=importlib`, so test files in different folders may share names.
 
