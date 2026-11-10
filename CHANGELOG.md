@@ -58,6 +58,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
     effect.
   - `broker_import`: broker exports through explicit TOML mappings
     (`configs/csv_mappings/example_broker.toml`).
+- `qrlab.reporting` v1 (phase 2.3): Italian/English formatting and labels, tables,
+  deterministic PNG figures, self-contained HTML rendering, and `build_portfolio_report`
+  (summary with TWR and MWR kept apart, positions, cash, P&L breakdown, income and costs,
+  charts, data sources and assumptions, visible warnings, "not investment advice").
+- `examples/portfolio_report.py` (writes to the git-ignored `results/`).
 - `qrlab.stats` (phase 2.2): `ols` with classical, White and Newey-West standard errors
   (statsmodels, cross-checked with an independent implementation), `rolling_ols` without
   look-ahead, `factor_exposures` (CAPM, FF3, FF5, momentum), `stationary_bootstrap`.

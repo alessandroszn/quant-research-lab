@@ -21,8 +21,8 @@
 
 Status: Level 1 is implemented: `core` (1.1), `data` (1.2), `instruments` (1.3) and
 `metrics` (1.4), i.e. milestone **M1 — Analytics core**. Phases 2.1 `portfolio` (accounting and
-performance) and 2.2 `stats` (robust regressions, factor exposures, bootstrap) are implemented.
-`validation`, `backtest` and `reporting` exist as documented stubs. The others are planned (see
+performance) 2.2 `stats` (robust regressions, factor exposures, bootstrap) and 2.3 `reporting` v1 (HTML
+portfolio report) are implemented. `validation` and `backtest` exist as documented stubs. The others are planned (see
 `ROADMAP.md`); each one is added together with its layering rule.
 
 | Layer | Module | Responsibility |

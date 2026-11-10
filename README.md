@@ -68,6 +68,13 @@ uv run python examples/portfolio_toy.py
 A synthetic broker export is imported, replayed into positions and cash, valued, and measured
 with a time-weighted return, a money-weighted return (XIRR) and an exact P&L decomposition.
 
+```bash
+uv run python examples/portfolio_report.py
+```
+
+Writes a self-contained HTML report of the same synthetic portfolio (Italian by default, `en`
+as second argument for English) to `results/`, which is git-ignored.
+
 ## Data and privacy
 
 Real portfolio data lives only in the git-ignored `data/` folder and never appears in tests,
