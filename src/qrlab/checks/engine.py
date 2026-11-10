@@ -13,7 +13,15 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from qrlab.checks import concentration, costs, data_quality
+from qrlab.checks import (
+    concentration,
+    costs,
+    currency_drift,
+    data_quality,
+    diversification,
+    etf_quality,
+    risk,
+)
 from qrlab.checks.context import CheckContext
 from qrlab.checks.framework import (
     CheckSpec,
@@ -29,7 +37,11 @@ __all__ = ["ALL_CHECKS", "CheckConfig", "CheckResult", "load_check_config", "run
 
 ALL_CHECKS: tuple[CheckSpec, ...] = (
     *concentration.CHECKS,
+    *diversification.CHECKS,
+    *risk.CHECKS,
     *costs.CHECKS,
+    *etf_quality.CHECKS,
+    *currency_drift.CHECKS,
     *data_quality.CHECKS,
 )
 """Every registered check, in report order."""

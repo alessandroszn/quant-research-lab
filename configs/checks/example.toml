@@ -28,6 +28,45 @@ enabled = true
 warning = 0.50
 critical = 0.80
 
+[diversification.average_correlation]   # mean pairwise correlation of position returns
+enabled = true
+warning = 0.85
+critical = 0.95
+window = 36                        # number of common returns used (e.g. 36 months)
+
+[diversification.ratio]            # weighted volatility / portfolio volatility (lower is worse)
+enabled = true
+warning = 1.10
+critical = 1.02
+window = 36
+
+[risk.volatility]                  # annualised volatility of the portfolio return series
+enabled = true
+warning = 0.18
+critical = 0.25
+periods_per_year = 12              # must match the frequency of the return series
+
+[risk.max_drawdown]                # maximum drawdown, a negative number (lower is worse)
+enabled = true
+warning = -0.25
+critical = -0.40
+
+[risk.expected_shortfall]          # historical one-period ES, a positive loss
+enabled = true
+warning = 0.08
+critical = 0.12
+confidence = 0.95
+
+[risk.beta]                        # beta against the benchmark return series
+enabled = true
+warning = 1.20
+critical = 1.50
+
+[risk.skewness]                    # skewness of returns (lower is worse: fatter left tail)
+enabled = true
+warning = -0.75
+critical = -1.50
+
 [costs.weighted_ter]               # weighted TER over the whole portfolio, a year
 enabled = true
 warning = 0.0040
@@ -42,6 +81,48 @@ critical = 0.0075
 enabled = true
 warning = 0.0060
 critical = 0.0120
+
+[etf_quality.synthetic_share]     # weight in synthetically replicated funds
+enabled = true
+warning = 0.30
+critical = 0.60
+
+[etf_quality.domicile]             # weight in funds domiciled outside the preferred list
+enabled = true
+warning = 0.0
+critical = "none"
+preferred = ["IE", "LU"]
+
+[etf_quality.distribution]         # weight in funds with a different distribution policy
+enabled = true
+warning = 0.0
+critical = "none"
+preferred = "accumulating"
+
+[etf_quality.fund_size]            # fund assets in base currency (lower is worse), per fund
+enabled = true
+warning = 100000000
+critical = 50000000
+
+[etf_quality.fund_age]             # years since inception (lower is worse), per fund
+enabled = true
+warning = 3.0
+critical = 1.0
+
+[currency.unhedged_foreign]        # total weight exposed to currencies other than the base
+enabled = true
+warning = 0.60
+critical = 0.85
+
+[drift.max_deviation]              # largest absolute deviation from a target weight
+enabled = true
+warning = 0.05
+critical = 0.10
+
+[drift.total]                      # half the sum of absolute deviations (share to trade)
+enabled = true
+warning = 0.10
+critical = 0.20
 
 [data_quality.stale_prices]        # prices carried forward from an earlier date
 enabled = true
