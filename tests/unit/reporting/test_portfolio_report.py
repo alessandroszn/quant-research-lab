@@ -6,10 +6,8 @@ unrealised 195 + income 100, residual 0, TWR 3.17 %, MWR 15.73 %.
 
 from __future__ import annotations
 
-import hashlib
 import re
-from datetime import UTC, date, datetime
-from decimal import Decimal
+from datetime import date, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -18,74 +16,16 @@ import pytest
 
 from qrlab.core.calendar import Frequency
 from qrlab.core.errors import ValidationError
-from qrlab.data.provenance import Provenance
-from qrlab.instruments.master import (
-    AssetClass,
-    Distribution,
-    Instrument,
-    InstrumentType,
-    Replication,
-)
 from qrlab.portfolio.performance import FlowTiming
 from qrlab.reporting.figures import AxisFormat, line_figure
 from qrlab.reporting.formatting import IT, Language
 from qrlab.reporting.html import Figure, Report, Section, render_html, write_report
-from qrlab.reporting.portfolio_report import build_portfolio_report
 from qrlab.reporting.tables import Table
 from support.portfolio import D0, D1, D2, D3, EUR, X, eur_only, price_series, toy_setup
+from support.report import toy_instrument, toy_report
 
-GENERATED = datetime(2026, 4, 1, 9, 30, tzinfo=UTC)
-PROVENANCE = Provenance(
-    source="user",
-    dataset="synthetic_broker_export",
-    url="file:movimenti.csv",
-    retrieved_at=datetime(2026, 4, 1, tzinfo=UTC),
-    sha256=hashlib.sha256(b"synthetic").hexdigest(),
-    size_bytes=9,
-    terms="synthetic",
-)
-
-
-def _instrument(name: str = "Example World Equity UCITS ETF") -> Instrument:
-    return Instrument(
-        isin=X,
-        name=name,
-        instrument_type=InstrumentType.ETF,
-        asset_class=AssetClass.EQUITY,
-        currency=EUR,
-        as_of=date(2026, 1, 2),
-        domicile="IE",
-        replication=Replication.PHYSICAL_SAMPLING,
-        distribution=Distribution.ACCUMULATING,
-        ter=Decimal("0.0020"),
-        benchmark="Example World Index",
-        hedged_to=None,
-        inception=None,
-        fund_size=None,
-        source="synthetic",
-    )
-
-
-def _report(language: Language = Language.IT, **changes: object) -> Report:
-    history, valuation = toy_setup()
-    kwargs: dict[str, object] = {
-        "name": "Toy portfolio",
-        "history": history,
-        "valuation": valuation,
-        "prices": {X: price_series({D0: 50.0, D1: 55.0, D2: 52.0, D3: 54.0})},
-        "to_base": eur_only,
-        "language": language,
-        "generated_at": GENERATED,
-        "flow_timing": FlowTiming.START_OF_DAY,
-        "max_price_age_days": 0,
-        "fx_description": "EUR only (no conversion)",
-        "provenance": [PROVENANCE],
-        "instruments": {X: _instrument()},
-        "import_notes": ["File listed newest first; rows reversed as a whole."],
-        "return_frequency": None,
-    }
-    kwargs.update(changes)
-    return build_portfolio_report(**kwargs)  # type: ignore[arg-type]
+_report = toy_report
+_instrument = toy_instrument
 
 
 class _Structure(HTMLParser):
@@ -159,6 +99,7 @@ def test_sections_and_figures_structure() -> None:
         "Profit and loss breakdown",
         "Income and costs",
         "Charts",
+        "Health checks",
         "Data and assumptions",
     ]
     assert len(structure.images) == 3

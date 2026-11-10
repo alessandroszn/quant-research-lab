@@ -1,8 +1,9 @@
-"""Phase 2.3 example: an HTML report of the synthetic toy portfolio.
+"""Phase 2.3-2.4 example: an HTML report of the synthetic toy portfolio, with health checks.
 
 Run with ``uv run python examples/portfolio_report.py [output.html] [it|en]``. The default
 output is ``results/portfolio_report_example.html`` (git-ignored). Offline and deterministic;
-all data are synthetic. The report is analytics, not investment advice.
+all data are synthetic. Health-check thresholds come from ``configs/checks/example.toml``
+(example values, not recommendations). The report is analytics, not investment advice.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 
+from qrlab.checks import CheckContext, load_check_config, run_checks
 from qrlab.core import Currency, Money
 from qrlab.data import PriceType, Provenance
 from qrlab.instruments import (
@@ -26,9 +28,11 @@ from qrlab.instruments import (
 from qrlab.portfolio import (
     FlowTiming,
     PriceSeries,
+    external_flows_by_date,
     load_broker_mapping,
     parse_broker_csv,
     replay,
+    time_weighted_returns,
     value_portfolio,
 )
 from qrlab.reporting import Language, build_portfolio_report, write_report
@@ -93,6 +97,21 @@ def main(output: Path, language: Language) -> Path:
         fund_size=None,
         source="synthetic example",
     )
+    twr = time_weighted_returns(
+        valuation, external_flows_by_date(history), flow_timing=FlowTiming.START_OF_DAY
+    )
+    context = CheckContext(
+        as_of=DATES[-1],
+        history=history,
+        valuation=valuation,
+        to_base=eur_only,
+        instruments={FUND: fund},
+        prices=prices,
+        portfolio_returns=twr.returns,  # monthly, matching periods_per_year = 12
+        benchmark_returns=None,
+        target_weights={FUND.code: 0.6, "cash": 0.4},
+    )
+    checks = run_checks(context, load_check_config(ROOT / "configs" / "checks" / "example.toml"))
     report = build_portfolio_report(
         name="Synthetic example",
         history=history,
@@ -108,6 +127,7 @@ def main(output: Path, language: Language) -> Path:
         instruments={FUND: fund},
         import_notes=list(imported.notes),
         return_frequency=None,
+        checks=checks,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     return write_report(report, output, overwrite=True)

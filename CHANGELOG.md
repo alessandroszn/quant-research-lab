@@ -62,7 +62,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   deterministic PNG figures, self-contained HTML rendering, and `build_portfolio_report`
   (summary with TWR and MWR kept apart, positions, cash, P&L breakdown, income and costs,
   charts, data sources and assumptions, visible warnings, "not investment advice").
-- `examples/portfolio_report.py` (writes to the git-ignored `results/`).
+- `examples/portfolio_report.py` (writes to the git-ignored `results/`), with health checks.
+- `qrlab.checks` (phase 2.4): a health-check engine and 27 checks:
+  - checks by category: concentration, diversification, risk, costs, ETF quality,
+    currency, drift and data quality;
+  - each check has a fixed direction, configurable warning and critical thresholds with
+    strict comparisons, and findings that carry the numbers;
+  - a missing input makes a check not applicable, with the reason; it never passes;
+  - the config must list every check (`configs/checks/example.toml`, example values,
+    not recommendations).
+- `instruments.Instrument.fund_size` (TOML key required, `"unknown"` allowed) and
+  `portfolio.TradeCharge` / `LedgerHistory.trade_charges` for the cost checks.
+- Report section "Health checks" / "Controlli di salute", with names and explanations of
+  every check in Italian and English (`reporting.check_labels`).
 - `qrlab.stats` (phase 2.2): `ols` with classical, White and Newey-West standard errors
   (statsmodels, cross-checked with an independent implementation), `rolling_ols` without
   look-ahead, `factor_exposures` (CAPM, FF3, FF5, momentum), `stationary_bootstrap`.
@@ -88,6 +100,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Test helpers live in `tests/support` (pytest `pythonpath` and mypy path include `tests/`).
 - CSV mappings accept a thousands separator equal to the delimiter (quoted numbers).
 - pytest uses `--import-mode=importlib`, so test files in different folders may share names.
+- `build_portfolio_report` requires a `checks` argument (a `CheckResult` or `None`).
+- Layering: `checks` may import `core`, `data`, `instruments`, `stats`, `metrics` and
+  `portfolio`; `reporting` may import `checks`.
 
 ## [0.1.0] - 2026-11-10
 

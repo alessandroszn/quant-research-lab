@@ -166,6 +166,10 @@ fully analysed with verified metrics.
   - *Drift:* deviation from target weights; rebalancing needed.
   - *Data quality:* stale prices, stale holdings, missing data.
 - **Tests:** for every check, a constructed portfolio that must trigger it and one that must not.
+- *Split (design note 2.4):* 27 checks run on data that exists after 2.3. The 8 that need
+  look-through (issuer, country and sector concentration, overlap, redundant funds, tracking
+  difference and error, TER vs. tracking difference, stale holdings) are added in 2.5. The
+  effective number of bets needs the risk models of 3.1.
 
 ### 2.5 Look-through & ETF analysis (25–35 h)
 - Aggregated exposures through ETF holdings by country, sector, currency and issuer, with

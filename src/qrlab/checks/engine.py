@@ -11,6 +11,7 @@ from __future__ import annotations
 import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from qrlab.checks import (
@@ -85,8 +86,9 @@ class CheckConfig:
 
 @dataclass(frozen=True)
 class CheckResult:
-    """Findings, plus checks that passed, could not run, or were disabled."""
+    """Findings, plus checks that passed, could not run, or were disabled, on ``as_of``."""
 
+    as_of: date
     findings: tuple[Finding, ...]
     passed: tuple[str, ...]
     not_applicable: tuple[tuple[str, str], ...]
@@ -130,7 +132,13 @@ def run_checks(context: CheckContext, config: CheckConfig) -> CheckResult:
             )
         if not triggered:
             passed.append(spec.id)
-    return CheckResult(tuple(findings), tuple(passed), tuple(not_applicable), tuple(disabled))
+    return CheckResult(
+        context.as_of,
+        tuple(findings),
+        tuple(passed),
+        tuple(not_applicable),
+        tuple(disabled),
+    )
 
 
 def load_check_config(path: Path) -> CheckConfig:

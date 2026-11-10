@@ -23,3 +23,7 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Sharpe ratio in the portfolio report | 2.3 `reporting` | Needs a risk-free series (e.g. euro short-term rate) as a report input. |
 | Translate library messages in reports | 2.3 `reporting` | Import notes and some error texts are English inside Italian reports. |
 | PDF export of reports | 2.3 `reporting` | Roadmap mentions HTML/PDF; HTML only in v1. |
+| Translate not-applicable reasons | 2.4 `checks` | Reasons are English library texts inside Italian reports, like import notes. |
+| Beta on excess returns | 2.4 `checks` | Needs a risk-free series in `CheckContext`; with a constant rate the beta is the same. |
+| Total-return position returns | 2.4 `checks` | Diversification checks use price returns; distributing funds look more volatile and less correlated than they are. |
+| Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |

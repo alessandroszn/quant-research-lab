@@ -36,7 +36,7 @@ portfolio report) are implemented. `validation` and `backtest` exist as document
 | 3 | `validation` | Walk-forward, purged and embargoed time-series splits |
 | 4 | `portfolio` | Transactions → positions and cash; multi-currency valuation; TWR, MWR (XIRR), contribution |
 | 4 | `optimization` | 1/N, min-variance, mean-variance, risk parity, max diversification, Black–Litterman, HRP; rebalancing policies |
-| 5 | `checks` | Health-check rule engine and rule library |
+| 5 | `checks` | Health-check rule engine and rule library (explanations live in `reporting.check_labels`) |
 | 5 | `lookthrough` | Exposures through ETF holdings, overlap, tracking difference, cost analysis |
 | 5 | `scenarios` | Historical replays and hypothetical shocks |
 | 5 | `simulation` | Monte Carlo projections, goal and savings-plan planning |
