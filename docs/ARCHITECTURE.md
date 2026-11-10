@@ -19,7 +19,7 @@
 
 ## Target module map
 
-Status: `core` (phase 1.1) and `data` (phase 1.2) are implemented.
+Status: `core` (1.1), `data` (1.2) and `instruments` (1.3) are implemented.
 `stats`, `validation`, `metrics`, `backtest`, `reporting` exist as documented stubs. The others are planned (see `ROADMAP.md`); each one is added together with its
 layering rule.
 
@@ -47,7 +47,8 @@ layering rule.
 
 Rule: a module may import from modules in **lower** layers only (plus itself). Modules in the
 same layer do not import each other, unless a specific exception is documented in the layering
-test.
+test. Current exception: `instruments` imports `data` (raw store and provenance for loading
+files); `data` never imports `instruments`.
 
 ## Quantitative risk register
 

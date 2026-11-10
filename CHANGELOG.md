@@ -27,14 +27,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
     euro-area HICP from the ECB Data Portal.
   - `user_csv`: user price files read through explicit TOML mappings
     (`configs/csv_mappings/example_prices.toml`).
-- Design notes `docs/design/1.1-core.md` and `docs/design/1.2-data.md`; `docs/IDEAS.md` for
-  out-of-scope ideas.
+- `qrlab.instruments` (phase 1.3):
+  - `identifiers`: `Isin` with ISO 6166 check digits; ISO 3166-1 alpha-2 country codes.
+  - `master`: `Instrument` master data (TER as a bounded fraction, fund-only fields) and
+    `master_data_issues` for missing, stale, future and duplicated records.
+  - `holdings`: `HoldingsSnapshot`, `holdings_issues` (weight gaps, duplicates, unknown shares,
+    staleness) and the explicit `normalised_weights`.
+  - `io`: TOML master data and issuer holdings CSVs through a declared mapping
+    (`configs/instruments/example.toml`, `configs/csv_mappings/example_holdings.toml`).
+- `data.user_csv.parse_number`, shared by the CSV readers.
+- Design notes `docs/design/1.1-core.md`, `1.2-data.md` and `1.3-instruments.md`;
+  `docs/IDEAS.md` for out-of-scope ideas.
 - Dev dependency `pandas-stubs`, so mypy strict type-checks pandas code.
 
 ### Changed
 
 - Roadmap: FRED dropped (its terms prohibit storing or caching data); ECB Data Portal used for
   rates and inflation. Broker transaction import moved from 1.2 to 2.1.
+- Layering: `instruments` may import `data` (documented exception).
+- CSV mappings accept a thousands separator equal to the delimiter (quoted numbers).
 - pytest uses `--import-mode=importlib`, so test files in different folders may share names.
 
 ## [0.1.0] - 2026-11-10
