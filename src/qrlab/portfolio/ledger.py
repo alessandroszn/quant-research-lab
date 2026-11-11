@@ -10,7 +10,9 @@ Rules:
   base currency at the conversion rate of each purchase date (as the Italian "costo medio
   ponderato") and, for same-currency charges, in the instrument currency;
 - every amount converted to the base currency goes through the caller's explicit ``to_base``
-  converter, which must return base-currency ``Money``.
+  converter, which must return base-currency ``Money``;
+- an FX conversion executed at a rate different from the converter's reference rate books the
+  difference (the spread) as a cost, so that the profit and loss reconciles.
 """
 
 from __future__ import annotations
@@ -311,6 +313,12 @@ class _Replayer:
     def _fx(self, t: Transaction) -> None:
         self.move_cash(t, _amount(t), -1)
         self.move_cash(t, _fx_counter(t), +1)
+        # The spread between the executed rate and the reference rate of ``to_base`` is a cost
+        # (positive when less value is received than given up); without it the P&L would not
+        # reconcile.
+        spread = self.conv(_amount(t), t.trade_date) - self.conv(_fx_counter(t), t.trade_date)
+        if spread:
+            self.costs.append(Cost(t.trade_date, t.account, K.FX_CONVERSION, spread))
         self._standalone_charges(t)
 
     def _income(self, t: Transaction) -> None:
