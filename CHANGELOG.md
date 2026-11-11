@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-11
+
+Milestones M1 (Analytics core) and M2 (Portfolio X-ray): phases 1.1 to 2.5.
+
 ### Added
 
 - `qrlab.core` (phase 1.1):
@@ -134,5 +138,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - GitHub Actions CI on Linux and Windows for Python 3.11 and 3.13.
 - Project documentation: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
 
-[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/alessandroszn/quant-research-lab/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/alessandroszn/quant-research-lab/releases/tag/v0.1.0
