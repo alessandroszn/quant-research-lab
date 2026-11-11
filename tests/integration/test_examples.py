@@ -189,3 +189,24 @@ def test_backtest_example_shows_gross_and_net() -> None:
     assert "net ann." in out
     assert "cross-sectional momentum" in out
     assert "One path is not evidence" in out
+
+
+@pytest.mark.integration
+def test_attribution_example_adds_up() -> None:
+    runs = [
+        subprocess.run(
+            [sys.executable, str(EXAMPLES / "attribution_example.py")],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=180,
+        )
+        for _ in range(2)
+    ]
+    assert runs[0].returncode == 0, runs[0].stderr
+    assert runs[0].stdout == runs[1].stdout
+    out = runs[0].stdout
+    assert "Carino-linked" in out
+    assert "not evidence of skill" in out
+    assert "residual below 1e-12: True" in out
+    assert "Currency attribution of one month" in out
