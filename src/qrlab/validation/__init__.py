@@ -1,6 +1,9 @@
-"""Time-aware model validation.
+"""Time-aware model validation: walk-forward splits with purging and embargo.
 
-Planned contents: expanding- and rolling-window walk-forward splits, purged and
-embargoed splits for overlapping labels. Random shuffled splits are deliberately
-not provided. Every split guarantees ``max(train_time) < min(test_time)``.
+Random shuffled splits are deliberately not provided. Every split guarantees that every
+training label ends strictly before the first test time.
 """
+
+from qrlab.validation.splits import Split, Splits, expanding_splits, rolling_splits, take
+
+__all__ = ["Split", "Splits", "expanding_splits", "rolling_splits", "take"]

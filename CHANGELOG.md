@@ -24,6 +24,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - an explicit currency effect;
   - hypothetical shocks to factors, positions and currencies;
   - scenario files in TOML (`configs/scenarios/example.toml`, example definitions).
+- `qrlab.validation` (phase 4.1): walk-forward splits, expanding and rolling, with
+  purging of overlapping labels and an embargo. Every split checks that each training label
+  ends before the first test time. A property test covers 500 random configurations.
 - `qrlab.simulation` (phase 3.3):
   - Monte Carlo engines: normal and Student-t on log returns, and a block bootstrap of
     history; an explicit Generator and cell limit are required;
