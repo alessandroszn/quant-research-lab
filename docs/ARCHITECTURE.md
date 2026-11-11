@@ -19,14 +19,14 @@
 
 ## Target module map
 
-Status: `core` is implemented (phase 1.1: errors, series validation, calendars, returns, money).
-`data`, `stats`, `validation`, `metrics`, `backtest`, `reporting` exist as documented stubs. The others are planned (see `ROADMAP.md`); each one is added together with its
+Status: `core` (phase 1.1) and `data` (phase 1.2) are implemented.
+`stats`, `validation`, `metrics`, `backtest`, `reporting` exist as documented stubs. The others are planned (see `ROADMAP.md`); each one is added together with its
 layering rule.
 
 | Layer | Module | Responsibility |
 |---|---|---|
 | 0 | `core` | Validated time series, frequencies and calendars, return conventions, currency-aware amounts, errors |
-| 1 | `data` | Provider interface, provenance, cache, schema checks; Ken French, ECB FX, FRED, user CSV/broker import |
+| 1 | `data` | Raw store with provenance and vintages, strict parsers; Ken French, ECB (FX, €STR, HICP), user price CSV |
 | 1 | `instruments` | ETF/asset master data (ISIN, TER, domicile, replication, distribution), holdings snapshots with as-of dates |
 | 2 | `stats` | HAC regressions, factor exposures, bootstrap, multiple-testing corrections, Sharpe inference |
 | 2 | `metrics` | Performance, risk and benchmark-relative metrics with standard errors |

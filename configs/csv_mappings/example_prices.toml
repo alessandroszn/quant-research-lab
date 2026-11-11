@@ -1,0 +1,23 @@
+# Example mapping for a user-supplied price file (synthetic; no real instrument).
+#
+# Copy this file, adapt it to your broker's export and keep the real CSV under data/ (git-ignored).
+# Every field is required: formats and separators are never guessed.
+
+date_column = "Data"
+date_format = "%d/%m/%Y"
+delimiter = ";"
+decimal_separator = ","
+thousands_separator = "."      # "" means no thousands separator
+encoding = "utf-8"
+currency = "EUR"
+frequency = "daily"          # daily, weekly, monthly, quarterly or annual
+
+# One table per price column: the identifier used in qrlab and whether dividends are included.
+# price_type: "total_return" (dividends reinvested), "price" (dividends excluded) or "nav".
+[columns."Chiusura ETF A"]
+instrument = "EXAMPLE_ETF_A"
+price_type = "price"
+
+[columns."NAV ETF B"]
+instrument = "EXAMPLE_ETF_B"
+price_type = "nav"

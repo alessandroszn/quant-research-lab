@@ -82,11 +82,12 @@ Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 is reache
 - Raw downloads stored unchanged, with provenance: source, URL, date, SHA-256 hash and range.
 - Local cache; schema and unit validation.
 - **Sources:**
-  - Ken French Data Library (factors, portfolios).
+  - Ken French Data Library (factors; portfolio files are added when a study needs them).
   - ECB reference FX rates.
-  - FRED (rates, inflation).
-  - **User CSV import** for prices and broker transactions, with a mapping layer for broker
-    export formats.
+  - ECB Data Portal: €STR (euro risk-free rate) and euro-area HICP (inflation). *FRED was
+    dropped after the terms-of-use review: its terms prohibit storing or caching its data.*
+  - **User CSV import** for prices, with an explicit mapping layer (formats never guessed).
+    *Broker transaction import moved to 2.1, where the transaction schema is defined.*
   - ETF prices: the free source is chosen after reviewing its terms of use. User-supplied CSV is
     always supported.
 - **Tests:** small committed fixture files; no network in tests.
@@ -118,6 +119,8 @@ fully analysed with verified metrics.
 ## Level 2 — Portfolio → M2 Portfolio X-ray
 
 ### 2.1 `portfolio`: accounting & performance (25–35 h)
+- **Broker transaction import** (moved from 1.2): broker exports mapped to the transaction
+  schema, reusing the explicit CSV mapping layer of `data`.
 - **Accounting:** transactions (buy, sell, dividend, fee, tax, deposit, withdrawal, FX), from
   which positions and cash are derived; multi-currency valuation in the base currency.
 - **Performance:**
