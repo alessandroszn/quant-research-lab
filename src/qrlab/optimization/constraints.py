@@ -29,6 +29,8 @@ from qrlab.core.errors import ValidationError
 __all__ = ["TOLERANCE", "Constraints", "SolverOutcome", "solve"]
 
 TOLERANCE = 1e-8
+SNAP = 1e-12
+"""Weights this close to a bound are set exactly to it after solving."""
 
 
 @dataclass(frozen=True)
@@ -184,6 +186,9 @@ def solve(
         options={"ftol": 1e-15, "maxiter": 2000},
     )
     w = np.asarray(result.x[:n], dtype=np.float64)
+    # snap solver noise (|w - bound| <= SNAP) onto the bound, so that a weight meant to be 0 is 0
+    w = np.where(np.abs(w - lower) <= SNAP, lower, w)
+    w = np.where(np.abs(w - upper) <= SNAP, upper, w)
     problems = _violations(w, lower, upper, groups, w0, constraints.turnover, equalities)
     if not result.success or problems:
         raise ValidationError(

@@ -19,10 +19,12 @@ import numpy as np
 import pandas as pd
 
 from qrlab.core.errors import ValidationError
-from qrlab.metrics.errors import UndefinedMetricError
 from qrlab.optimization.constraints import TOLERANCE, Constraints, solve
 from qrlab.risk.covariance import CovarianceEstimate
 from qrlab.risk.decomposition import RiskContributions, volatility_contributions
+
+ZERO_VARIANCE = 1e-24
+"""Portfolio variance below this (volatility below 1e-12) is treated as zero."""
 
 __all__ = [
     "OptimizationResult",
@@ -190,10 +192,10 @@ def _result(
     iterations: int,
 ) -> OptimizationResult:
     weights = pd.Series(w, index=covariance.matrix.index, name="weight")
-    try:
-        contributions: RiskContributions | None = volatility_contributions(covariance, weights)
-    except UndefinedMetricError:
-        contributions = None
+    sigma = covariance.matrix.to_numpy(dtype=np.float64)
+    contributions: RiskContributions | None = None
+    if float(w @ sigma @ w) > ZERO_VARIANCE:
+        contributions = volatility_contributions(covariance, weights)
     inputs: dict[str, str | float] = {
         "covariance": covariance.estimator,
         "n_obs": float(covariance.n_obs),
