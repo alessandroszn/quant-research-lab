@@ -23,6 +23,7 @@ from qrlab.core.returns import (
     ReturnKind,
     aggregate_returns,
     compound,
+    convert_return_currency,
     excess_returns,
     log_to_simple,
     prices_to_returns,
@@ -276,3 +277,60 @@ def test_compound_log_frame() -> None:
 def test_aggregate_target_must_be_frequency() -> None:
     with pytest.raises(ValidationError, match="Frequency"):
         aggregate_returns(_jan_feb(), kind=SIMPLE, to="ME", min_periods=1)  # type: ignore[arg-type]
+
+
+# --------------------------------------------------------------------------- currency conversion
+def _fx(values: list[float], start: str = "2026-01-30") -> pd.Series:
+    return pd.Series(values, index=pd.bdate_range(start, periods=len(values)))
+
+
+def test_convert_return_currency_hand_example() -> None:
+    # EUR return 1 %, USD per EUR 1.10 -> 1.111: USD return 1.01 x 1.01 - 1 = 2.01 %
+    fx = _fx([1.10, 1.111])
+    r = pd.Series([0.01], index=fx.index[1:])
+    out = convert_return_currency(r, fx, kind=SIMPLE)
+    assert out.iloc[0] == pytest.approx(0.0201, abs=1e-15)
+
+
+def test_convert_return_currency_log_adds_fx_log_change() -> None:
+    fx = _fx([1.10, 1.111, 1.0999])
+    r = pd.Series([0.01, -0.02], index=fx.index[1:])
+    simple = convert_return_currency(r, fx, kind=SIMPLE)
+    logged = convert_return_currency(simple_to_log(r), fx, kind=LOG)
+    np.testing.assert_allclose(log_to_simple(logged).to_numpy(), simple.to_numpy(), rtol=1e-14)
+
+
+def test_convert_return_currency_round_trip(rng: np.random.Generator) -> None:
+    fx = _fx(list(1.1 * np.exp(np.cumsum(rng.normal(0, 0.005, 61)))))
+    r = pd.Series(rng.normal(0.005, 0.03, 60), index=fx.index[1:])
+    back = convert_return_currency(convert_return_currency(r, fx, kind=SIMPLE), 1 / fx, kind=SIMPLE)
+    np.testing.assert_allclose(back.to_numpy(), r.to_numpy(), rtol=1e-12)
+
+
+def test_convert_return_currency_frame() -> None:
+    fx = _fx([1.10, 1.111])
+    frame = pd.DataFrame({"a": [0.01], "b": [0.0]}, index=fx.index[1:])
+    out = convert_return_currency(frame, fx, kind=SIMPLE)
+    assert out["b"].iloc[0] == pytest.approx(0.01)
+
+
+@pytest.mark.parametrize(
+    ("fx_values", "match"),
+    [
+        ([1.10, 1.111, 1.2], "one more"),
+        ([1.10, np.nan], "NaN"),
+        ([1.10, -1.0], "positive"),
+    ],
+)
+def test_convert_return_currency_validation(fx_values: list[float], match: str) -> None:
+    fx = _fx(fx_values)
+    r = pd.Series([0.01], index=fx.index[1:2])
+    with pytest.raises(ValidationError, match=match):
+        convert_return_currency(r, fx, kind=SIMPLE)
+
+
+def test_convert_return_currency_index_must_follow_fx() -> None:
+    fx = _fx([1.10, 1.111])
+    r = pd.Series([0.01], index=pd.DatetimeIndex(["2026-03-31"]))
+    with pytest.raises(AlignmentError):
+        convert_return_currency(r, fx, kind=SIMPLE)

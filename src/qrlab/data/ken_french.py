@@ -74,6 +74,13 @@ KEN_FRENCH_DATASETS: Mapping[str, _Spec] = MappingProxyType(
         "F-F_Research_Data_5_Factors_2x3_daily": _Spec(_FF5, _DAILY),
         "F-F_Momentum_Factor": _Spec(("Mom",), _MONTHLY_ANNUAL),
         "F-F_Momentum_Factor_daily": _Spec(("Mom",), _DAILY),
+        # International factors (Bloomberg data, USD), monthly and annual sections.
+        "Developed_3_Factors": _Spec(_FF3, _MONTHLY_ANNUAL),
+        "Developed_5_Factors": _Spec(_FF5, _MONTHLY_ANNUAL),
+        "Developed_Mom_Factor": _Spec(("WML",), _MONTHLY_ANNUAL),
+        "Europe_3_Factors": _Spec(_FF3, _MONTHLY_ANNUAL),
+        "Europe_5_Factors": _Spec(_FF5, _MONTHLY_ANNUAL),
+        "Europe_Mom_Factor": _Spec(("WML",), _MONTHLY_ANNUAL),
     }
 )
 """Supported datasets: expected columns and available frequencies."""
@@ -143,8 +150,8 @@ def parse_ken_french(content: bytes, provenance: Provenance, *, frequency: Frequ
     ]
     if "RF" in spec.columns:
         notes.append("Mkt-RF is an excess return over RF; RF is the one-month T-bill return.")
-    if "Mom" in spec.columns:
-        notes.append("Mom is a long-short (zero-cost) factor return.")
+    if "Mom" in spec.columns or "WML" in spec.columns:
+        notes.append("Momentum (Mom or WML) is a long-short (zero-cost) factor return.")
     return Dataset(
         data=frame,
         provenance=provenance,
