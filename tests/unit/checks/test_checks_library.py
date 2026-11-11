@@ -82,6 +82,17 @@ def test_diversification_ratio_and_correlation_hand_example(rng: np.random.Gener
     assert corr.details == {"pairs": "1"}
 
 
+def test_effective_bets_hand_example(rng: np.random.Generator) -> None:
+    # uncorrelated, sigma 2 % and 1 %, equal weights: variance shares 0.8 / 0.2,
+    # ENB = exp(-(0.8 ln 0.8 + 0.2 ln 0.2)) = 1.649385
+    ctx = weighted_context({A: "0.45", B: "0.45"}, prices=_two_assets(rng, 0.0))  # type: ignore[arg-type]
+    measured = _one(diversification.effective_bets(ctx, {"window": WINDOW}))
+    assert measured.observed == pytest.approx(1.649385, abs=1e-6)
+    assert measured.details == {"positions": "2"}
+    single = weighted_context({A: "1"})
+    assert isinstance(diversification.effective_bets(single, {"window": WINDOW}), NotApplicable)
+
+
 def test_diversification_uses_only_the_last_window(rng: np.random.Generator) -> None:
     prices = _two_assets(rng, 0.9, n=WINDOW + 10)
     ctx = weighted_context({A: "0.5", B: "0.5"}, prices=prices)  # type: ignore[arg-type]
@@ -340,4 +351,4 @@ def test_boundaries_are_strict_through_the_engine() -> None:
 
 def test_registry_covers_every_category_once() -> None:
     ids = [spec.id for spec in ALL_CHECKS]
-    assert len(ids) == len(set(ids)) == 36
+    assert len(ids) == len(set(ids)) == 37
