@@ -19,18 +19,18 @@
 
 ## Target module map
 
-Status: milestones **M1 — Analytics core**, **M2 — Portfolio X-ray** and **M3 — Risk &
-Planning** are implemented:
+Status: milestones **M1 — Analytics core**, **M2 — Portfolio X-ray**, **M3 — Risk &
+Planning** and **M4 — Construction & Backtest** are implemented:
 
 - Level 1: `core`, `data`, `instruments` and `metrics`;
 - Level 2: `portfolio`, `stats`, `reporting`, `checks` and `lookthrough`;
-- Level 3: `risk`, `scenarios` and `simulation`.
+- Level 3: `risk`, `scenarios` and `simulation`;
+- Level 4: `validation` (walk-forward splits with purging and embargo), `optimization`
+  (constrained portfolio construction and rebalancing policies), `backtest` (lagged execution
+  with gross and net ledgers) and `attribution` (Brinson-Fachler, factor and currency).
 
-Phases 4.1 `validation` (walk-forward splits with purging and embargo), 4.2
-`optimization` (constrained portfolio construction and rebalancing policies) and 4.3
-`backtest` (lagged execution with gross and net ledgers) are implemented too. The other
-modules are planned (see `ROADMAP.md`), and each one is added together with its layering
-rule.
+The other modules are planned (see `ROADMAP.md`), and each one is added together with its
+layering rule.
 
 | Layer | Module | Responsibility |
 |---|---|---|

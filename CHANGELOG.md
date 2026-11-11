@@ -24,6 +24,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - an explicit currency effect;
   - hypothetical shocks to factors, positions and currencies;
   - scenario files in TOML (`configs/scenarios/example.toml`, example definitions).
+- `qrlab.attribution` (phase 4.4):
+  - Brinson-Fachler by segment (allocation, selection, interaction), linked over periods
+    with Carino or reported with its residual;
+  - factor attribution, with alpha and its standard error;
+  - one-period currency attribution (local, currency, cross).
+  - Every method adds up exactly to the active return.
+- `examples/attribution_example.py`.
 - `qrlab.backtest` (phase 4.3):
   - strategies see only the history up to their decision date, and an execution lag of
     at least 1 is required;
@@ -70,7 +77,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `projection` argument (a `ProjectionResult` or `None`).
 - Layering: `simulation` may import `core`, `stats` and `metrics`; `reporting` may import
   `simulation`. `optimization` may import `core`, `stats`, `metrics` and `risk`.
-  `backtest` may also import `optimization` and `simulation`.
+  `backtest` may also import `optimization` and `simulation`. `attribution` may import
+  `core`, `stats` and `metrics`.
 
 ## [0.2.0] - 2026-11-11
 
