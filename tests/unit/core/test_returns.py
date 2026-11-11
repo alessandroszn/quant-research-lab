@@ -264,3 +264,15 @@ def test_aggregate_input_not_mutated() -> None:
     before = r.copy()
     aggregate_returns(r, kind=SIMPLE, to=Frequency.MONTHLY, min_periods=1)
     pd.testing.assert_series_equal(r, before)
+
+
+def test_compound_log_frame() -> None:
+    idx = pd.bdate_range("2026-01-05", periods=2)
+    r = pd.DataFrame({"a": [0.1, 0.2], "b": [-0.1, 0.0]}, index=idx)
+    out = compound(r, kind=LOG)
+    np.testing.assert_allclose(out.to_numpy(), [0.3, -0.1], rtol=1e-15)
+
+
+def test_aggregate_target_must_be_frequency() -> None:
+    with pytest.raises(ValidationError, match="Frequency"):
+        aggregate_returns(_jan_feb(), kind=SIMPLE, to="ME", min_periods=1)  # type: ignore[arg-type]

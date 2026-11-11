@@ -192,3 +192,9 @@ def test_custom_calendar_validates_holidays_within_coverage() -> None:
 def test_custom_calendar_rejects_datetimes_as_holidays() -> None:
     with pytest.raises(ValidationError, match="date"):
         BusinessCalendar(name="x", holidays=frozenset({datetime(2026, 1, 1)}), years=None)
+
+
+@pytest.mark.parametrize("years", [range(2026, 2026), range(2020, 2030, 2)])
+def test_custom_calendar_rejects_empty_or_stepped_years(years: range) -> None:
+    with pytest.raises(ValidationError, match="step 1"):
+        BusinessCalendar(name="x", holidays=frozenset(), years=years)
