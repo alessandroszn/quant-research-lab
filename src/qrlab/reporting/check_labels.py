@@ -14,6 +14,42 @@ from qrlab.reporting.formatting import Language
 __all__ = ["CHECK_LABELS", "check_label"]
 
 _EN: dict[str, tuple[str, str]] = {
+    "lookthrough.country": (
+        "Country concentration (look-through)",
+        "Largest country weight through the holdings of the funds.",
+    ),
+    "lookthrough.sector": (
+        "Sector concentration (look-through)",
+        "Largest sector weight through the holdings of the funds.",
+    ),
+    "lookthrough.issuer": (
+        "Issuer concentration (look-through)",
+        "Largest issuer weight through the holdings; without an issuer map, per security.",
+    ),
+    "lookthrough.pair_overlap": (
+        "Fund overlap",
+        "Share of holdings two funds have in common. A high value means redundant funds.",
+    ),
+    "lookthrough.duplicated": (
+        "Duplicated exposure",
+        "Weight of securities held through two or more positions.",
+    ),
+    "etf_quality.tracking_difference": (
+        "Tracking difference",
+        "Annualised fund return minus index return. Negative values mean the fund lagged.",
+    ),
+    "etf_quality.tracking_error": (
+        "Tracking error",
+        "Annualised volatility of the difference between fund and index returns.",
+    ),
+    "etf_quality.td_vs_ter": (
+        "Costs beyond the TER",
+        "Tracking difference plus TER. Negative values mean costs beyond the stated TER.",
+    ),
+    "data_quality.stale_holdings": (
+        "Old holdings data",
+        "Fund holdings snapshots older than the configured age.",
+    ),
     "concentration.largest_position": (
         "Largest position",
         "Weight of the largest single position. A high value ties the result to one holding.",
@@ -128,6 +164,43 @@ _EN: dict[str, tuple[str, str]] = {
 }
 
 _IT: dict[str, tuple[str, str]] = {
+    "lookthrough.country": (
+        "Concentrazione per paese (look-through)",
+        "Peso del paese principale attraverso le partecipazioni dei fondi.",
+    ),
+    "lookthrough.sector": (
+        "Concentrazione per settore (look-through)",
+        "Peso del settore principale attraverso le partecipazioni dei fondi.",
+    ),
+    "lookthrough.issuer": (
+        "Concentrazione per emittente (look-through)",
+        "Peso dell'emittente principale; senza mappa degli emittenti, per singolo titolo.",
+    ),
+    "lookthrough.pair_overlap": (
+        "Sovrapposizione tra fondi",
+        "Quota di partecipazioni comuni a due fondi. Un valore alto indica fondi ridondanti.",
+    ),
+    "lookthrough.duplicated": (
+        "Esposizione duplicata",
+        "Peso dei titoli detenuti attraverso due o più posizioni.",
+    ),
+    "etf_quality.tracking_difference": (
+        "Tracking difference",
+        "Rendimento annualizzato del fondo meno quello dell'indice. Valori negativi indicano "
+        "che il fondo è rimasto indietro.",
+    ),
+    "etf_quality.tracking_error": (
+        "Tracking error",
+        "Volatilità annualizzata della differenza tra i rendimenti del fondo e dell'indice.",
+    ),
+    "etf_quality.td_vs_ter": (
+        "Costi oltre il TER",
+        "Tracking difference più TER. Valori negativi indicano costi oltre il TER dichiarato.",
+    ),
+    "data_quality.stale_holdings": (
+        "Partecipazioni vecchie",
+        "Composizioni dei fondi più vecchie dell'età configurata.",
+    ),
     "concentration.largest_position": (
         "Posizione più grande",
         "Peso della singola posizione più grande. Un valore alto lega il risultato a un titolo.",

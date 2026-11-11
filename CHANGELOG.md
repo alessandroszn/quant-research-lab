@@ -73,6 +73,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
     not recommendations).
 - `instruments.Instrument.fund_size` (TOML key required, `"unknown"` allowed) and
   `portfolio.TradeCharge` / `LedgerHistory.trade_charges` for the cost checks.
+- `qrlab.lookthrough` (phase 2.5):
+  - exposures through fund holdings by country, sector, currency (after hedging and
+    underlying), security and issuer;
+  - explicit buckets for unknown values, weight the holdings do not explain, funds without
+    holdings, and cash;
+  - pairwise fund overlap and duplicated exposure;
+  - tracking difference (annualised only over a year or more, complete calendar years),
+    tracking error, and TD + TER;
+  - `LookThroughInputs` for checks and reports.
+- Nine checks through holdings and tracking series (36 in total): country, sector and
+  issuer concentration, fund overlap, duplicated exposure, tracking difference, tracking
+  error, costs beyond the TER, stale holdings.
+- Report section "Look-through" with holdings dates, exposures, overlap and tracking.
 - Report section "Health checks" / "Controlli di salute", with names and explanations of
   every check in Italian and English (`reporting.check_labels`).
 - `qrlab.stats` (phase 2.2): `ols` with classical, White and Newey-West standard errors
@@ -100,9 +113,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Test helpers live in `tests/support` (pytest `pythonpath` and mypy path include `tests/`).
 - CSV mappings accept a thousands separator equal to the delimiter (quoted numbers).
 - pytest uses `--import-mode=importlib`, so test files in different folders may share names.
-- `build_portfolio_report` requires a `checks` argument (a `CheckResult` or `None`).
-- Layering: `checks` may import `core`, `data`, `instruments`, `stats`, `metrics` and
-  `portfolio`; `reporting` may import `checks`.
+- `build_portfolio_report` requires `checks` (a `CheckResult` or `None`) and `lookthrough`
+  (a `LookThroughInputs` or `None`).
+- `CheckContext` requires a `lookthrough` input (`None` makes those checks not applicable).
+- Layering: `lookthrough` may import `core`, `data`, `instruments`, `metrics` and
+  `portfolio`; `checks` may also import `lookthrough`; `reporting` may import `checks` and
+  `lookthrough`.
 
 ## [0.1.0] - 2026-11-10
 

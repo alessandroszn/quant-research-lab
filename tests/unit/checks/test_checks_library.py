@@ -340,4 +340,4 @@ def test_boundaries_are_strict_through_the_engine() -> None:
 
 def test_registry_covers_every_category_once() -> None:
     ids = [spec.id for spec in ALL_CHECKS]
-    assert len(ids) == len(set(ids)) == 27
+    assert len(ids) == len(set(ids)) == 36

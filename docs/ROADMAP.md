@@ -166,10 +166,10 @@ fully analysed with verified metrics.
   - *Drift:* deviation from target weights; rebalancing needed.
   - *Data quality:* stale prices, stale holdings, missing data.
 - **Tests:** for every check, a constructed portfolio that must trigger it and one that must not.
-- *Split (design note 2.4):* 27 checks run on data that exists after 2.3. The 8 that need
-  look-through (issuer, country and sector concentration, overlap, redundant funds, tracking
-  difference and error, TER vs. tracking difference, stale holdings) are added in 2.5. The
-  effective number of bets needs the risk models of 3.1.
+- *Split (design notes 2.4 and 2.5):* 27 checks use data that exists after 2.3. The 9 that
+  need look-through are added in 2.5: country, sector and issuer concentration, fund overlap,
+  duplicated exposure, tracking difference, tracking error, TD vs. TER, and stale holdings.
+  The effective number of bets needs the risk models of 3.1.
 
 ### 2.5 Look-through & ETF analysis (25–35 h)
 - Aggregated exposures through ETF holdings by country, sector, currency and issuer, with
@@ -178,6 +178,8 @@ fully analysed with verified metrics.
 - Tracking difference (ETF return minus index return, net of costs) and tracking error.
 - Cost analysis: TER vs. realised tracking difference.
 - **Tests:** synthetic ETFs with known holdings; overlap of identical funds is 100%.
+- Adds the 9 look-through and tracking health checks (36 in total) and a look-through
+  section in the portfolio report (design note 2.5).
 
 **M2 — Portfolio X-ray:** import a real portfolio and get a complete, verified report of
 performance, risk, exposures, ETF analysis and health checks. *Proposed moment to make the repo

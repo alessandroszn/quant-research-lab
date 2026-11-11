@@ -21,6 +21,7 @@ from qrlab.checks import (
     data_quality,
     diversification,
     etf_quality,
+    holdings_checks,
     risk,
 )
 from qrlab.checks.context import CheckContext
@@ -38,12 +39,15 @@ __all__ = ["ALL_CHECKS", "CheckConfig", "CheckResult", "load_check_config", "run
 
 ALL_CHECKS: tuple[CheckSpec, ...] = (
     *concentration.CHECKS,
+    *holdings_checks.LOOKTHROUGH_CHECKS,
     *diversification.CHECKS,
     *risk.CHECKS,
     *costs.CHECKS,
     *etf_quality.CHECKS,
+    *holdings_checks.TRACKING_CHECKS,
     *currency_drift.CHECKS,
     *data_quality.CHECKS,
+    *holdings_checks.STALE_HOLDINGS,
 )
 """Every registered check, in report order."""
 

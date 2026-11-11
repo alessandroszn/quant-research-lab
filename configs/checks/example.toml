@@ -28,6 +28,31 @@ enabled = true
 warning = 0.50
 critical = 0.80
 
+[lookthrough.country]             # largest country weight through fund holdings
+enabled = true
+warning = 0.60
+critical = 0.80
+
+[lookthrough.sector]              # largest sector weight through fund holdings
+enabled = true
+warning = 0.30
+critical = 0.45
+
+[lookthrough.issuer]              # largest issuer (security without an issuer map) weight
+enabled = true
+warning = 0.05
+critical = 0.10
+
+[lookthrough.pair_overlap]        # overlap of each pair of funds (redundant funds)
+enabled = true
+warning = 0.50
+critical = 0.80
+
+[lookthrough.duplicated]          # weight of securities reached through two or more positions
+enabled = true
+warning = 0.40
+critical = 0.70
+
 [diversification.average_correlation]   # mean pairwise correlation of position returns
 enabled = true
 warning = 0.85
@@ -109,6 +134,22 @@ enabled = true
 warning = 3.0
 critical = 1.0
 
+[etf_quality.tracking_difference] # annualised fund return minus index return (lower is worse)
+enabled = true
+warning = -0.005
+critical = -0.01
+
+[etf_quality.tracking_error]      # annualised tracking error
+enabled = true
+warning = 0.01
+critical = 0.02
+periods_per_year = 12             # must match the frequency of the tracking series
+
+[etf_quality.td_vs_ter]           # TD + TER: costs beyond the TER (lower is worse)
+enabled = true
+warning = -0.0025
+critical = -0.005
+
 [currency.unhedged_foreign]        # total weight exposed to currencies other than the base
 enabled = true
 warning = 0.60
@@ -149,3 +190,9 @@ critical = "none"
 enabled = true
 warning = 0.01
 critical = 1.0
+
+[data_quality.stale_holdings]     # holdings snapshots older than max_age_days (count)
+enabled = true
+warning = 0
+critical = "none"
+max_age_days = 100

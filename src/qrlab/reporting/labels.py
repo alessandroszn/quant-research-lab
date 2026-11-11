@@ -105,6 +105,46 @@ _EN = {
     "kind_transfer_in": "Transfer in",
     "kind_transfer_out": "Transfer out",
     "kind_split": "Split",
+    "lookthrough": "Look-through",
+    "lookthrough_not_done": "Look-through of fund holdings was not done for this report.",
+    "lt_as_reported": (
+        "Fund holdings are used as reported: weight the holdings do not explain is shown as "
+        "a separate bucket, never spread over the others."
+    ),
+    "lt_normalised": "Fund holdings are rescaled to sum to 100 % (explicit choice).",
+    "lt_buckets": (
+        "Unknown values, funds without holdings data and cash are separate buckets; they are "
+        "never counted as one country, sector or security."
+    ),
+    "lt_no_issuer_map": ("No issuer map was given: concentration is per security, not per issuer."),
+    "holdings_dates": "Holdings dates",
+    "holdings_date": "Holdings as of",
+    "age_days": "Age (days)",
+    "lt_country": "Country",
+    "lt_sector": "Sector",
+    "lt_currency": "Currency (after hedging)",
+    "lt_security": "Security",
+    "lt_more": "{count} smaller entries not shown.",
+    "lt_overlap": "Overlap between funds",
+    "fund": "Fund",
+    "overlap": "Overlap",
+    "unmatched": "Without ISIN",
+    "lt_tracking": "Tracking difference",
+    "series_type": "Series",
+    "series_nav": "NAV",
+    "series_total_return": "Total return",
+    "series_price": "Price",
+    "td_period": "Over the period",
+    "td_annualised": "Annualised",
+    "ter": "TER",
+    "td_plus_ter": "TD + TER",
+    "td_note": (
+        "Fund return minus index return. Not annualised over less than a year. "
+        "TD + TER below zero means costs beyond the TER."
+    ),
+    "bucket_unknown": "Unknown",
+    "bucket_unexplained": "Not explained by the holdings",
+    "bucket_not_looked_through": "Funds without holdings data",
     "health_checks": "Health checks",
     "checks_not_run": "Health checks were not run for this report.",
     "checks_summary": (
@@ -233,6 +273,50 @@ _IT = {
     "kind_transfer_in": "Trasferimento in entrata",
     "kind_transfer_out": "Trasferimento in uscita",
     "kind_split": "Frazionamento",
+    "lookthrough": "Look-through",
+    "lookthrough_not_done": (
+        "Il look-through delle partecipazioni non è stato fatto per questo report."
+    ),
+    "lt_as_reported": (
+        "Le partecipazioni dei fondi sono usate come pubblicate: il peso che non spiegano è "
+        "mostrato a parte, mai ripartito sulle altre voci."
+    ),
+    "lt_normalised": "Le partecipazioni sono riscalate per sommare al 100 % (scelta esplicita).",
+    "lt_buckets": (
+        "Valori ignoti, fondi senza dati sulle partecipazioni e liquidità sono voci separate; "
+        "non sono mai contati come un paese, un settore o un titolo."
+    ),
+    "lt_no_issuer_map": (
+        "Nessuna mappa degli emittenti: la concentrazione è per titolo, non per emittente."
+    ),
+    "holdings_dates": "Date delle partecipazioni",
+    "holdings_date": "Partecipazioni al",
+    "age_days": "Età (giorni)",
+    "lt_country": "Paese",
+    "lt_sector": "Settore",
+    "lt_currency": "Valuta (dopo la copertura)",
+    "lt_security": "Titolo",
+    "lt_more": "{count} voci minori non mostrate.",
+    "lt_overlap": "Sovrapposizione tra fondi",
+    "fund": "Fondo",
+    "overlap": "Sovrapposizione",
+    "unmatched": "Senza ISIN",
+    "lt_tracking": "Tracking difference",
+    "series_type": "Serie",
+    "series_nav": "NAV",
+    "series_total_return": "Total return",
+    "series_price": "Prezzo",
+    "td_period": "Nel periodo",
+    "td_annualised": "Annualizzata",
+    "ter": "TER",
+    "td_plus_ter": "TD + TER",
+    "td_note": (
+        "Rendimento del fondo meno rendimento dell'indice. Non annualizzata su meno di un anno. "
+        "TD + TER sotto zero indica costi oltre il TER."
+    ),
+    "bucket_unknown": "Sconosciuto",
+    "bucket_unexplained": "Non spiegato dalle partecipazioni",
+    "bucket_not_looked_through": "Fondi senza dati sulle partecipazioni",
     "health_checks": "Controlli di salute",
     "checks_not_run": "I controlli di salute non sono stati eseguiti per questo report.",
     "checks_summary": (

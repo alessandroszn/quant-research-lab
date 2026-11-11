@@ -1,15 +1,19 @@
-"""Phase 2.3-2.4 example: an HTML report of the synthetic toy portfolio, with health checks.
+"""Phase 2.3-2.5 example: an HTML report of the synthetic toy portfolio.
+
+The report includes look-through and health checks.
 
 Run with ``uv run python examples/portfolio_report.py [output.html] [it|en]``. The default
 output is ``results/portfolio_report_example.html`` (git-ignored). Offline and deterministic;
 all data are synthetic. Health-check thresholds come from ``configs/checks/example.toml``
-(example values, not recommendations). The report is analytics, not investment advice.
+(example values, not recommendations). The fund's holdings file and its NAV and index
+series are synthetic too. The report is analytics, not investment advice.
 """
 
 from __future__ import annotations
 
 import hashlib
 import sys
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -24,6 +28,14 @@ from qrlab.instruments import (
     InstrumentType,
     Isin,
     Replication,
+    load_holdings_mapping,
+    parse_holdings_csv,
+)
+from qrlab.lookthrough import (
+    LookThroughInputs,
+    TrackingSeries,
+    WeightTreatment,
+    look_through,
 )
 from qrlab.portfolio import (
     FlowTiming,
@@ -49,6 +61,19 @@ t3;30/01/2026;Bonifico in entrata;;;;EUR;5.000,00;;;;;
 t2;02/01/2026;Acquisto;IE0000000012;100;50,00;EUR;;-10,00;;;;
 t1;02/01/2026;Bonifico in entrata;;;;EUR;10.000,00;;;;;
 """
+HOLDINGS = """\
+Synthetic World Equity UCITS ETF
+Holdings as of 31/03/2026
+Name,ISIN,Weight (%),Country Code,Sector,Currency,Asset Class
+Example Corp A,US0000000119,40.0,US,Technology,USD,Equity
+Example Corp B,US0000000127,25.0,US,Health Care,USD,Equity
+Example Corp C,JP0000000133,20.0,JP,Industrials,JPY,Equity
+Example Corp D,DE0000000140,14.0,DE,Financials,EUR,Equity
+
+Synthetic file: the weights deliberately sum to 99 % to show the unexplained bucket.
+"""
+NAV = [50.0, 55.0, 52.0, 54.0]
+INDEX = [1000.0, 1100.3, 1040.5, 1080.9]
 DATES = [date(2026, 1, 2), date(2026, 1, 30), date(2026, 2, 27), date(2026, 3, 31)]
 
 
@@ -110,7 +135,48 @@ def main(output: Path, language: Language) -> Path:
         portfolio_returns=twr.returns,  # monthly, matching periods_per_year = 12
         benchmark_returns=None,
         target_weights={FUND.code: 0.6, "cash": 0.4},
+        lookthrough=None,
     )
+    holdings_content = HOLDINGS.encode("utf-8")
+    holdings = parse_holdings_csv(
+        holdings_content,
+        Provenance(
+            source="user",
+            dataset="synthetic_holdings",
+            url="file:holdings.csv",
+            retrieved_at=datetime(2026, 4, 1, tzinfo=UTC),
+            sha256=hashlib.sha256(holdings_content).hexdigest(),
+            size_bytes=len(holdings_content),
+            terms="synthetic example data",
+        ),
+        load_holdings_mapping(ROOT / "configs" / "csv_mappings" / "example_holdings.toml"),
+        fund=FUND,
+        as_of=date(2026, 3, 31),
+        weight_basis="market value, % of NAV",
+        sector_taxonomy="Synthetic sectors",
+    )
+    nav_index = pd.DatetimeIndex(DATES)
+    lookthrough = LookThroughInputs(
+        exposures=look_through(
+            as_of=DATES[-1],
+            position_weights=context.position_weights(),
+            cash_weights=context.cash_weights(),
+            instruments={FUND: fund},
+            snapshots={FUND: holdings},
+            treatment=WeightTreatment.AS_REPORTED,
+            issuers=None,
+        ),
+        snapshots={FUND: holdings},
+        tracking={
+            FUND: (
+                TrackingSeries(pd.Series(NAV, index=nav_index), PriceType.NAV, EUR, None),
+                TrackingSeries(
+                    pd.Series(INDEX, index=nav_index), PriceType.TOTAL_RETURN, EUR, None
+                ),
+            )
+        },
+    )
+    context = replace(context, lookthrough=lookthrough)
     checks = run_checks(context, load_check_config(ROOT / "configs" / "checks" / "example.toml"))
     report = build_portfolio_report(
         name="Synthetic example",
@@ -128,6 +194,7 @@ def main(output: Path, language: Language) -> Path:
         import_notes=list(imported.notes),
         return_frequency=None,
         checks=checks,
+        lookthrough=lookthrough,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     return write_report(report, output, overwrite=True)

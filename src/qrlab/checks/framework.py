@@ -58,6 +58,7 @@ class Category(Enum):
     CURRENCY = "currency"
     DRIFT = "drift"
     DATA_QUALITY = "data_quality"
+    LOOKTHROUGH = "lookthrough"
 
 
 class Direction(Enum):
