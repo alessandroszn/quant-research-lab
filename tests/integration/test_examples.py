@@ -167,3 +167,25 @@ def test_construction_example_reports_only_out_of_sample_results() -> None:
     assert "hierarchical risk parity" in out
     assert "66/34 -> 65%/35%, traded 2,000 EUR, cost 6.00 EUR" in out
     assert "not evidence" in out
+
+
+@pytest.mark.integration
+def test_backtest_example_shows_gross_and_net() -> None:
+    runs = [
+        subprocess.run(
+            [sys.executable, str(EXAMPLES / "backtest_strategies.py")],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=300,
+        )
+        for _ in range(2)
+    ]
+    assert runs[0].returncode == 0, runs[0].stderr
+    assert runs[0].stdout == runs[1].stdout
+    out = runs[0].stdout
+    assert "lag 1 month" in out
+    assert "gross ann." in out
+    assert "net ann." in out
+    assert "cross-sectional momentum" in out
+    assert "One path is not evidence" in out

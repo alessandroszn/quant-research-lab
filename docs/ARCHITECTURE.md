@@ -26,11 +26,11 @@ Planning** are implemented:
 - Level 2: `portfolio`, `stats`, `reporting`, `checks` and `lookthrough`;
 - Level 3: `risk`, `scenarios` and `simulation`.
 
-Phases 4.1 `validation` (walk-forward splits with purging and embargo) and 4.2
-`optimization` (constrained portfolio construction and rebalancing policies) are
-implemented too.
-`backtest` exists as a documented stub. The other modules are planned (see `ROADMAP.md`), and
-each one is added together with its layering rule.
+Phases 4.1 `validation` (walk-forward splits with purging and embargo), 4.2
+`optimization` (constrained portfolio construction and rebalancing policies) and 4.3
+`backtest` (lagged execution with gross and net ledgers) are implemented too. The other
+modules are planned (see `ROADMAP.md`), and each one is added together with its layering
+rule.
 
 | Layer | Module | Responsibility |
 |---|---|---|
