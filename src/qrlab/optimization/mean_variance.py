@@ -187,7 +187,7 @@ def _result(
     method: str,
     objective: float,
     constraints: Constraints,
-    extra: Mapping[str, float],
+    extra: Mapping[str, str | float],
     active: tuple[str, ...],
     iterations: int,
 ) -> OptimizationResult:
