@@ -251,3 +251,14 @@ def test_empty_covariance_raises() -> None:
     empty = CovarianceEstimate(pd.DataFrame(), "sample", 0, 0)
     with pytest.raises(ValidationError, match="no assets"):
         minimum_variance(empty, LONG)
+
+
+def test_solver_noise_is_snapped_and_tiny_volatility_is_zero() -> None:
+    """Regression: CI on some platforms left 2.2e-16 in an asset meant to be 0."""
+    from qrlab.optimization.mean_variance import _result
+
+    with_cash = _cov([[0.0, 0.0], [0.0, 0.04]], ["cash", "equity"])
+    noisy = _result(with_cash, np.array([1.0, 2.220446e-16]), "x", 0.0, LONG, {}, (), 0)
+    assert noisy.contributions is None  # volatility 4.4e-17 is not a risk to allocate
+    result = minimum_variance(with_cash, LONG)
+    assert result.weights["equity"] == 0.0
