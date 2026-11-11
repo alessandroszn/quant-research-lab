@@ -24,6 +24,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - an explicit currency effect;
   - hypothetical shocks to factors, positions and currencies;
   - scenario files in TOML (`configs/scenarios/example.toml`, example definitions).
+- `qrlab.optimization` (phase 4.2):
+  - explicit constraints (long-only, bounds, groups, turnover), with a feasibility check
+    and a post-solve check of every constraint;
+  - methods: 1/N, minimum variance, mean-variance and the efficient frontier, risk
+    budgeting and ERC, maximum diversification, hierarchical risk parity, and
+    Black-Litterman;
+  - calendar and threshold rebalancing policies, and trade costs.
+- `examples/portfolio_construction.py`: methods compared out of sample on walk-forward
+  splits.
 - `qrlab.validation` (phase 4.1): walk-forward splits, expanding and rolling, with
   purging of overlapping labels and an embargo. Every split checks that each training label
   ends before the first test time. A property test covers 500 random configurations.
@@ -50,7 +59,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - `build_portfolio_report` requires a `risk` argument (a `RiskSummary` or `None`) and a
   `projection` argument (a `ProjectionResult` or `None`).
 - Layering: `simulation` may import `core`, `stats` and `metrics`; `reporting` may import
-  `simulation`.
+  `simulation`. `optimization` may import `core`, `stats`, `metrics` and `risk`.
 
 ## [0.2.0] - 2026-11-11
 
