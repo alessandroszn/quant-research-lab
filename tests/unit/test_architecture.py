@@ -25,7 +25,8 @@ ALLOWED: dict[str, set[str]] = {
     "instruments": {"core", "data"},
     "stats": {"core"},
     "portfolio": {"core", "data", "instruments", "metrics"},
-    "checks": {"core", "data", "instruments", "stats", "metrics", "portfolio"},
+    "lookthrough": {"core", "data", "instruments", "metrics", "portfolio"},
+    "checks": {"core", "data", "instruments", "stats", "metrics", "portfolio", "lookthrough"},
     "metrics": {"core", "stats"},
     "validation": {"core"},
     "backtest": {"core", "data", "metrics", "validation"},
@@ -38,6 +39,7 @@ ALLOWED: dict[str, set[str]] = {
         "validation",
         "portfolio",
         "checks",
+        "lookthrough",
         "backtest",
     },
 }
