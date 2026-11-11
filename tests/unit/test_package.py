@@ -11,7 +11,16 @@ import pytest
 
 import qrlab
 
-SUBPACKAGES = ["core", "data", "stats", "validation", "metrics", "backtest", "reporting"]
+SUBPACKAGES = [
+    "core",
+    "data",
+    "instruments",
+    "stats",
+    "validation",
+    "metrics",
+    "backtest",
+    "reporting",
+]
 
 
 def test_version_matches_installed_metadata() -> None:

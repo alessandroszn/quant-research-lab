@@ -20,6 +20,9 @@ PACKAGE_ROOT = Path(qrlab.__file__).parent
 ALLOWED: dict[str, set[str]] = {
     "core": set(),
     "data": {"core"},
+    # Documented exception (design note 1.3): instruments sits in layer 1 next to data but loads
+    # files through data's raw store and provenance. data never imports instruments.
+    "instruments": {"core", "data"},
     "stats": {"core"},
     "metrics": {"core", "stats"},
     "validation": {"core"},
