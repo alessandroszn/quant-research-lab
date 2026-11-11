@@ -1,0 +1,53 @@
+# Example instrument master data (synthetic: the ISINs are made up but have valid check digits).
+#
+# Keep your real list in data/ (git-ignored). One table per ISIN. Every key is required:
+# write "unknown" for a value you do not know (never leave it out or guess). "unknown" is
+# reported as missing for funds; for other instrument types fund-only fields must be "unknown".
+#
+# ter is a quoted decimal FRACTION: "0.0020" means 0.20 % per year.
+# hedged_to is a currency for hedged share classes, or "none".
+
+[IE0000000012]
+name = "Example World Equity UCITS ETF"
+instrument_type = "etf"              # etf, etc, stock, bond, fund, cash
+asset_class = "equity"               # equity, fixed_income, money_market, commodity, ...
+currency = "USD"                     # base (NAV) currency
+as_of = 2026-10-01                   # date you last checked the record against its source
+domicile = "IE"
+replication = "physical_sampling"    # physical_full, physical_sampling, synthetic
+distribution = "accumulating"        # accumulating, distributing
+ter = "0.0020"
+benchmark = "Example World Index"
+hedged_to = "none"
+inception = 2009-09-25
+source = "KID dated 2026-03"
+
+[LU0000000025]
+name = "Example Euro Government Bond UCITS ETF EUR Hedged"
+instrument_type = "etf"
+asset_class = "fixed_income"
+currency = "USD"
+as_of = 2026-10-01
+domicile = "LU"
+replication = "physical_sampling"
+distribution = "distributing"
+ter = "0.0015"
+benchmark = "unknown"
+hedged_to = "EUR"
+inception = "unknown"
+source = "issuer factsheet 2026-09"
+
+[US0000000044]
+name = "Example Stock Inc."
+instrument_type = "stock"
+asset_class = "equity"
+currency = "USD"
+as_of = 2026-10-01
+domicile = "US"
+replication = "unknown"
+distribution = "unknown"
+ter = "unknown"
+benchmark = "unknown"
+hedged_to = "none"
+inception = "unknown"
+source = "manual entry"

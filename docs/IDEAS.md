@@ -11,3 +11,6 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | FRED as a data source | 1.2 `data` | Excluded: its terms prohibit storing or caching data without written consent. Reconsider only with written permission or a no-cache design. |
 | Ken French portfolio files | 1.2 `data` | 25/100 size–value portfolios, industry portfolios; multi-table files. Add when a study (5.3) needs them. |
 | Retry with back-off for downloads | 1.2 `data` | The ECB Data Portal intermittently returns HTTP 504; today a failed download raises and nothing is stored. |
+| Country name to ISO code table | 1.3 `instruments` | Issuer holdings files use country names ("United States"); needed for look-through in 2.5. |
+| Issuer holdings adapters (iShares, Xtrackers, Vanguard, Amundi, SPDR, Invesco) | 1.3 `instruments` | Each needs its own terms-of-use review before any download code. |
+| Exchange listings and trading currencies | 1.3 `instruments` | Needed when valuing transactions on a specific exchange (2.1). |

@@ -188,7 +188,7 @@ def test_declared_frequency_must_match_data() -> None:
     [
         ({"decimal_separator": ";"}, "decimal_separator"),
         ({"thousands_separator": ","}, "differ"),
-        ({"delimiter": ","}, "delimiter"),
+        ({"delimiter": ","}, "decimal separator"),
         ({"columns": {}}, "column"),
         ({"date_format": "%d/%m"}, "date_format"),
         (
