@@ -37,3 +37,7 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Duration-based rate shocks | 3.2 `scenarios` | Needs a duration (and convexity) field in master data for bond funds. |
 | Residual risk in proxy replays | 3.2 `scenarios` | Proxy replays ignore specific risk; a band from the residual variance would show the uncertainty. |
 | Stress-period betas | 3.2 `scenarios` | Betas estimated in calm periods understate crisis co-movement; estimate them on stress windows too. |
+| Regime-switching engine | 3.3 `simulation` | Optional in the roadmap; needs a Markov-switching estimation with diagnostics. |
+| Stochastic inflation | 3.3 `simulation` | Inflation is a fixed annual rate; a joint model with returns (e.g. from HICP) would widen real outcomes. |
+| Loss carry-forward in the tax model | 3.3 `simulation` | Italian capital losses can offset gains for four years; v1 does not carry them, which overstates taxes. |
+| Sensitivity for the bootstrap engine | 3.3 `simulation` | Shifting the mean and scaling volatility of resampled history needs a stated transformation. |

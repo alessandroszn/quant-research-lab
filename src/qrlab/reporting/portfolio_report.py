@@ -16,6 +16,8 @@ from collections.abc import Mapping, Sequence
 from datetime import date, datetime
 from decimal import Decimal
 
+import pandas as pd
+
 from qrlab.checks.engine import ALL_CHECKS, CheckResult
 from qrlab.checks.framework import Direction, Finding, MeasureUnit, Severity
 from qrlab.core.calendar import Frequency
@@ -66,6 +68,8 @@ from qrlab.reporting.labels import label
 from qrlab.reporting.tables import Table
 from qrlab.scenarios.definitions import HistoricalScenario
 from qrlab.scenarios.summary import RiskSummary
+from qrlab.simulation.outcomes import ProjectionResult
+from qrlab.simulation.plan import Flow
 
 __all__ = ["build_portfolio_report"]
 
@@ -92,6 +96,7 @@ def build_portfolio_report(
     checks: CheckResult | None,
     lookthrough: LookThroughInputs | None,
     risk: RiskSummary | None,
+    projection: ProjectionResult | None,
 ) -> Report:
     """Build the portfolio report.
 
@@ -130,6 +135,9 @@ def build_portfolio_report(
     risk
         Risk numbers and stress-test results on the last valuation date, or ``None`` to say
         in the report that they were not computed.
+    projection
+        A projection of the portfolio with its sensitivity table, or ``None`` to say in the
+        report that it was not computed.
     """
     if generated_at.utcoffset() is None:
         raise ValidationError("generated_at must be timezone-aware")
@@ -139,6 +147,7 @@ def build_portfolio_report(
         checks,
         lookthrough,
         risk,
+        projection,
     ).build()  # fmt: skip
 
 
@@ -162,6 +171,7 @@ class _Builder:
         checks: CheckResult | None,
         lookthrough: LookThroughInputs | None,
         risk: RiskSummary | None,
+        projection: ProjectionResult | None,
     ) -> None:
         self.name = name
         self.history = history
@@ -194,6 +204,11 @@ class _Builder:
         if risk is not None and risk.as_of != self.end:
             raise ValidationError(f"risk is as of {risk.as_of}, the report ends on {self.end}")
         self.risk = risk
+        if projection is not None and projection.summary.dates[0] != self.end:
+            raise ValidationError(
+                f"projection starts on {projection.summary.dates[0]}, the report ends on {self.end}"
+            )
+        self.projection = projection
         self.warnings: list[str] = []
 
     # ----------------------------------------------------------------- helpers
@@ -223,6 +238,7 @@ class _Builder:
             self._figures(flows, twr),
             self._lookthrough(),
             self._risk(),
+            self._projection(),
             self._health_checks(),
             self._data(),
         )
@@ -609,6 +625,141 @@ class _Builder:
                 )
             )
         return Section(self.t("risk_stress"), paragraphs, tuple(tables), ())
+
+    def _projection(self) -> Section:
+        if self.projection is None:
+            return Section(self.t("projection"), (self.t("projection_not_computed"),), (), ())
+        summary = self.projection.summary
+        plan = summary.plan
+        years = (len(summary.dates) - 1) / plan.periods_per_year
+        rebalancing = (
+            self.t("rebalance_never")
+            if plan.rebalance_every is None
+            else self.t("rebalance_every", n=str(plan.rebalance_every))
+        )
+        assumptions = (
+            (self.t("engine"), summary.engine),
+            (self.t("paths"), format_number(summary.n_paths, 0, style=self.style)),
+            (self.t("horizon"), self.t("years", n=format_number(years, 1, style=self.style))),
+            (self.t("initial_wealth"), self.money(Decimal(repr(plan.initial_wealth)))),
+            (self.t("flows"), "; ".join(self._flow_text(f) for f in plan.flows) or self.t("none")),
+            (self.t("flow_timing"), self.t(f"timing_{plan.flow_timing}_of_period")),
+            (self.t("rebalancing"), rebalancing),
+            (self.t("annual_cost"), self.pct(plan.annual_cost)),
+            (self.t("inflation"), self.pct(plan.inflation)),
+            (self.t("capital_gains_tax"), self.pct(plan.taxes.capital_gains_rate)),
+            (self.t("wealth_tax"), self.pct(plan.taxes.wealth_tax_rate)),
+        )
+        tables = [
+            Table(self.t("assumptions"), ("", self.t("value")), assumptions, ("left", "right"), ())
+        ]
+        terminal = tuple(
+            (
+                f"P{format_number(level, 0, style=self.style)}",
+                self.money(Decimal(repr(real))),
+                self.money(Decimal(repr(nominal))),
+                self.money(Decimal(repr(after_tax))),
+            )
+            for level, real, nominal, after_tax in zip(
+                summary.percentiles,
+                summary.terminal_real,
+                summary.terminal_nominal,
+                summary.terminal_after_tax,
+                strict=True,
+            )
+        )
+        tables.append(
+            Table(
+                self.t("terminal_wealth"),
+                (self.t("percentile"), self.t("real"), self.t("nominal"), self.t("after_tax")),
+                terminal,
+                ("left", "right", "right", "right"),
+                (self.t("after_tax_note"),),
+            )
+        )
+        depletion = (
+            self.t("not_available")
+            if summary.median_depletion_period is None
+            else format_number(summary.median_depletion_period, 0, style=self.style)
+        )
+        odds = (
+            (
+                self.t("goal", goal=self.money(Decimal(repr(summary.goal_real)))),
+                f"{self.pct(summary.p_goal)} ± {self.pct(summary.p_goal_se)}",
+            ),
+            (
+                self.t("depletion"),
+                f"{self.pct(summary.p_depleted)} ± {self.pct(summary.p_depleted_se)}",
+            ),
+            (self.t("median_depletion"), depletion),
+            (
+                self.t("mean_terminal_real"),
+                f"{self.money(Decimal(repr(summary.terminal_mean_real)))} ± "
+                f"{self.money(Decimal(repr(summary.terminal_mean_real_se)))}",
+            ),
+            (
+                self.t("sequence_worst", n=str(summary.early_periods)),
+                self.money(Decimal(repr(summary.sequence_worst))),
+            ),
+            (
+                self.t("sequence_best", n=str(summary.early_periods)),
+                self.money(Decimal(repr(summary.sequence_best))),
+            ),
+        )
+        tables.append(
+            Table(
+                self.t("probabilities"),
+                ("", self.t("value")),
+                odds,
+                ("left", "right"),
+                (self.t("se_note"),),
+            )
+        )
+        if self.projection.sensitivity:
+            rows = tuple(
+                (
+                    self.t(f"sens_{row.key}"),
+                    f"{self.pct(row.p_goal)} ± {self.pct(row.p_goal_se)}",
+                    self.money(Decimal(repr(row.median_terminal_real))),
+                )
+                for row in self.projection.sensitivity
+            )
+            tables.append(
+                Table(
+                    self.t("sensitivity"),
+                    (self.t("assumption"), self.t("goal_probability"), self.t("median_real")),
+                    rows,
+                    ("left", "right", "right"),
+                    (self.t("sensitivity_note"),),
+                )
+            )
+        index = pd.DatetimeIndex([pd.Timestamp(d) for d in summary.dates])
+        lines = [
+            (f"P{format_number(level, 0, style=self.style)}", pd.Series(values, index=index))
+            for level, values in zip(summary.percentiles, summary.fan_real, strict=True)
+        ]
+        figure = Figure(
+            self.t("fan_chart"),
+            line_figure(
+                lines,
+                title=self.t("fan_chart"),
+                y_label=plan.currency.code,
+                axis=AxisFormat.NUMBER,
+                style=self.style,
+            ),
+        )
+        paragraphs = (self.t("projection_note"), self.t("projection_costs_note"))
+        return Section(self.t("projection"), paragraphs, tuple(tables), (figure,))
+
+    def _flow_text(self, flow: Flow) -> str:
+        amount = self.money(Decimal(repr(flow.amount)))
+        return self.t(
+            f"flow_{flow.kind}",
+            amount=amount,
+            first=str(flow.first + 1),
+            last=str(flow.last + 1),
+            indexed=self.t("indexed") if flow.indexed else self.t("fixed"),
+        )
 
     def _name_of(self, holding: str) -> str:
         for isin, instrument in self.instruments.items():
