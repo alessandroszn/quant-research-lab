@@ -8,6 +8,13 @@ from qrlab.optimization.mean_variance import (
     mean_variance,
     minimum_variance,
 )
+from qrlab.optimization.rebalancing import (
+    CalendarPolicy,
+    CostModel,
+    ThresholdPolicy,
+    Trade,
+    trade,
+)
 from qrlab.optimization.risk_based import (
     BlackLitterman,
     black_litterman,
@@ -19,8 +26,12 @@ from qrlab.optimization.risk_based import (
 __all__ = [
     "TOLERANCE",
     "BlackLitterman",
+    "CalendarPolicy",
     "Constraints",
+    "CostModel",
     "OptimizationResult",
+    "ThresholdPolicy",
+    "Trade",
     "black_litterman",
     "efficient_frontier",
     "equal_weights",
@@ -29,4 +40,5 @@ __all__ = [
     "mean_variance",
     "minimum_variance",
     "risk_budgeting",
+    "trade",
 ]

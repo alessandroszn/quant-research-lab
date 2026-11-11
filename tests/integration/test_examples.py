@@ -148,3 +148,22 @@ def test_projection_example_runs_deterministically() -> None:
     assert "P(running out)" in out
     assert "sequence risk" in out
     assert "mean return +1 pp" in out
+
+
+@pytest.mark.integration
+def test_construction_example_reports_only_out_of_sample_results() -> None:
+    result = subprocess.run(
+        [sys.executable, str(EXAMPLES / "portfolio_construction.py")],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=300,
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "out-of-sample months only" in out
+    assert "15 walk-forward splits" in out
+    assert "180 out-of-sample months" in out
+    assert "hierarchical risk parity" in out
+    assert "66/34 -> 65%/35%, traded 2,000 EUR, cost 6.00 EUR" in out
+    assert "not evidence" in out
