@@ -64,6 +64,8 @@ from qrlab.reporting.formatting import (
 from qrlab.reporting.html import Figure, Report, Section
 from qrlab.reporting.labels import label
 from qrlab.reporting.tables import Table
+from qrlab.scenarios.definitions import HistoricalScenario
+from qrlab.scenarios.summary import RiskSummary
 
 __all__ = ["build_portfolio_report"]
 
@@ -89,6 +91,7 @@ def build_portfolio_report(
     return_frequency: tuple[Frequency, float] | None,
     checks: CheckResult | None,
     lookthrough: LookThroughInputs | None,
+    risk: RiskSummary | None,
 ) -> Report:
     """Build the portfolio report.
 
@@ -124,6 +127,9 @@ def build_portfolio_report(
     lookthrough
         Exposures through fund holdings on the last valuation date, with the holdings and
         tracking series, or ``None`` to say in the report that look-through was not done.
+    risk
+        Risk numbers and stress-test results on the last valuation date, or ``None`` to say
+        in the report that they were not computed.
     """
     if generated_at.utcoffset() is None:
         raise ValidationError("generated_at must be timezone-aware")
@@ -132,6 +138,7 @@ def build_portfolio_report(
         max_price_age_days, fx_description, provenance, instruments, import_notes, return_frequency,
         checks,
         lookthrough,
+        risk,
     ).build()  # fmt: skip
 
 
@@ -154,6 +161,7 @@ class _Builder:
         return_frequency: tuple[Frequency, float] | None,
         checks: CheckResult | None,
         lookthrough: LookThroughInputs | None,
+        risk: RiskSummary | None,
     ) -> None:
         self.name = name
         self.history = history
@@ -183,6 +191,9 @@ class _Builder:
             dated = lookthrough.exposures.as_of
             raise ValidationError(f"look-through is as of {dated}, the report ends on {self.end}")
         self.lookthrough = lookthrough
+        if risk is not None and risk.as_of != self.end:
+            raise ValidationError(f"risk is as of {risk.as_of}, the report ends on {self.end}")
+        self.risk = risk
         self.warnings: list[str] = []
 
     # ----------------------------------------------------------------- helpers
@@ -211,6 +222,7 @@ class _Builder:
             self._income_costs(),
             self._figures(flows, twr),
             self._lookthrough(),
+            self._risk(),
             self._health_checks(),
             self._data(),
         )
@@ -488,6 +500,123 @@ class _Builder:
         return Section(
             self.t("data_assumptions"), paragraphs, (sources, assumptions, carried_table), ()
         )
+
+    def _risk(self) -> Section:
+        if self.risk is None:
+            return Section(self.t("risk_stress"), (self.t("risk_not_computed"),), (), ())
+        risk = self.risk
+        paragraphs = (
+            self.t(
+                "risk_window",
+                frequency=risk.frequency,
+                start=self.day(risk.window_start),
+                end=self.day(risk.window_end),
+                n=str(risk.n_obs),
+            ),
+            self.t("stress_note"),
+        )
+        vol = risk.volatility
+        rows = [
+            (self._name_of(holding), self.pct(float(vol.component[holding])),
+             self.pct(float(vol.share[holding])))
+            for holding in vol.component.index
+        ]  # fmt: skip
+        rows.append((self.t("total"), self.pct(vol.total), self.pct(1.0)))
+        tables = [
+            Table(
+                self.t("risk_volatility"),
+                (self.t("holding"), self.t("contribution"), self.t("share")),
+                tuple(rows),
+                ("left", "right", "right"),
+                (),
+            )
+        ]
+        if risk.var_es:
+            confidence = self.pct(risk.confidence)
+            tables.append(
+                Table(
+                    self.t("risk_var_es", confidence=confidence),
+                    (self.t("method"), "VaR", "ES"),
+                    tuple((m, self.pct(v), self.pct(e)) for m, (v, e) in risk.var_es.items()),
+                    ("left", "right", "right"),
+                    (self.t("var_note"),),
+                )
+            )
+        if risk.scenarios:
+            summary = []
+            detail = []
+            for result in risk.scenarios:
+                scenario = result.scenario
+                dates = (
+                    f"{self.day(result.first_date)} - {self.day(result.last_date)}"
+                    if result.first_date is not None and result.last_date is not None
+                    else self.t("not_available")
+                )
+                kind = "historical" if isinstance(scenario, HistoricalScenario) else "hypothetical"
+                summary.append(
+                    (
+                        scenario.description,
+                        self.t(f"scenario_{kind}"),
+                        dates,
+                        self.pct(result.portfolio_return),
+                        self.money(result.pnl.amount),
+                        self.pct(result.not_covered_weight),
+                    )
+                )
+                for row in result.rows:
+                    detail.append(
+                        (
+                            scenario.id,
+                            self._name_of(row.holding),
+                            self.t(f"method_{row.method.replace(' ', '_')}"),
+                            self.t("not_available")
+                            if row.base_return is None
+                            else self.pct(row.base_return),
+                            self.t("not_available")
+                            if row.contribution is None
+                            else self.pct(row.contribution),
+                        )
+                    )
+            tables.append(
+                Table(
+                    self.t("scenarios"),
+                    (
+                        self.t("scenario"),
+                        self.t("kind"),
+                        self.t("dates_used"),
+                        self.t("portfolio_return"),
+                        self.t("pnl"),
+                        self.t("not_covered"),
+                    ),
+                    tuple(summary),
+                    ("left", "left", "left", "right", "right", "right"),
+                    (self.t("not_covered_note"),),
+                )
+            )
+            tables.append(
+                Table(
+                    self.t("scenario_detail"),
+                    (
+                        self.t("scenario"),
+                        self.t("holding"),
+                        self.t("method"),
+                        self.t("base_return"),
+                        self.t("contribution"),
+                    ),
+                    tuple(detail),
+                    ("left", "left", "left", "right", "right"),
+                    (),
+                )
+            )
+        return Section(self.t("risk_stress"), paragraphs, tuple(tables), ())
+
+    def _name_of(self, holding: str) -> str:
+        for isin, instrument in self.instruments.items():
+            if isin.code == holding:
+                return instrument.name
+        if holding.startswith("cash "):
+            return f"{self.t('cash')} {holding.removeprefix('cash ')}"
+        return holding
 
     def _lookthrough(self) -> Section:
         if self.lookthrough is None:

@@ -14,6 +14,7 @@ from qrlab.scenarios.engine import (
     StressPortfolio,
     run_scenario,
 )
+from qrlab.scenarios.summary import RiskSummary
 
 __all__ = [
     "HistoricalScenario",
@@ -21,6 +22,7 @@ __all__ = [
     "MarketData",
     "PositionResult",
     "PositionSeries",
+    "RiskSummary",
     "Scenario",
     "ScenarioResult",
     "StressPortfolio",

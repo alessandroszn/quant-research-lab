@@ -100,6 +100,7 @@ def test_sections_and_figures_structure() -> None:
         "Income and costs",
         "Charts",
         "Look-through",
+        "Risk and stress tests",
         "Health checks",
         "Data and assumptions",
     ]
