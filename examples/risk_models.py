@@ -1,4 +1,4 @@
-"""Phase 3.1 example on synthetic data: covariance, risk contributions, VaR and backtests.
+"""Phases 3.1-3.2 example on synthetic data: risk models, VaR backtests and stress tests.
 
 Run with ``uv run python examples/risk_models.py``. Offline and deterministic.
 
@@ -6,17 +6,24 @@ Four synthetic assets driven by two synthetic factors with fat-tailed (Student-t
 example compares covariance estimators, splits portfolio risk into asset and factor
 contributions, computes one-day VaR and ES at 99 % with four methods, and backtests rolling
 VaR forecasts that use only earlier data. Every figure is one day and not annualised.
+Finally it runs the example stress scenarios of ``configs/scenarios/example.toml`` on
+today's weights: the synthetic history starts in 2020, so the 2008 replay is not covered.
 
 The output is analytics on synthetic data, not investment advice.
 """
 
 from __future__ import annotations
 
+from datetime import date
+from decimal import Decimal
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
-from qrlab.core import ReturnKind
+from qrlab.core import Currency, Money, ReturnKind
 from qrlab.core.series import NanPolicy
+from qrlab.instruments import Isin
 from qrlab.metrics.risk import historical_es, historical_var, parametric_es, parametric_var
 from qrlab.risk import (
     cornish_fisher,
@@ -32,7 +39,22 @@ from qrlab.risk import (
     var_forecasts,
     volatility_contributions,
 )
+from qrlab.scenarios import (
+    MarketData,
+    PositionSeries,
+    StressPortfolio,
+    load_scenarios,
+    run_scenario,
+)
 
+ROOT = Path(__file__).parents[1]
+EUR = Currency("EUR")
+ISINS = {  # made-up ISINs with valid check digits
+    "Equity A": Isin("IE0000002018"),
+    "Equity B": Isin("IE0000002026"),
+    "Balanced": Isin("IE0000002034"),
+    "Bonds": Isin("IE0000002042"),
+}
 SEED = 20261111
 DAYS = 1500
 CONFIDENCE = 0.99
@@ -48,7 +70,7 @@ def synthetic_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     factors = pd.DataFrame(
         rng.standard_t(4, size=(DAYS, 2)) / scale * [0.010, 0.006],
         index=index,
-        columns=["market", "rates"],
+        columns=["Mkt-RF", "rates"],
     )
     betas = np.array([[1.1, 0.0], [0.9, 0.2], [0.3, 1.0], [0.0, 0.8]])
     noise = rng.standard_t(4, size=(DAYS, 4)) / scale * [0.006, 0.005, 0.003, 0.002]
@@ -135,7 +157,37 @@ def main() -> None:
             f"Kupiec p {result.kupiec_pvalue:.3f}; Christoffersen cc p "
             f"{result.conditional_coverage_pvalue:.3f}"
         )
-    print("A test that does not reject is not proof that the model is right.")
+    print("A test that does not reject is not proof that the model is right.\n")
+
+    stress(assets, factors, weights, model.betas)
+
+
+def stress(
+    assets: pd.DataFrame, factors: pd.DataFrame, weights: pd.Series, betas: pd.DataFrame
+) -> None:
+    """Run the example scenarios on today's weights (90 % invested, 10 % EUR cash)."""
+    invested = 0.9
+    portfolio = StressPortfolio(
+        as_of=date(2026, 6, 30),
+        value=Money(Decimal("100000"), EUR),
+        position_weights={ISINS[str(a)]: invested * float(w) for a, w in weights.items()},
+        cash_weights={EUR: 1.0 - invested},
+        exposure_currencies=dict.fromkeys(ISINS.values(), EUR),
+    )
+    market = MarketData(
+        positions={ISINS[a]: PositionSeries(assets[a], EUR) for a in ["Equity A", "Bonds"]},
+        factors=factors,
+        betas=betas.rename(index={a: ISINS[a].code for a in betas.index}),
+        fx={},
+    )
+    print("Stress scenarios on today's weights ('what if', not forecasts):")
+    for scenario in load_scenarios(ROOT / "configs" / "scenarios" / "example.toml"):
+        result = run_scenario(scenario, portfolio, market)
+        methods = sorted({r.method for r in result.rows})
+        print(
+            f"  {scenario.id:<16} {result.portfolio_return:+.2%}  P&L {result.pnl.amount:>10}  "
+            f"not covered {result.not_covered_weight:.0%}  methods {methods}"
+        )
 
 
 if __name__ == "__main__":

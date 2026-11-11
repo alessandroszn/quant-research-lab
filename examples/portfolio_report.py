@@ -195,6 +195,7 @@ def main(output: Path, language: Language) -> Path:
         return_frequency=None,
         checks=checks,
         lookthrough=lookthrough,
+        risk=None,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     return write_report(report, output, overwrite=True)

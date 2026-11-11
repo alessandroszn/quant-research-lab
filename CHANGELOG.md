@@ -18,13 +18,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - filtered historical simulation with an EWMA filter;
   - VaR forecasts that use only earlier data, with Kupiec and Christoffersen backtests.
 - Check `diversification.effective_bets` (37 checks in total).
+- `qrlab.scenarios` (phase 3.2):
+  - historical replays: direct from a position's own history, by factor proxy compounded
+    period by period, or reported as not covered;
+  - an explicit currency effect;
+  - hypothetical shocks to factors, positions and currencies;
+  - scenario files in TOML (`configs/scenarios/example.toml`, example definitions).
+- Report section "Risk and stress tests": volatility contributions, VaR and ES by method,
+  and scenario results with coverage and the dates used (`RiskSummary`).
 - `examples/risk_models.py`, with an integration test.
 - Dev dependency `scikit-learn`, used only in tests to cross-check Ledoit-Wolf.
 
 ### Changed
 
 - Layering: `risk` may import `core`, `stats` and `metrics`; `checks` and `reporting` may
-  import `risk`.
+  import `risk`. `scenarios` may import `core`, `data`, `instruments`, `metrics`, `risk`
+  and `portfolio`; `reporting` may import `scenarios`.
+- `build_portfolio_report` requires a `risk` argument (a `RiskSummary` or `None`).
 
 ## [0.2.0] - 2026-11-11
 

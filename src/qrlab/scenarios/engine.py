@@ -255,11 +255,11 @@ def _hypothetical(
         currency = portfolio.exposure_currencies[isin]
         if isin in scenario.positions:
             local, method = float(scenario.positions[isin]), "shock"
+        elif not scenario.factors:
+            local, method = 0.0, "currency only"
         elif betas is not None and isin.code in betas.index:
             exposure = betas.loc[isin.code].reindex(shock.index).to_numpy(dtype=np.float64)
             local, method = float(exposure @ shock.to_numpy()), "proxy"
-        elif not scenario.factors:
-            local, method = 0.0, "currency only"
         else:
             rows.append(PositionResult(isin.code, weight, "not covered", None, None, None))
             continue

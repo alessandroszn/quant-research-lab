@@ -34,3 +34,6 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Minimum-torsion effective bets | 3.1 `risk` | Meucci et al. (2015) remove the dependence of ENB on the principal-component rotation. |
 | GARCH volatility filter | 3.1 `risk` | Filtered historical simulation uses EWMA; GARCH needs maximum-likelihood estimation and diagnostics. |
 | Basel traffic-light zones | 3.1 `risk` | Green/yellow/red classification of 250-day VaR backtests. |
+| Duration-based rate shocks | 3.2 `scenarios` | Needs a duration (and convexity) field in master data for bond funds. |
+| Residual risk in proxy replays | 3.2 `scenarios` | Proxy replays ignore specific risk; a band from the residual variance would show the uncertainty. |
+| Stress-period betas | 3.2 `scenarios` | Betas estimated in calm periods understate crisis co-movement; estimate them on stress windows too. |

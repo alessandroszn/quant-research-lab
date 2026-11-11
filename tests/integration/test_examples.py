@@ -122,3 +122,7 @@ def test_risk_example_runs_deterministically() -> None:
     assert "Kupiec p" in out
     assert "not investment advice" in out
     assert "not proof that the model is right" in out
+    assert "Stress scenarios on today's weights" in out
+    assert "gfc_2008         +0.00%" in out  # synthetic history starts in 2020
+    assert "not covered 90%" in out
+    assert "equity_minus_30  -17.87%" in out

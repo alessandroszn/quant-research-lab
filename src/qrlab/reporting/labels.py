@@ -105,6 +105,43 @@ _EN = {
     "kind_transfer_in": "Transfer in",
     "kind_transfer_out": "Transfer out",
     "kind_split": "Split",
+    "risk_stress": "Risk and stress tests",
+    "risk_not_computed": "Risk numbers and stress tests were not computed for this report.",
+    "risk_window": (
+        "Risk figures are one {frequency} period, estimated on {n} returns from {start} to "
+        "{end}; they are not annualised."
+    ),
+    "stress_note": (
+        "Stress tests are 'what if' analyses on today's weights, not forecasts or "
+        "probabilities. Proxy replays use factor betas and ignore specific risk."
+    ),
+    "risk_volatility": "Volatility contributions",
+    "holding": "Holding",
+    "contribution": "Contribution",
+    "share": "Share",
+    "total": "Total",
+    "risk_var_es": "Value at risk and expected shortfall at {confidence}",
+    "method": "Method",
+    "var_note": "Positive numbers are losses. No method is 'the' VaR: compare them.",
+    "scenarios": "Stress scenarios",
+    "scenario": "Scenario",
+    "dates_used": "Dates used",
+    "portfolio_return": "Portfolio return",
+    "not_covered": "Not covered",
+    "not_covered_note": (
+        "Weight that is not covered is excluded from the portfolio figure, never assumed to "
+        "lose nothing."
+    ),
+    "scenario_detail": "Stress scenarios by holding",
+    "base_return": "Return in base currency",
+    "scenario_historical": "Historical",
+    "scenario_hypothetical": "Hypothetical",
+    "method_direct": "Own history",
+    "method_proxy": "Factor proxy",
+    "method_shock": "Direct shock",
+    "method_currency_only": "Currency only",
+    "method_cash": "Cash",
+    "method_not_covered": "Not covered",
     "lookthrough": "Look-through",
     "lookthrough_not_done": "Look-through of fund holdings was not done for this report.",
     "lt_as_reported": (
@@ -273,6 +310,43 @@ _IT = {
     "kind_transfer_in": "Trasferimento in entrata",
     "kind_transfer_out": "Trasferimento in uscita",
     "kind_split": "Frazionamento",
+    "risk_stress": "Rischio e stress test",
+    "risk_not_computed": "Rischio e stress test non sono stati calcolati per questo report.",
+    "risk_window": (
+        "Le misure di rischio sono su un periodo ({frequency}), stimate su {n} rendimenti dal "
+        "{start} al {end}; non sono annualizzate."
+    ),
+    "stress_note": (
+        "Gli stress test sono analisi 'what if' sui pesi di oggi, non previsioni né "
+        "probabilità. Le simulazioni via proxy usano i beta fattoriali e ignorano il rischio "
+        "specifico."
+    ),
+    "risk_volatility": "Contributi alla volatilità",
+    "holding": "Posizione",
+    "contribution": "Contributo",
+    "share": "Quota",
+    "total": "Totale",
+    "risk_var_es": "Value at risk ed expected shortfall al {confidence}",
+    "method": "Metodo",
+    "var_note": "I numeri positivi sono perdite. Nessun metodo è 'il' VaR: vanno confrontati.",
+    "scenarios": "Scenari di stress",
+    "scenario": "Scenario",
+    "dates_used": "Date usate",
+    "portfolio_return": "Rendimento del portafoglio",
+    "not_covered": "Non coperto",
+    "not_covered_note": (
+        "Il peso non coperto è escluso dal dato di portafoglio, mai considerato senza perdite."
+    ),
+    "scenario_detail": "Scenari di stress per posizione",
+    "base_return": "Rendimento in valuta di base",
+    "scenario_historical": "Storico",
+    "scenario_hypothetical": "Ipotetico",
+    "method_direct": "Storia propria",
+    "method_proxy": "Proxy fattoriale",
+    "method_shock": "Shock diretto",
+    "method_currency_only": "Solo cambio",
+    "method_cash": "Liquidità",
+    "method_not_covered": "Non coperto",
     "lookthrough": "Look-through",
     "lookthrough_not_done": (
         "Il look-through delle partecipazioni non è stato fatto per questo report."
