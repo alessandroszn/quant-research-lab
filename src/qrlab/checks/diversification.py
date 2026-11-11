@@ -1,4 +1,4 @@
-"""Diversification checks on position returns (effective number of bets: phase 3.1).
+"""Diversification checks on position returns, including Meucci's effective number of bets.
 
 Position returns are simple returns of each held instrument's price series up to ``as_of``,
 on the dates where every held instrument has a price (rows with a missing price are dropped),
@@ -17,6 +17,9 @@ from qrlab.checks.context import CheckContext
 from qrlab.checks.framework import Direction, Measurement, MeasureUnit, NotApplicable, spec
 from qrlab.core.errors import ValidationError
 from qrlab.core.returns import ReturnKind, prices_to_returns
+from qrlab.core.series import NanPolicy
+from qrlab.risk.covariance import sample_covariance
+from qrlab.risk.decomposition import effective_number_of_bets
 
 __all__ = ["CHECKS", "position_returns"]
 
@@ -72,6 +75,20 @@ def diversification_ratio(
     return [Measurement("portfolio", ratio, {"window": str(len(returns))})]
 
 
+def effective_bets(
+    ctx: CheckContext, params: Mapping[str, object]
+) -> list[Measurement] | NotApplicable:
+    """Meucci's effective number of bets from the sample covariance of position returns."""
+    returns = position_returns(ctx, params["window"])
+    if isinstance(returns, NotApplicable):
+        return returns
+    weights = {isin.code: w for isin, w in ctx.position_weights().items()}
+    w = pd.Series({code: weights[code] for code in returns.columns})
+    covariance = sample_covariance(returns, kind=ReturnKind.SIMPLE, missing=NanPolicy.RAISE)
+    value = effective_number_of_bets(covariance, w / w.sum())
+    return [Measurement("portfolio", value, {"positions": str(len(w))})]
+
+
 CHECKS = (
     spec(
         "diversification.average_correlation",
@@ -82,5 +99,12 @@ CHECKS = (
     ),
     spec(
         "diversification.ratio", Direction.BELOW, MeasureUnit.RATIO, diversification_ratio, "window"
+    ),
+    spec(
+        "diversification.effective_bets",
+        Direction.BELOW,
+        MeasureUnit.RATIO,
+        effective_bets,
+        "window",
     ),
 )

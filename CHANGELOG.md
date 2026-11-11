@@ -6,6 +6,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- `qrlab.risk` (phase 3.1):
+  - covariance estimators: sample, EWMA (explicit decay and demeaning) and Ledoit-Wolf
+    shrinkage, each checked to be positive semi-definite;
+  - risk contributions to volatility, historical ES and normal ES, which sum to the totals;
+  - Meucci's effective number of bets;
+  - a factor risk model with factor and specific contributions;
+  - Cornish-Fisher VaR and ES (refused when the expansion is not a quantile);
+  - filtered historical simulation with an EWMA filter;
+  - VaR forecasts that use only earlier data, with Kupiec and Christoffersen backtests.
+- Check `diversification.effective_bets` (37 checks in total).
+- `examples/risk_models.py`, with an integration test.
+- Dev dependency `scikit-learn`, used only in tests to cross-check Ledoit-Wolf.
+
+### Changed
+
+- Layering: `risk` may import `core`, `stats` and `metrics`; `checks` and `reporting` may
+  import `risk`.
+
 ## [0.2.0] - 2026-11-11
 
 Milestones M1 (Analytics core) and M2 (Portfolio X-ray): phases 1.1 to 2.5.

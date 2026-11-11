@@ -30,3 +30,7 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Issuer map loader (TOML) | 2.5 `lookthrough` | `look_through` takes a Python mapping today; a declared file would make it reusable. |
 | Fund-of-funds look-through | 2.5 `lookthrough` | A fund held inside a fund is one security; a second level needs that fund's holdings. |
 | Sector for direct positions | 2.5 `lookthrough` | Master data has no sector field, so direct stocks show an unknown sector. |
+| Constant-correlation shrinkage target | 3.1 `risk` | Ledoit-Wolf (2004, JPM) target; only the scaled identity is implemented. |
+| Minimum-torsion effective bets | 3.1 `risk` | Meucci et al. (2015) remove the dependence of ENB on the principal-component rotation. |
+| GARCH volatility filter | 3.1 `risk` | Filtered historical simulation uses EWMA; GARCH needs maximum-likelihood estimation and diagnostics. |
+| Basel traffic-light zones | 3.1 `risk` | Green/yellow/red classification of 250-day VaR backtests. |

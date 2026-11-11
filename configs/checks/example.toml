@@ -65,6 +65,12 @@ warning = 1.10
 critical = 1.02
 window = 36
 
+[diversification.effective_bets]  # effective number of independent bets (lower is worse)
+enabled = true
+warning = 2.0
+critical = 1.2
+window = 36
+
 [risk.volatility]                  # annualised volatility of the portfolio return series
 enabled = true
 warning = 0.18

@@ -76,6 +76,11 @@ _EN: dict[str, tuple[str, str]] = {
         "Weighted average volatility over portfolio volatility. A value near 1 means "
         "little risk is diversified away.",
     ),
+    "diversification.effective_bets": (
+        "Effective number of bets",
+        "How many independent sources of risk the positions add up to (principal portfolios). "
+        "Close to 1 means one risk drives everything.",
+    ),
     "risk.volatility": (
         "Volatility",
         "Annualised standard deviation of portfolio returns.",
@@ -227,6 +232,11 @@ _IT: dict[str, tuple[str, str]] = {
         "Rapporto di diversificazione",
         "Volatilità media ponderata diviso volatilità del portafoglio. Un valore vicino a 1 "
         "indica poco rischio diversificato.",
+    ),
+    "diversification.effective_bets": (
+        "Numero effettivo di scommesse",
+        "Quante fonti di rischio indipendenti compongono le posizioni (portafogli principali). "
+        "Vicino a 1 significa che un solo rischio guida tutto.",
     ),
     "risk.volatility": (
         "Volatilità",

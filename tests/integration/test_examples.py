@@ -99,3 +99,26 @@ def test_report_example_writes_a_self_contained_html(tmp_path: Path) -> None:
     assert "Partecipazioni al" in html  # look-through of the synthetic holdings file
     assert "Non spiegato dalle partecipazioni" in html  # holdings sum to 99 %
     assert "<script" not in html
+
+
+@pytest.mark.integration
+def test_risk_example_runs_deterministically() -> None:
+    runs = [
+        subprocess.run(
+            [sys.executable, str(EXAMPLES / "risk_models.py")],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=180,
+        )
+        for _ in range(2)
+    ]
+    assert runs[0].returncode == 0, runs[0].stderr
+    assert runs[0].stdout == runs[1].stdout
+    out = runs[0].stdout
+    assert "Ledoit-Wolf shrinkage intensity" in out
+    assert "Effective number of bets" in out
+    assert "Cornish-Fisher" in out
+    assert "Kupiec p" in out
+    assert "not investment advice" in out
+    assert "not proof that the model is right" in out
