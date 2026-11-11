@@ -278,3 +278,11 @@ def test_download_stores_raw_zip_with_provenance(tmp_path: Path) -> None:
     assert stored.path.read_bytes() == content
     assert stored.provenance.source == "ken_french"
     assert "Kenneth R. French" in stored.provenance.terms
+
+
+def test_two_sections_of_the_same_frequency_raise() -> None:
+    text = MONTHLY_FF3.replace(
+        "Copyright", ",Mkt-RF,SMB,HML,RF\n202701,    1.00,    1.00,    1.00,    1.00\n\nCopyright"
+    )
+    with pytest.raises(ParseError, match="found 2"):
+        _parse(text, frequency=Frequency.MONTHLY)
