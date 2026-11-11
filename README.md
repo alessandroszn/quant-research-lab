@@ -4,7 +4,8 @@
 portfolio analytics and backtesting. Correctness, reproducibility and methodological rigour come
 before speed or feature count.
 
-> **Status:** Level 0 (setup). The subpackages are documented stubs; see
+> **Status:** milestone M1 (Analytics core) reached: `core`, `data`, `instruments` and
+> `metrics` are implemented and tested; the other subpackages are documented stubs. See
 > [`docs/ROADMAP.md`](docs/ROADMAP.md) for the plan and [`CHANGELOG.md`](CHANGELOG.md) for
 > releases.
 
@@ -49,6 +50,16 @@ CI runs the same checks on Linux and Windows for Python 3.11 and 3.13.
 | `examples/` | Small runnable examples on synthetic data |
 | `research/` | Exploratory work, not part of the library |
 | `data/` | Local data store, git-ignored except its README |
+
+## Example
+
+```bash
+uv run python examples/m1_analytics_core.py
+```
+
+Synthetic prices in an Italian broker CSV format are imported with provenance, converted to
+returns and analysed (CAGR, volatility, Sharpe with standard error, drawdown, VaR/ES, tracking
+error, CAPM, capture ratios). Offline and deterministic.
 
 ## Data and privacy
 

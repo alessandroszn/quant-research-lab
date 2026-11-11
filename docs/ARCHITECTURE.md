@@ -19,7 +19,8 @@
 
 ## Target module map
 
-Status: `core` (1.1), `data` (1.2) and `instruments` (1.3) are implemented.
+Status: Level 1 is implemented: `core` (1.1), `data` (1.2), `instruments` (1.3) and
+`metrics` (1.4), i.e. milestone **M1 — Analytics core**.
 `stats`, `validation`, `metrics`, `backtest`, `reporting` exist as documented stubs. The others are planned (see `ROADMAP.md`); each one is added together with its
 layering rule.
 

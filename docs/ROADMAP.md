@@ -113,6 +113,8 @@ Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 is reache
 - **Tests:** hand-calculated series; analytical normal cases; simulation coverage of standard
   errors.
 
+*Status: implemented and verified locally on 2026-11-10; pending CI on GitHub and your review.*
+
 **M1 — Analytics core:** any return series, in any currency, can be loaded with provenance and
 fully analysed with verified metrics.
 
