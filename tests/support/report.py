@@ -74,6 +74,7 @@ def toy_report(language: Language = Language.IT, **changes: object) -> Report:
         "checks": None,
         "lookthrough": None,
         "risk": None,
+        "projection": None,
     }
     kwargs.update(changes)
     return build_portfolio_report(**kwargs)  # type: ignore[arg-type]

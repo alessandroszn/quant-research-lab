@@ -24,6 +24,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - an explicit currency effect;
   - hypothetical shocks to factors, positions and currencies;
   - scenario files in TOML (`configs/scenarios/example.toml`, example definitions).
+- `qrlab.simulation` (phase 3.3):
+  - Monte Carlo engines: normal and Student-t on log returns, and a block bootstrap of
+    history; an explicit Generator and cell limit are required;
+  - plans with contributions and net withdrawals (fixed or indexed), explicit timing,
+    costs, inflation, capital-gains and wealth taxes on an average cost basis, rebalancing
+    and depletion;
+  - outcomes: fan charts, terminal percentiles (real, nominal, after tax), goal and
+    depletion probabilities with Monte Carlo errors, sequence-of-returns risk, and a
+    sensitivity table on common random numbers.
+- Report section "Projection" with a fan chart, and `examples/projection_plan.py`.
 - Report section "Risk and stress tests": volatility contributions, VaR and ES by method,
   and scenario results with coverage and the dates used (`RiskSummary`).
 - `examples/risk_models.py`, with an integration test.
@@ -34,7 +44,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Layering: `risk` may import `core`, `stats` and `metrics`; `checks` and `reporting` may
   import `risk`. `scenarios` may import `core`, `data`, `instruments`, `metrics`, `risk`
   and `portfolio`; `reporting` may import `scenarios`.
-- `build_portfolio_report` requires a `risk` argument (a `RiskSummary` or `None`).
+- `build_portfolio_report` requires a `risk` argument (a `RiskSummary` or `None`) and a
+  `projection` argument (a `ProjectionResult` or `None`).
+- Layering: `simulation` may import `core`, `stats` and `metrics`; `reporting` may import
+  `simulation`.
 
 ## [0.2.0] - 2026-11-11
 

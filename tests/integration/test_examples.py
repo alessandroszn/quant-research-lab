@@ -126,3 +126,25 @@ def test_risk_example_runs_deterministically() -> None:
     assert "gfc_2008         +0.00%" in out  # synthetic history starts in 2020
     assert "not covered 90%" in out
     assert "equity_minus_30  -17.87%" in out
+
+
+@pytest.mark.integration
+def test_projection_example_runs_deterministically() -> None:
+    runs = [
+        subprocess.run(
+            [sys.executable, str(EXAMPLES / "projection_plan.py")],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=180,
+        )
+        for _ in range(2)
+    ]
+    assert runs[0].returncode == 0, runs[0].stderr
+    assert runs[0].stdout == runs[1].stdout
+    out = runs[0].stdout
+    assert "not forecasts or investment advice" in out
+    assert "block bootstrap (12)" in out
+    assert "P(running out)" in out
+    assert "sequence risk" in out
+    assert "mean return +1 pp" in out

@@ -9,6 +9,14 @@ from qrlab.simulation.engines import (
     normal_returns,
     student_t_returns,
 )
+from qrlab.simulation.outcomes import (
+    ProjectionResult,
+    ProjectionSummary,
+    SensitivityRow,
+    sensitivity,
+    shifted_moments,
+    summarize,
+)
 from qrlab.simulation.plan import Flow, Plan, Projection, TaxModel, project
 
 __all__ = [
@@ -17,11 +25,17 @@ __all__ = [
     "LogMoments",
     "Plan",
     "Projection",
+    "ProjectionResult",
+    "ProjectionSummary",
+    "SensitivityRow",
     "SimulatedReturns",
     "TaxModel",
     "bootstrap_returns",
     "log_moments",
     "normal_returns",
     "project",
+    "sensitivity",
+    "shifted_moments",
     "student_t_returns",
+    "summarize",
 ]
