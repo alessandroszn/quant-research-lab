@@ -41,6 +41,7 @@ ALLOWED: dict[str, set[str]] = {
     "metrics": {"core", "stats"},
     "risk": {"core", "stats", "metrics"},
     "optimization": {"core", "stats", "metrics", "risk"},
+    "attribution": {"core", "stats", "metrics"},
     "validation": {"core"},
     "backtest": {"core", "data", "metrics", "validation", "optimization", "simulation"},
     "reporting": {
@@ -57,6 +58,7 @@ ALLOWED: dict[str, set[str]] = {
         "scenarios",
         "simulation",
         "optimization",
+        "attribution",
         "backtest",
     },
 }
