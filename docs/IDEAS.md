@@ -14,3 +14,6 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Country name to ISO code table | 1.3 `instruments` | Issuer holdings files use country names ("United States"); needed for look-through in 2.5. |
 | Issuer holdings adapters (iShares, Xtrackers, Vanguard, Amundi, SPDR, Invesco) | 1.3 `instruments` | Each needs its own terms-of-use review before any download code. |
 | Exchange listings and trading currencies | 1.3 `instruments` | Needed when valuing transactions on a specific exchange (2.1). |
+| FIFO and specific-lot cost basis | 2.1 `portfolio` | Average cost (Italian regime amministrato) is implemented; other methods for other tax regimes. |
+| Original cost on transfers in | 2.1 `portfolio` | Transfers in take market value as cost basis; carrying the original cost from another broker matters for taxes. |
+| Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |

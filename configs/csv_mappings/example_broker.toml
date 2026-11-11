@@ -1,0 +1,47 @@
+# Example mapping for a broker transaction export (synthetic). Formats are declared, never guessed.
+# Keep real exports in data/ (git-ignored); keep a real mapping there too if it reveals personal
+# details such as account numbers.
+
+delimiter = ";"
+decimal_separator = ","
+thousands_separator = "."        # "" means no thousands separator
+encoding = "utf-8"
+date_format = "%d/%m/%Y"
+date_order = "descending"        # as listed in the file: "ascending" or "descending"
+amount_sign = "signed"           # "signed": outflows negative in the file; "absolute": all >= 0
+zero_charge_currency = "EUR"     # currency of an implicit zero fee or tax
+
+# Transaction field -> column header in the file. A value starting with "=" is a constant
+# (e.g. account = "=main"). id, trade_date, kind and account are required; other fields are
+# optional and only needed by the transaction kinds that use them.
+[columns]
+id = "Riferimento"
+trade_date = "Data"
+kind = "Operazione"
+account = "=conto-principale"
+isin = "ISIN"
+quantity = "Quantita"
+price = "Prezzo"
+price_currency = "Divisa"
+amount = "Importo"
+amount_currency = "Divisa"
+fees = "Commissioni"
+fees_currency = "=EUR"
+taxes = "Imposte"
+taxes_currency = "Divisa"
+fx_counter = "Controvalore"
+fx_counter_currency = "Divisa controvalore"
+note = "Descrizione"
+
+# Broker wording -> transaction kind. Any wording not listed here raises.
+[kinds]
+"Bonifico in entrata" = "deposit"
+"Bonifico in uscita" = "withdrawal"
+"Acquisto" = "buy"
+"Vendita" = "sell"
+"Dividendo" = "dividend"
+"Interessi" = "interest"
+"Commissione" = "fee"
+"Imposta" = "tax"
+"Cambio valuta" = "fx_conversion"
+"Frazionamento" = "split"

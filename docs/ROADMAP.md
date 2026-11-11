@@ -121,6 +121,7 @@ fully analysed with verified metrics.
 ## Level 2 — Portfolio → M2 Portfolio X-ray
 
 ### 2.1 `portfolio`: accounting & performance (25–35 h)
+*Status: implemented and verified locally on 2026-11-10; pending CI and review.*
 - **Broker transaction import** (moved from 1.2): broker exports mapped to the transaction
   schema, reusing the explicit CSV mapping layer of `data`.
 - **Accounting:** transactions (buy, sell, dividend, fee, tax, deposit, withdrawal, FX), from
