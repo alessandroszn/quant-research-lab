@@ -14,12 +14,16 @@ from qrlab.backtest.engine import (
     run_backtest,
     run_backtest_targets,
 )
+from qrlab.backtest.summary import BacktestSummary, LedgerSummary, summarize_backtest
 
 __all__ = [
     "BacktestResult",
+    "BacktestSummary",
     "Execution",
+    "LedgerSummary",
     "Strategy",
     "TradeOnSignal",
     "run_backtest",
     "run_backtest_targets",
+    "summarize_backtest",
 ]

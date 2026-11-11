@@ -24,6 +24,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - an explicit currency effect;
   - hypothetical shocks to factors, positions and currencies;
   - scenario files in TOML (`configs/scenarios/example.toml`, example definitions).
+- `qrlab.backtest` (phase 4.3):
+  - strategies see only the history up to their decision date, and an execution lag of
+    at least 1 is required;
+  - precomputed targets use the same lag;
+  - weights drift between trades, and the 4.2 policies (or `TradeOnSignal`) decide the
+    trades;
+  - costs and capital-gains tax hit the net ledger, with the gross ledger alongside;
+  - `summarize_backtest` reports gross and net statistics side by side.
+- `examples/backtest_strategies.py`: trend and momentum strategies on synthetic data, gross
+  against net.
 - `qrlab.optimization` (phase 4.2):
   - explicit constraints (long-only, bounds, groups, turnover), with a feasibility check
     and a post-solve check of every constraint;
@@ -60,6 +70,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `projection` argument (a `ProjectionResult` or `None`).
 - Layering: `simulation` may import `core`, `stats` and `metrics`; `reporting` may import
   `simulation`. `optimization` may import `core`, `stats`, `metrics` and `risk`.
+  `backtest` may also import `optimization` and `simulation`.
 
 ## [0.2.0] - 2026-11-11
 

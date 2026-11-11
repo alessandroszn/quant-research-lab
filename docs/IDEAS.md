@@ -44,3 +44,5 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Combinatorial purged cross-validation | 4.1 `validation` | Trains on data after the test window, which breaks the train-before-test rule; only with an explicit opt-in and a documented reason. |
 | Robust or resampled mean-variance | 4.2 `optimization` | Michaud resampling or robust optimisation to tame estimation error in expected returns. |
 | Optimisation report section | 4.2 `optimization` | Weights, contributions and out-of-sample comparisons in the HTML report, through the experiment runner. |
+| Assets entering and leaving the universe | 4.3 `backtest` | Returns must be complete today; survivorship-free universes need assets with start and end dates. |
+| Market impact and spreads | 4.3 `backtest` | Costs are proportional plus fixed; size-dependent impact matters for large trades. |
