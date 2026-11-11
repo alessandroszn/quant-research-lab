@@ -1,0 +1,41 @@
+# Example stress scenarios. EXAMPLE DEFINITIONS, NOT RECOMMENDATIONS OR FORECASTS.
+#
+# Historical scenarios replay the returns dated in (start, end] on today's weights. The dates
+# follow commonly cited S&P 500 peak-to-trough dates; edit them freely. With monthly data the
+# effective window snaps to month-ends, and the report shows the dates actually used.
+#
+# Hypothetical scenarios are explicit shocks (simple returns, above -1). Factor names must
+# match the columns of the betas (here Ken French "Mkt-RF"); positions are ISIN codes;
+# currencies are shocks to one unit of that currency measured in the base currency.
+
+[gfc_2008]
+kind = "historical"
+description = "Global financial crisis: S&P 500 peak to trough"
+start = 2007-10-09
+end = 2009-03-09
+
+[covid_2020]
+kind = "historical"
+description = "Covid crash: S&P 500 peak to trough"
+start = 2020-02-19
+end = 2020-03-23
+
+[rates_2022]
+kind = "historical"
+description = "2022 rate shock: from the 2021 year-end to the S&P 500 low"
+start = 2021-12-31
+end = 2022-10-12
+
+[equity_minus_30]
+kind = "hypothetical"
+description = "Equity market falls 30 % in one step"
+factors = { "Mkt-RF" = -0.30 }
+positions = {}
+currencies = {}
+
+[usd_minus_10]
+kind = "hypothetical"
+description = "US dollar falls 10 % against the base currency"
+factors = {}
+positions = {}
+currencies = { USD = -0.10 }
