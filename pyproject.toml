@@ -34,6 +34,7 @@ dev = [
     "mypy>=1.13",
     "pandas-stubs>=3.1.0.261029",
     "scipy-stubs>=1.17.1.5",
+    "scikit-learn>=1.9.1",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -84,7 +85,7 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
 [[tool.mypy.overrides]]
 # statsmodels ships no type information.
-module = ["statsmodels", "statsmodels.*"]
+module = ["statsmodels", "statsmodels.*", "sklearn", "sklearn.*"]
 ignore_missing_imports = true
 
 # --------------------------------------------------------------------------- pytest
