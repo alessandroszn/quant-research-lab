@@ -19,11 +19,16 @@
 
 ## Target module map
 
-Status: Level 1 is implemented: `core` (1.1), `data` (1.2), `instruments` (1.3) and
-`metrics` (1.4), i.e. milestone **M1 — Analytics core**. Phases 2.1 `portfolio` (accounting and
-performance) 2.2 `stats` (robust regressions, factor exposures, bootstrap) and 2.3 `reporting` v1 (HTML
-portfolio report) are implemented. `validation` and `backtest` exist as documented stubs. The others are planned (see
-`ROADMAP.md`); each one is added together with its layering rule.
+Status: milestones **M1 — Analytics core**, **M2 — Portfolio X-ray** and **M3 — Risk &
+Planning** are implemented:
+
+- Level 1: `core`, `data`, `instruments` and `metrics`;
+- Level 2: `portfolio`, `stats`, `reporting`, `checks` and `lookthrough`;
+- Level 3: `risk`, `scenarios` and `simulation`.
+
+Phase 4.1 `validation` (walk-forward splits with purging and embargo) is implemented too.
+`backtest` exists as a documented stub. The other modules are planned (see `ROADMAP.md`), and
+each one is added together with its layering rule.
 
 | Layer | Module | Responsibility |
 |---|---|---|

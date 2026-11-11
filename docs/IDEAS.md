@@ -41,3 +41,4 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Stochastic inflation | 3.3 `simulation` | Inflation is a fixed annual rate; a joint model with returns (e.g. from HICP) would widen real outcomes. |
 | Loss carry-forward in the tax model | 3.3 `simulation` | Italian capital losses can offset gains for four years; v1 does not carry them, which overstates taxes. |
 | Sensitivity for the bootstrap engine | 3.3 `simulation` | Shifting the mean and scaling volatility of resampled history needs a stated transformation. |
+| Combinatorial purged cross-validation | 4.1 `validation` | Trains on data after the test window, which breaks the train-before-test rule; only with an explicit opt-in and a documented reason. |
