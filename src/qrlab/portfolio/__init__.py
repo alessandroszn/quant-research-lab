@@ -30,6 +30,7 @@ from qrlab.portfolio.ledger import (
     Position,
     RealisedGain,
     ToBase,
+    TradeCharge,
     replay,
 )
 from qrlab.portfolio.performance import (
@@ -66,6 +67,7 @@ __all__ = [
     "PriceSeries",
     "RealisedGain",
     "ToBase",
+    "TradeCharge",
     "Transaction",
     "TransactionKind",
     "TwrResult",

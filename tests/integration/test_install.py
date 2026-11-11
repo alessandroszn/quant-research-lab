@@ -14,8 +14,9 @@ import pytest
 @pytest.mark.integration
 def test_package_imports_in_fresh_interpreter() -> None:
     code = (
-        "import qrlab, qrlab.core, qrlab.data, qrlab.instruments, qrlab.portfolio, qrlab.stats, "
-        "qrlab.validation, qrlab.metrics, qrlab.backtest, qrlab.reporting; print(qrlab.__version__)"
+        "import qrlab, qrlab.core, qrlab.data, qrlab.instruments, qrlab.portfolio, qrlab.checks, "
+        "qrlab.stats, qrlab.validation, qrlab.metrics, qrlab.backtest, qrlab.reporting; "
+        "print(qrlab.__version__)"
     )
     result = subprocess.run(
         [sys.executable, "-I", "-c", code], capture_output=True, text=True, check=False

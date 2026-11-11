@@ -1,0 +1,70 @@
+# Example health-check thresholds. EXAMPLE VALUES, NOT RECOMMENDATIONS: choose your own.
+#
+# Every registered check must appear here. For each check:
+#   enabled  = true | false
+#   warning  = level that produces a warning
+#   critical = level that produces a critical finding, or "none"
+# The direction (whether higher or lower is worse) is fixed by the check, not by this file.
+# Comparisons are strict: a value exactly at a threshold does not trigger.
+# Weights and costs are fractions (0.20 = 20 %); money is in the portfolio's base currency.
+
+[concentration.largest_position]   # weight of the largest position (higher is worse)
+enabled = true
+warning = 0.20
+critical = 0.35
+
+[concentration.top5]               # weight of the five largest positions
+enabled = true
+warning = 0.70
+critical = 0.90
+
+[concentration.herfindahl]         # sum of squared position weights (1 / effective positions)
+enabled = true
+warning = 0.20
+critical = 0.35
+
+[concentration.foreign_currency]   # largest exposure to one foreign currency
+enabled = true
+warning = 0.50
+critical = 0.80
+
+[costs.weighted_ter]               # weighted TER over the whole portfolio, a year
+enabled = true
+warning = 0.0040
+critical = 0.0080
+
+[costs.trading_drag]               # trade charges over average value, a year
+enabled = true
+warning = 0.0025
+critical = 0.0075
+
+[costs.total_cost]                 # weighted TER + trading drag, a year
+enabled = true
+warning = 0.0060
+critical = 0.0120
+
+[data_quality.stale_prices]        # prices carried forward from an earlier date
+enabled = true
+warning = 0
+critical = "none"
+
+[data_quality.stale_fx]            # FX rates carried forward from an earlier date
+enabled = true
+warning = 0
+critical = "none"
+
+[data_quality.stale_master]        # instruments whose master data is older than max_age_days
+enabled = true
+warning = 0
+critical = "none"
+max_age_days = 365
+
+[data_quality.missing_master]      # missing master-data fields (or records)
+enabled = true
+warning = 0
+critical = "none"
+
+[data_quality.pnl_residual]        # absolute P&L residual (should be zero)
+enabled = true
+warning = 0.01
+critical = 1.0

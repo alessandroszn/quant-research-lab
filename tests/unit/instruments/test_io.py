@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from qrlab.core.errors import ValidationError
-from qrlab.core.money import Currency
+from qrlab.core.money import Currency, Money
 from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Provenance
 from qrlab.instruments.identifiers import Isin
@@ -54,6 +54,7 @@ def test_example_instruments_load() -> None:
     assert etf.ter == Decimal("0.0020")
     assert etf.as_of == date(2026, 10, 1)
     assert etf.hedged_to is None
+    assert etf.fund_size == Money.of("85000000000", "USD")
     hedged = records["LU0000000025"]
     assert hedged.hedged_to == Currency("EUR")
     assert hedged.benchmark is None
@@ -85,6 +86,16 @@ def _write(tmp_path: Path, text: str) -> Path:
         ("as_of = 2026-10-01", 'as_of = "unknown"', "as_of"),
         ("[IE0000000012]", "[IE0000000013]", "ISIN"),
         ("as_of = 2026-10-01", "as_of = 2026-10-01T10:00:00", "as_of"),
+        (
+            'fund_size = { amount = "85000000000", currency = "USD" }',
+            "fund_size = 85000000000",
+            "fund_size",
+        ),
+        (
+            'fund_size = { amount = "85000000000", currency = "USD" }',
+            'fund_size = { amount = 1, currency = "USD" }',
+            "quoted",
+        ),
     ],
 )
 def test_instrument_file_strictness(tmp_path: Path, old: str, new: str, match: str) -> None:

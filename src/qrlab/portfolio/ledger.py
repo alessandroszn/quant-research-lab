@@ -40,6 +40,7 @@ __all__ = [
     "Position",
     "RealisedGain",
     "ToBase",
+    "TradeCharge",
     "replay",
 ]
 
@@ -130,6 +131,21 @@ class Cost:
 
 
 @dataclass(frozen=True)
+class TradeCharge:
+    """Fees and taxes paid on a purchase or sale, in the base currency.
+
+    They are already part of the cost basis or the proceeds; they are listed separately to
+    measure trading-cost drag.
+    """
+
+    trade_date: date
+    account: str
+    isin: Isin
+    kind: TransactionKind
+    amount_base: Decimal
+
+
+@dataclass(frozen=True)
 class CashMovement:
     """A change of a cash balance in its own currency (used for the currency effect on cash)."""
 
@@ -151,6 +167,7 @@ class LedgerHistory:
     income: tuple[Income, ...]
     costs: tuple[Cost, ...]
     cash_movements: tuple[CashMovement, ...]
+    trade_charges: tuple[TradeCharge, ...]
 
     def state_on(self, day: date) -> LedgerState:
         """State after all transactions dated on or before ``day`` (empty before the first)."""
@@ -195,6 +212,7 @@ class _Replayer:
         self.income: list[Income] = []
         self.costs: list[Cost] = []
         self.movements: list[CashMovement] = []
+        self.trade_charges: list[TradeCharge] = []
         self.dates: list[date] = []
         self.states: list[LedgerState] = []
 
@@ -226,6 +244,7 @@ class _Replayer:
             income=tuple(self.income),
             costs=tuple(self.costs),
             cash_movements=tuple(self.movements),
+            trade_charges=tuple(self.trade_charges),
         )
 
     # ----------------------------------------------------------------- helpers
@@ -258,6 +277,12 @@ class _Replayer:
                 self.move_cash(t, charge, -1)
                 total += self.conv(charge, t.trade_date)
         return total, [c for c in (t.fees, t.taxes) if c.amount]
+
+    def _record_trade_charges(self, t: Transaction, amount_base: Decimal) -> None:
+        if amount_base:
+            self.trade_charges.append(
+                TradeCharge(t.trade_date, t.account, _isin(t), t.kind, amount_base)
+            )
 
     def held(self, t: Transaction) -> Position:
         position = self.positions.get((t.account, _isin(t)))
@@ -335,6 +360,7 @@ class _Replayer:
         gross = Money(_quantity(t) * _price(t).amount, _price(t).currency)
         self.move_cash(t, gross, -1)
         charges_base, charges = self.charges(t)
+        self._record_trade_charges(t, charges_base)
         local_charges = sum((c.amount for c in charges if c.currency == gross.currency), Decimal(0))
         self._add_units(
             t, _quantity(t), gross, local_charges, self.conv(gross, t.trade_date) + charges_base
@@ -401,6 +427,7 @@ class _Replayer:
         gross = Money(_quantity(t) * _price(t).amount, _price(t).currency)
         self.move_cash(t, gross, +1)
         charges_base, charges = self.charges(t)
+        self._record_trade_charges(t, charges_base)
         local_charges = sum((c.amount for c in charges if c.currency == gross.currency), Decimal(0))
         proceeds_base = self.conv(gross, t.trade_date) - charges_base
         self.realised.append(

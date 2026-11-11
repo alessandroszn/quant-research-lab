@@ -23,7 +23,7 @@ from typing import Any, TypeVar
 import pandas as pd
 
 from qrlab.core.errors import ValidationError
-from qrlab.core.money import Currency
+from qrlab.core.money import Currency, Money
 from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Provenance
 from qrlab.data.user_csv import parse_number
@@ -50,7 +50,8 @@ _UNKNOWN = "unknown"
 _INSTRUMENT_KEYS = frozenset(
     {
         "name", "instrument_type", "asset_class", "currency", "as_of", "domicile",
-        "replication", "distribution", "ter", "benchmark", "hedged_to", "inception", "source",
+        "replication", "distribution", "ter", "benchmark", "hedged_to", "inception", "fund_size",
+        "source",
     }
 )  # fmt: skip
 _DELIMITERS = frozenset({",", ";", "\t", "|"})
@@ -61,8 +62,8 @@ def load_instruments(path: Path) -> list[Instrument]:
     """Load instrument master data from a TOML file with one table per ISIN.
 
     See ``configs/instruments/example.toml``. ``"unknown"`` becomes ``None`` for domicile,
-    replication, distribution, TER, benchmark and inception; ``hedged_to`` is a currency or
-    ``"none"``. The TER must be a quoted decimal fraction (``"0.0020"``).
+    replication, distribution, TER, benchmark, inception and fund size; ``hedged_to`` is a
+    currency or ``"none"``. The TER must be a quoted decimal fraction (``"0.0020"``).
     """
     with Path(path).open("rb") as handle:
         raw = tomllib.load(handle)
@@ -90,6 +91,7 @@ def _instrument(code: str, table: Mapping[str, Any]) -> Instrument:
         benchmark=_optional(table["benchmark"]),
         hedged_to=None if hedged == "none" else Currency(hedged),
         inception=_toml_date(table["inception"], "inception", code, allow_unknown=True),
+        fund_size=_fund_size(table["fund_size"], code),
         source=table["source"],
     )
 
@@ -352,6 +354,18 @@ def _ter(value: object, where: str) -> Decimal | None:
         return Decimal(value)
     except InvalidOperation:
         raise ValidationError(f"{where}: ter {value!r} is not a decimal number") from None
+
+
+def _fund_size(value: object, where: str) -> Money | None:
+    if value == _UNKNOWN:
+        return None
+    if not isinstance(value, Mapping) or set(value) != {"amount", "currency"}:
+        raise ValidationError(
+            f'{where}: fund_size must be "unknown" or {{ amount = "...", currency = "EUR" }}'
+        )
+    if not isinstance(value["amount"], str):
+        raise ValidationError(f"{where}: fund_size amount must be a quoted decimal string")
+    return Money.of(value["amount"], value["currency"])
 
 
 def _toml_date(value: object, field: str, where: str, *, allow_unknown: bool) -> date | None:

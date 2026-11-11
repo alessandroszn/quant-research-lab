@@ -61,6 +61,7 @@ def _instrument(name: str = "Example World Equity UCITS ETF") -> Instrument:
         benchmark="Example World Index",
         hedged_to=None,
         inception=None,
+        fund_size=None,
         source="synthetic",
     )
 

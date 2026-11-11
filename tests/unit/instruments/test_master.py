@@ -12,7 +12,7 @@ from decimal import Decimal
 import pytest
 
 from qrlab.core.errors import ValidationError
-from qrlab.core.money import Currency
+from qrlab.core.money import Currency, Money
 from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.master import (
     AssetClass,
@@ -43,6 +43,7 @@ def _etf(**changes: object) -> Instrument:
         benchmark="Example World Index",
         hedged_to=None,
         inception=date(2009, 9, 25),
+        fund_size=Money.of("85000000000", "USD"),
         source="synthetic test record",
     )
     return replace(base, **changes)  # type: ignore[arg-type]
@@ -57,6 +58,7 @@ def _stock(**changes: object) -> Instrument:
         "distribution": None,
         "ter": None,
         "benchmark": None,
+        "fund_size": None,
         "domicile": "US",
     }
     return _etf(**(defaults | changes))
@@ -122,7 +124,9 @@ def test_complete_fresh_record_has_no_issues() -> None:
 
 
 def test_missing_fund_fields_are_reported_not_filled() -> None:
-    record = _etf(domicile=None, replication=None, distribution=None, ter=None, benchmark=None)
+    record = _etf(
+        domicile=None, replication=None, distribution=None, ter=None, benchmark=None, fund_size=None
+    )
     issues = master_data_issues([record], on=ON, max_age_days=365)
     assert {(i.field, i.kind) for i in issues} == {
         ("domicile", IssueKind.MISSING),
@@ -130,6 +134,7 @@ def test_missing_fund_fields_are_reported_not_filled() -> None:
         ("distribution", IssueKind.MISSING),
         ("ter", IssueKind.MISSING),
         ("benchmark", IssueKind.MISSING),
+        ("fund_size", IssueKind.MISSING),
     }
     assert all(i.subject == "IE00B4L5Y983" for i in issues)
 
@@ -168,3 +173,12 @@ def test_hedged_share_class_and_unknown_inception_are_valid() -> None:
     record = _etf(hedged_to=Currency("EUR"), inception=None)
     assert record.hedged_to == Currency("EUR")
     assert record.inception is None
+
+
+def test_fund_size_validation() -> None:
+    with pytest.raises(ValidationError, match="fund_size"):
+        _etf(fund_size=Money.of(0, "USD"))
+    with pytest.raises(ValidationError, match="fund_size"):
+        _etf(fund_size=1_000_000)
+    with pytest.raises(ValidationError, match="fund"):
+        _stock(fund_size=Money.of(1, "USD"))
