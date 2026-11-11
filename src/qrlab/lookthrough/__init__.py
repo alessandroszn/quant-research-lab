@@ -11,6 +11,7 @@ from qrlab.lookthrough.exposures import (
     WeightTreatment,
     look_through,
 )
+from qrlab.lookthrough.inputs import LookThroughInputs
 from qrlab.lookthrough.overlap import Overlap, duplicated_exposure, pair_overlap, pairwise_overlaps
 from qrlab.lookthrough.tracking import (
     TrackingDifference,
@@ -28,6 +29,7 @@ __all__ = [
     "UNKNOWN",
     "Dimension",
     "LookThrough",
+    "LookThroughInputs",
     "Overlap",
     "TrackingDifference",
     "TrackingSeries",

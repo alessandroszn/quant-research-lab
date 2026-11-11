@@ -96,4 +96,6 @@ def test_report_example_writes_a_self_contained_html(tmp_path: Path) -> None:
     assert "Analisi, non consulenza finanziaria." in html
     assert "Controlli di salute" in html
     assert "Scostamento massimo" in html  # drift from the example targets
+    assert "Partecipazioni al" in html  # look-through of the synthetic holdings file
+    assert "Non spiegato dalle partecipazioni" in html  # holdings sum to 99 %
     assert "<script" not in html

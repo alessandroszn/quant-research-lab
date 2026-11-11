@@ -27,3 +27,6 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Beta on excess returns | 2.4 `checks` | Needs a risk-free series in `CheckContext`; with a constant rate the beta is the same. |
 | Total-return position returns | 2.4 `checks` | Diversification checks use price returns; distributing funds look more volatile and less correlated than they are. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |
+| Issuer map loader (TOML) | 2.5 `lookthrough` | `look_through` takes a Python mapping today; a declared file would make it reusable. |
+| Fund-of-funds look-through | 2.5 `lookthrough` | A fund held inside a fund is one security; a second level needs that fund's holdings. |
+| Sector for direct positions | 2.5 `lookthrough` | Master data has no sector field, so direct stocks show an unknown sector. |

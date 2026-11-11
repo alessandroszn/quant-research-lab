@@ -25,6 +25,17 @@ from qrlab.data.errors import DataNotFoundError
 from qrlab.data.provenance import Provenance
 from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.master import Instrument
+from qrlab.lookthrough.exposures import (
+    CASH,
+    NOT_LOOKED_THROUGH,
+    SPECIAL_BUCKETS,
+    UNEXPLAINED,
+    UNKNOWN,
+    Dimension,
+    WeightTreatment,
+)
+from qrlab.lookthrough.inputs import LookThroughInputs
+from qrlab.lookthrough.tracking import td_vs_ter, tracking_difference
 from qrlab.metrics.drawdown import drawdown_series, max_drawdown
 from qrlab.metrics.errors import UndefinedMetricError
 from qrlab.metrics.performance import annualised_volatility
@@ -57,6 +68,7 @@ from qrlab.reporting.tables import Table
 __all__ = ["build_portfolio_report"]
 
 ONE_YEAR_DAYS = 365
+TOP_BUCKETS = 10
 
 
 def build_portfolio_report(
@@ -76,6 +88,7 @@ def build_portfolio_report(
     import_notes: Sequence[str],
     return_frequency: tuple[Frequency, float] | None,
     checks: CheckResult | None,
+    lookthrough: LookThroughInputs | None,
 ) -> Report:
     """Build the portfolio report.
 
@@ -108,6 +121,9 @@ def build_portfolio_report(
         Health-check result on the report's last valuation date (see :mod:`qrlab.checks`), or
         ``None`` to say in the report that checks were not run. A result for another date
         raises.
+    lookthrough
+        Exposures through fund holdings on the last valuation date, with the holdings and
+        tracking series, or ``None`` to say in the report that look-through was not done.
     """
     if generated_at.utcoffset() is None:
         raise ValidationError("generated_at must be timezone-aware")
@@ -115,6 +131,7 @@ def build_portfolio_report(
         name, history, valuation, prices, to_base, language, generated_at, flow_timing,
         max_price_age_days, fx_description, provenance, instruments, import_notes, return_frequency,
         checks,
+        lookthrough,
     ).build()  # fmt: skip
 
 
@@ -136,6 +153,7 @@ class _Builder:
         import_notes: Sequence[str],
         return_frequency: tuple[Frequency, float] | None,
         checks: CheckResult | None,
+        lookthrough: LookThroughInputs | None,
     ) -> None:
         self.name = name
         self.history = history
@@ -161,6 +179,10 @@ class _Builder:
                 f"health checks are as of {checks.as_of}, the report ends on {self.end}"
             )
         self.checks = checks
+        if lookthrough is not None and lookthrough.exposures.as_of != self.end:
+            dated = lookthrough.exposures.as_of
+            raise ValidationError(f"look-through is as of {dated}, the report ends on {self.end}")
+        self.lookthrough = lookthrough
         self.warnings: list[str] = []
 
     # ----------------------------------------------------------------- helpers
@@ -188,6 +210,7 @@ class _Builder:
             self._pnl(),
             self._income_costs(),
             self._figures(flows, twr),
+            self._lookthrough(),
             self._health_checks(),
             self._data(),
         )
@@ -465,6 +488,132 @@ class _Builder:
         return Section(
             self.t("data_assumptions"), paragraphs, (sources, assumptions, carried_table), ()
         )
+
+    def _lookthrough(self) -> Section:
+        if self.lookthrough is None:
+            return Section(self.t("lookthrough"), (self.t("lookthrough_not_done"),), (), ())
+        inputs = self.lookthrough
+        exposures = inputs.exposures
+        paragraphs = [
+            self.t(
+                "lt_as_reported"
+                if exposures.treatment is WeightTreatment.AS_REPORTED
+                else "lt_normalised"
+            ),
+            self.t("lt_buckets"),
+        ]
+        if not exposures.issuer_mapped:
+            paragraphs.append(self.t("lt_no_issuer_map"))
+        tables = []
+        dates = tuple(
+            (
+                isin.code,
+                self._name(isin),
+                self.day(day),
+                str((self.end - day).days),
+            )
+            for isin, day in sorted(exposures.snapshot_dates.items(), key=lambda i: i[0].code)
+        )
+        if dates:
+            tables.append(
+                Table(
+                    self.t("holdings_dates"),
+                    (self.t("isin"), self.t("name"), self.t("holdings_date"), self.t("age_days")),
+                    dates,
+                    ("left", "left", "left", "right"),
+                    (),
+                )
+            )
+        for dimension, key in (
+            (Dimension.COUNTRY, "lt_country"),
+            (Dimension.SECTOR, "lt_sector"),
+            (Dimension.CURRENCY, "lt_currency"),
+            (Dimension.SECURITY, "lt_security"),
+        ):
+            tables.append(self._exposure_table(dimension, key))
+        overlaps = inputs.overlaps()
+        if overlaps:
+            rows = tuple(
+                (p.first.code, p.second.code, self.pct(p.overlap),
+                 f"{self.pct(p.unmatched_first)} / {self.pct(p.unmatched_second)}")
+                for p in overlaps
+            )  # fmt: skip
+            tables.append(
+                Table(
+                    self.t("lt_overlap"),
+                    (self.t("fund"), self.t("fund"), self.t("overlap"), self.t("unmatched")),
+                    rows,
+                    ("left", "left", "right", "right"),
+                    (),
+                )
+            )
+        tracking = []
+        for isin, (fund, index) in sorted(inputs.tracking.items(), key=lambda i: i[0].code):
+            td = tracking_difference(fund, index)
+            instrument = self.instruments.get(isin)
+            ter = instrument.ter if instrument is not None else None
+            na = self.t("not_available")
+            tracking.append(
+                (
+                    isin.code,
+                    f"{self.day(td.start)} - {self.day(td.end)}",
+                    self.t(f"series_{fund.price_type.value}"),
+                    self.pct(td.difference),
+                    na if td.annualised is None else self.pct(td.annualised),
+                    na if ter is None else self.pct(float(ter)),
+                    na if td.annualised is None or ter is None
+                    else self.pct(td_vs_ter(td.annualised, ter)),
+                )
+            )  # fmt: skip
+        if tracking:
+            columns = (
+                self.t("isin"), self.t("period"), self.t("series_type"), self.t("td_period"),
+                self.t("td_annualised"), self.t("ter"), self.t("td_plus_ter"),
+            )  # fmt: skip
+            align = ("left", "left", "left", "right", "right", "right", "right")
+            notes = (self.t("td_note"),)
+            tables.append(Table(self.t("lt_tracking"), columns, tuple(tracking), align, notes))
+        return Section(self.t("lookthrough"), tuple(paragraphs), tuple(tables), ())
+
+    def _exposure_table(self, dimension: Dimension, key: str) -> Table:
+        assert self.lookthrough is not None
+        exposures = self.lookthrough.exposures
+        series = exposures.exposure(dimension)
+        regular = [k for k in series.index if k not in SPECIAL_BUCKETS][:TOP_BUCKETS]
+        special = [k for k in series.index if k in SPECIAL_BUCKETS]
+        names = {}
+        if dimension is Dimension.SECURITY:
+            rows = exposures.rows.dropna(subset=["security"])
+            names = dict(zip(rows["security"], rows["name"], strict=True))
+        table_rows = tuple(
+            (self._bucket_label(str(k), names), self.pct(float(series[k])))
+            for k in regular + special
+        )
+        notes: tuple[str, ...] = ()
+        hidden = len([k for k in series.index if k not in SPECIAL_BUCKETS]) - len(regular)
+        if hidden > 0:
+            notes = (self.t("lt_more", count=str(hidden)),)
+        return Table(
+            self.t(key), (self.t(key), self.t("weight")), table_rows, ("left", "right"), notes
+        )
+
+    def _bucket_label(self, key: str, names: Mapping[str, object]) -> str:
+        special = {
+            UNKNOWN: "bucket_unknown",
+            UNEXPLAINED: "bucket_unexplained",
+            NOT_LOOKED_THROUGH: "bucket_not_looked_through",
+            CASH: "cash",
+        }
+        if key in special:
+            return self.t(special[key])
+        name = names.get(key)
+        if isinstance(name, str) and not key.startswith("name:"):
+            return f"{name} ({key})"
+        return key.removeprefix("name:")
+
+    def _name(self, isin: Isin) -> str:
+        instrument = self.instruments.get(isin)
+        return instrument.name if instrument else isin.code
 
     def _health_checks(self) -> Section:
         if self.checks is None:

@@ -111,6 +111,7 @@ def _toy_context() -> CheckContext:
     return CheckContext(
         as_of=D3, history=history, valuation=valuation, to_base=eur_only, instruments={},
         prices={}, portfolio_returns=None, benchmark_returns=None, target_weights=None,
+        lookthrough=None,
     )  # fmt: skip
 
 
@@ -130,6 +131,7 @@ def test_total_cost_adds_ter_and_drag() -> None:
     ctx = CheckContext(
         as_of=D3, history=history, valuation=valuation, to_base=eur_only, instruments={X: fund(X)},
         prices={}, portfolio_returns=None, benchmark_returns=None, target_weights=None,
+        lookthrough=None,
     )  # fmt: skip
     measured = _one(costs.total_cost(ctx, NO_PARAMS))
     ter = 2700 / 15480 * 0.002
@@ -175,6 +177,7 @@ def test_stale_prices_and_fx_on_the_check_date() -> None:
     ctx = CheckContext(
         as_of=later, history=history, valuation=valuation, to_base=stale_fx, instruments={},
         prices=prices, portfolio_returns=None, benchmark_returns=None, target_weights=None,
+        lookthrough=None,
     )  # fmt: skip
     measured = _one(data_quality.stale_prices(ctx, NO_PARAMS))
     assert measured.observed == 1
@@ -189,7 +192,7 @@ def test_residual_with_a_wrong_converter() -> None:
     wrong = FixedRates({date(2026, 1, 2): "1.25"})
     ctx = CheckContext(
         as_of=D3, history=history, valuation=valuation, to_base=wrong, instruments={}, prices={},
-        portfolio_returns=None, benchmark_returns=None, target_weights=None,
+        portfolio_returns=None, benchmark_returns=None, target_weights=None, lookthrough=None,
     )  # fmt: skip
     assert _one(data_quality.pnl_residual(ctx, NO_PARAMS)).observed > 1
 
@@ -213,6 +216,7 @@ def test_context_edge_cases() -> None:
         CheckContext(
             as_of=AS_OF, history=empty_history, valuation=zero, to_base=eur_only, instruments={},
             prices={}, portfolio_returns=None, benchmark_returns=None, target_weights=None,
+        lookthrough=None,
         )  # fmt: skip
     ok = weighted_context({A: "0.6"}, target_weights={A.code: 0.5, "cash": 0.5})
     assert ok.target_weights == {A.code: 0.5, "cash": 0.5}

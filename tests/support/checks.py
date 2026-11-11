@@ -19,6 +19,7 @@ from qrlab.instruments.master import (
     InstrumentType,
     Replication,
 )
+from qrlab.lookthrough.inputs import LookThroughInputs
 from qrlab.portfolio.ledger import ToBase, replay
 from qrlab.portfolio.transactions import TransactionKind
 from qrlab.portfolio.valuation import value_portfolio
@@ -71,6 +72,7 @@ def weighted_context(
     benchmark_returns: pd.Series | None = None,
     target_weights: Mapping[str, float] | None = None,
     prices: Mapping[Isin, pd.Series] | None = None,
+    lookthrough: LookThroughInputs | None = None,
 ) -> CheckContext:
     """Build a portfolio worth 10,000 bought at price 1 on AS_OF, with the given weights.
 
@@ -129,6 +131,7 @@ def weighted_context(
         portfolio_returns=portfolio_returns,
         benchmark_returns=benchmark_returns,
         target_weights=target_weights,
+        lookthrough=lookthrough,
     )
 
 

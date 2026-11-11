@@ -12,6 +12,7 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency, Money
 from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.master import Instrument
+from qrlab.lookthrough.inputs import LookThroughInputs
 from qrlab.portfolio.ledger import LedgerHistory, ToBase
 from qrlab.portfolio.valuation import PriceSeries, Valuation
 
@@ -41,6 +42,9 @@ class CheckContext:
         Benchmark returns with the same index as ``portfolio_returns``, or ``None``.
     target_weights
         Target weights by ISIN code and ``"cash"``, summing to 1, or ``None``.
+    lookthrough
+        Exposures through fund holdings on ``as_of``, with the holdings and tracking series,
+        or ``None``.
     """
 
     as_of: date
@@ -52,6 +56,7 @@ class CheckContext:
     portfolio_returns: pd.Series | None
     benchmark_returns: pd.Series | None
     target_weights: Mapping[str, float] | None
+    lookthrough: LookThroughInputs | None
 
     def __post_init__(self) -> None:
         """Validate the date and the target weights."""
@@ -59,6 +64,10 @@ class CheckContext:
             raise ValidationError(f"as_of {self.as_of} is not a valuation date")
         if self.valuation.totals[self.as_of] <= 0:
             raise ValidationError("checks need a positive portfolio value on as_of")
+        if self.lookthrough is not None:
+            dated = self.lookthrough.exposures.as_of
+            if dated != self.as_of:
+                raise ValidationError(f"look-through is as of {dated}, checks as of {self.as_of}")
         if self.target_weights is not None:
             total = sum(self.target_weights.values())
             if abs(total - 1.0) > 1e-9 or any(w < 0 for w in self.target_weights.values()):

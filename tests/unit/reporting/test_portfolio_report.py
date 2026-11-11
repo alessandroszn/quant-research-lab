@@ -99,6 +99,7 @@ def test_sections_and_figures_structure() -> None:
         "Profit and loss breakdown",
         "Income and costs",
         "Charts",
+        "Look-through",
         "Health checks",
         "Data and assumptions",
     ]

@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from datetime import UTC, date, datetime
 
 import pandas as pd
 
+from qrlab.checks.context import CheckContext
 from qrlab.data.provenance import Provenance
 from qrlab.instruments.holdings import HoldingsSnapshot
 from qrlab.instruments.identifiers import Isin, is_valid_isin
+from qrlab.lookthrough.exposures import WeightTreatment, look_through
+from qrlab.lookthrough.inputs import LookThroughInputs
+from qrlab.lookthrough.tracking import TrackingSeries
 
 
 def security(prefix: str, number: int) -> str:
@@ -79,3 +84,25 @@ def countries(fund: Isin, weights: dict[str, float]) -> HoldingsSnapshot:
             for n, (code, w) in enumerate(weights.items(), start=1)
         ],
     )
+
+
+def with_lookthrough(
+    ctx: CheckContext,
+    snapshots: Mapping[Isin, HoldingsSnapshot],
+    *,
+    tracking: Mapping[Isin, tuple[TrackingSeries, TrackingSeries]] | None = None,
+    issuers: Mapping[Isin, str] | None = None,
+) -> CheckContext:
+    """Return ``ctx`` with look-through inputs built from its own weights (as reported)."""
+    exposures = look_through(
+        as_of=ctx.as_of,
+        position_weights=ctx.position_weights(),
+        cash_weights=ctx.cash_weights(),
+        instruments=ctx.instruments,
+        snapshots=snapshots,
+        treatment=WeightTreatment.AS_REPORTED,
+        issuers=issuers,
+    )
+    used = {isin: s for isin, s in snapshots.items() if isin in exposures.snapshot_dates}
+    inputs = LookThroughInputs(exposures, used, tracking or {})
+    return replace(ctx, lookthrough=inputs)
