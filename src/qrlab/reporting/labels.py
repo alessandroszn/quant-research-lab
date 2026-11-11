@@ -105,6 +105,34 @@ _EN = {
     "kind_transfer_in": "Transfer in",
     "kind_transfer_out": "Transfer out",
     "kind_split": "Split",
+    "health_checks": "Health checks",
+    "checks_not_run": "Health checks were not run for this report.",
+    "checks_summary": (
+        "{critical} critical, {warning} warning and {info} information findings; "
+        "{passed} checks passed, {not_applicable} not applicable, {disabled} disabled."
+    ),
+    "checks_note": (
+        "Thresholds come from the user's configuration file. A finding is a prompt to review "
+        "the portfolio, not a recommendation to trade."
+    ),
+    "findings": "Findings",
+    "severity": "Severity",
+    "check": "Check",
+    "subject": "Subject",
+    "observed": "Observed",
+    "threshold": "Threshold",
+    "details": "Details",
+    "severity_info": "Information",
+    "severity_warning": "Warning",
+    "severity_critical": "Critical",
+    "subject_portfolio": "Portfolio",
+    "checks_explained": "What the checks measure",
+    "explanation": "Explanation",
+    "checks_not_applicable": "Checks not applicable",
+    "reason": "Reason",
+    "reasons_in_english": "Reasons are given in English, as reported by the library.",
+    "checks_disabled": "Disabled checks: {checks}.",
+    "warn_critical_findings": "{count} critical health-check findings: see Health checks.",
 }
 
 _IT = {
@@ -205,6 +233,36 @@ _IT = {
     "kind_transfer_in": "Trasferimento in entrata",
     "kind_transfer_out": "Trasferimento in uscita",
     "kind_split": "Frazionamento",
+    "health_checks": "Controlli di salute",
+    "checks_not_run": "I controlli di salute non sono stati eseguiti per questo report.",
+    "checks_summary": (
+        "{critical} segnalazioni critiche, {warning} avvisi e {info} informative; "
+        "{passed} controlli superati, {not_applicable} non applicabili, {disabled} disattivati."
+    ),
+    "checks_note": (
+        "Le soglie vengono dal file di configurazione dell'utente. Una segnalazione invita a "
+        "rivedere il portafoglio, non è una raccomandazione di operare."
+    ),
+    "findings": "Segnalazioni",
+    "severity": "Gravità",
+    "check": "Controllo",
+    "subject": "Oggetto",
+    "observed": "Valore osservato",
+    "threshold": "Soglia",
+    "details": "Dettagli",
+    "severity_info": "Informativa",
+    "severity_warning": "Avviso",
+    "severity_critical": "Critica",
+    "subject_portfolio": "Portafoglio",
+    "checks_explained": "Cosa misurano i controlli",
+    "explanation": "Spiegazione",
+    "checks_not_applicable": "Controlli non applicabili",
+    "reason": "Motivo",
+    "reasons_in_english": "I motivi sono in inglese, come riportati dalla libreria.",
+    "checks_disabled": "Controlli disattivati: {checks}.",
+    "warn_critical_findings": (
+        "{count} segnalazioni critiche nei controlli di salute: vedi la sezione."
+    ),
 }
 
 LABELS: Mapping[Language, Mapping[str, str]] = MappingProxyType(

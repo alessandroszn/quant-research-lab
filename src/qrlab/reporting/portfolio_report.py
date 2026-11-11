@@ -16,6 +16,8 @@ from collections.abc import Mapping, Sequence
 from datetime import date, datetime
 from decimal import Decimal
 
+from qrlab.checks.engine import ALL_CHECKS, CheckResult
+from qrlab.checks.framework import Direction, Finding, MeasureUnit, Severity
 from qrlab.core.calendar import Frequency
 from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency, Money
@@ -37,6 +39,7 @@ from qrlab.portfolio.performance import (
     time_weighted_returns,
 )
 from qrlab.portfolio.valuation import PriceSeries, Valuation
+from qrlab.reporting.check_labels import check_label
 from qrlab.reporting.figures import AxisFormat, line_figure
 from qrlab.reporting.formatting import (
     Language,
@@ -72,6 +75,7 @@ def build_portfolio_report(
     instruments: Mapping[Isin, Instrument],
     import_notes: Sequence[str],
     return_frequency: tuple[Frequency, float] | None,
+    checks: CheckResult | None,
 ) -> Report:
     """Build the portfolio report.
 
@@ -100,12 +104,17 @@ def build_portfolio_report(
     return_frequency
         ``(frequency, periods_per_year)`` if the valuation dates are regular; enables the
         annualised volatility. ``None`` omits it, with a note.
+    checks
+        Health-check result on the report's last valuation date (see :mod:`qrlab.checks`), or
+        ``None`` to say in the report that checks were not run. A result for another date
+        raises.
     """
     if generated_at.utcoffset() is None:
         raise ValidationError("generated_at must be timezone-aware")
     return _Builder(
         name, history, valuation, prices, to_base, language, generated_at, flow_timing,
         max_price_age_days, fx_description, provenance, instruments, import_notes, return_frequency,
+        checks,
     ).build()  # fmt: skip
 
 
@@ -126,6 +135,7 @@ class _Builder:
         instruments: Mapping[Isin, Instrument],
         import_notes: Sequence[str],
         return_frequency: tuple[Frequency, float] | None,
+        checks: CheckResult | None,
     ) -> None:
         self.name = name
         self.history = history
@@ -146,6 +156,11 @@ class _Builder:
         if not self.dates:
             raise ValidationError("the valuation has no dates")
         self.start, self.end = self.dates[0], self.dates[-1]
+        if checks is not None and checks.as_of != self.end:
+            raise ValidationError(
+                f"health checks are as of {checks.as_of}, the report ends on {self.end}"
+            )
+        self.checks = checks
         self.warnings: list[str] = []
 
     # ----------------------------------------------------------------- helpers
@@ -173,6 +188,7 @@ class _Builder:
             self._pnl(),
             self._income_costs(),
             self._figures(flows, twr),
+            self._health_checks(),
             self._data(),
         )
         self._collect_warnings(twr, mwr)
@@ -450,7 +466,100 @@ class _Builder:
             self.t("data_assumptions"), paragraphs, (sources, assumptions, carried_table), ()
         )
 
+    def _health_checks(self) -> Section:
+        if self.checks is None:
+            return Section(self.t("health_checks"), (self.t("checks_not_run"),), (), ())
+        result = self.checks
+        counts = {s: sum(f.severity is s for f in result.findings) for s in Severity}
+        paragraphs = [
+            self.t(
+                "checks_summary",
+                critical=str(counts[Severity.CRITICAL]),
+                warning=str(counts[Severity.WARNING]),
+                info=str(counts[Severity.INFO]),
+                passed=str(len(result.passed)),
+                not_applicable=str(len(result.not_applicable)),
+                disabled=str(len(result.disabled)),
+            ),
+            self.t("checks_note"),
+        ]
+        if result.disabled:
+            names = ", ".join(check_label(c, self.language)[0] for c in result.disabled)
+            paragraphs.append(self.t("checks_disabled", checks=names))
+        tables = []
+        if result.findings:
+            order = (Severity.CRITICAL, Severity.WARNING, Severity.INFO)
+            ranked = sorted(result.findings, key=lambda f: order.index(f.severity))
+            rows = tuple(
+                (
+                    self.t(f"severity_{f.severity.value}"),
+                    check_label(f.check_id, self.language)[0],
+                    self.t("subject_portfolio") if f.subject == "portfolio" else f.subject,
+                    self._measure(f.observed, f.unit),
+                    self._threshold(f),
+                    "; ".join(f"{k}: {v}" for k, v in f.details.items() if v),
+                )
+                for f in ranked
+            )
+            finding_columns = (
+                self.t("severity"), self.t("check"), self.t("subject"), self.t("observed"),
+                self.t("threshold"), self.t("details"),
+            )  # fmt: skip
+            align = ("left", "left", "left", "right", "right", "left")
+            tables.append(Table(self.t("findings"), finding_columns, rows, align, ()))
+        if result.not_applicable:
+            reasons = tuple(
+                (check_label(c, self.language)[0], reason) for c, reason in result.not_applicable
+            )
+            tables.append(
+                Table(
+                    self.t("checks_not_applicable"),
+                    (self.t("check"), self.t("reason")),
+                    reasons,
+                    ("left", "left"),
+                    (self.t("reasons_in_english"),),
+                )
+            )
+        evaluated = (
+            {f.check_id for f in result.findings}
+            | set(result.passed)
+            | {c for c, _ in result.not_applicable}
+        )
+        explained = tuple(
+            check_label(spec.id, self.language) for spec in ALL_CHECKS if spec.id in evaluated
+        )
+        if explained:
+            tables.append(
+                Table(
+                    self.t("checks_explained"),
+                    (self.t("check"), self.t("explanation")),
+                    explained,
+                    ("left", "left"),
+                    (),
+                )
+            )
+        return Section(self.t("health_checks"), tuple(paragraphs), tuple(tables), ())
+
+    def _measure(self, value: float, unit: MeasureUnit) -> str:
+        if unit is MeasureUnit.FRACTION:
+            return self.pct(value)
+        if unit is MeasureUnit.MONEY:
+            return self.money(Decimal(str(value)))
+        if unit is MeasureUnit.COUNT:
+            return format_number(value, 0, style=self.style)
+        if unit is MeasureUnit.YEARS:
+            return format_number(value, 1, style=self.style)
+        return format_number(value, 2, style=self.style)
+
+    def _threshold(self, finding: Finding) -> str:
+        sign = ">" if finding.direction is Direction.ABOVE else "<"
+        return f"{sign} {self._measure(finding.threshold, finding.unit)}"
+
     def _collect_warnings(self, twr: TwrResult, mwr: XirrResult | None) -> None:
+        if self.checks is not None:
+            critical = sum(f.severity is Severity.CRITICAL for f in self.checks.findings)
+            if critical:
+                self.warnings.append(self.t("warn_critical_findings", count=str(critical)))
         for isin, requested, used in self.valuation.stale_prices:
             self.warnings.append(
                 self.t(

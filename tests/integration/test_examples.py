@@ -94,4 +94,6 @@ def test_report_example_writes_a_self_contained_html(tmp_path: Path) -> None:
     assert "15.480,00 EUR" in html
     assert "3,17 %" in html
     assert "Analisi, non consulenza finanziaria." in html
+    assert "Controlli di salute" in html
+    assert "Scostamento massimo" in html  # drift from the example targets
     assert "<script" not in html
