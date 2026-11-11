@@ -77,3 +77,21 @@ def test_factor_example_recovers_the_synthetic_loadings() -> None:
     assert "Mkt-RF    0.944" in out  # true 0.95
     assert "SMB       0.200" in out  # true 0.20
     assert "No significance claims" in out
+
+
+@pytest.mark.integration
+def test_report_example_writes_a_self_contained_html(tmp_path: Path) -> None:
+    output = tmp_path / "report.html"
+    result = subprocess.run(
+        [sys.executable, str(EXAMPLES / "portfolio_report.py"), str(output), "it"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=180,
+    )
+    assert result.returncode == 0, result.stderr
+    html = output.read_text(encoding="utf-8")
+    assert "15.480,00 EUR" in html
+    assert "3,17 %" in html
+    assert "Analisi, non consulenza finanziaria." in html
+    assert "<script" not in html

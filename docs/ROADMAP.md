@@ -142,6 +142,7 @@ fully analysed with verified metrics.
 - **Tests:** agreement with statsmodels; known-answer simulations.
 
 ### 2.3 `reporting` v1 (15–20 h)
+*Status: implemented and verified locally on 2026-11-10; pending CI and review.*
 - Tables and figures (Matplotlib, Agg backend) and a portfolio report in HTML.
 - Every report states its data as-of dates, its assumptions and a "not investment advice" note.
 

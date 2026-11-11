@@ -20,3 +20,6 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
 | International daily factors | 2.2 `stats` | French publishes daily Developed and Europe factors; only monthly and annual are parsed. |
 | Fama-MacBeth regressions | 2.2 `stats` | Cross-sectional asset pricing tests, needed for the factor-zoo study (5.3). |
+| Sharpe ratio in the portfolio report | 2.3 `reporting` | Needs a risk-free series (e.g. euro short-term rate) as a report input. |
+| Translate library messages in reports | 2.3 `reporting` | Import notes and some error texts are English inside Italian reports. |
+| PDF export of reports | 2.3 `reporting` | Roadmap mentions HTML/PDF; HTML only in v1. |
