@@ -27,6 +27,7 @@ ALLOWED: dict[str, set[str]] = {
     "portfolio": {"core", "data", "instruments", "metrics"},
     "lookthrough": {"core", "data", "instruments", "metrics", "portfolio"},
     "scenarios": {"core", "data", "instruments", "metrics", "risk", "portfolio"},
+    "simulation": {"core", "stats", "metrics"},
     "checks": {
         "core",
         "data",
@@ -53,6 +54,7 @@ ALLOWED: dict[str, set[str]] = {
         "checks",
         "lookthrough",
         "scenarios",
+        "simulation",
         "backtest",
     },
 }
