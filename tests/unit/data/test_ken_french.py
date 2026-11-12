@@ -377,7 +377,7 @@ def test_portfolio_sections_are_selected_by_title() -> None:
     )
     assert list(vw.data.columns)[7] == "Hlth"
     assert vw.data.iloc[0].tolist() == pytest.approx([0.01 * k for k in range(1, 11)])
-    assert np.isnan(vw.data.loc["2026-02-28", "Durbl"])
+    assert vw.data.isna().loc["2026-02-28", "Durbl"]
     assert ew.data.iloc[0, 0] == pytest.approx(0.001)
     assert any("Average Value Weighted" in note for note in vw.notes)
 
@@ -392,7 +392,7 @@ def test_firm_tables_keep_published_units() -> None:
     )
     assert firms.loc["2026-02-28", "NoDur"] == 11.0
     assert size.loc["2026-01-31", "NoDur"] == 5.0
-    assert np.isnan(size.loc["2026-02-28", "Durbl"])
+    assert size.isna().loc["2026-02-28", "Durbl"]
 
 
 def test_daily_portfolio_file() -> None:
