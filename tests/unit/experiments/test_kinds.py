@@ -335,6 +335,7 @@ def test_cli_runs_every_example(tmp_path: Path, capsys: pytest.CaptureFixture[st
         "backtest",
         "portfolio_report",
         "projection",
+        "study_one_over_n",
         "study_volatility_managed",
     } == set(KINDS)
 

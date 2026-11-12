@@ -27,10 +27,16 @@ from qrlab.core.money import Currency
 from qrlab.core.returns import ReturnKind
 from qrlab.data.errors import ParseError
 from qrlab.data.ken_french import (
+    AVERAGE_FIRM_SIZE,
+    EQUAL_WEIGHTED_MONTHLY,
     KEN_FRENCH_DATASETS,
+    NUMBER_OF_FIRMS,
+    VALUE_WEIGHTED_DAILY,
+    VALUE_WEIGHTED_MONTHLY,
     download_ken_french,
     ken_french_url,
     parse_ken_french,
+    parse_ken_french_table,
 )
 from qrlab.data.provenance import Provenance, Unit
 from qrlab.data.store import RawStore
@@ -261,6 +267,10 @@ def test_catalogue_and_urls() -> None:
         "Europe_3_Factors",
         "Europe_5_Factors",
         "Europe_Mom_Factor",
+        "10_Industry_Portfolios",
+        "10_Industry_Portfolios_daily",
+        "25_Portfolios_5x5",
+        "25_Portfolios_5x5_Daily",
     }
     assert ken_french_url("F-F_Momentum_Factor") == (
         "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip"
@@ -307,3 +317,125 @@ def test_international_daily_frequency_is_not_offered() -> None:
     content = _zip(MONTHLY_FF3)
     with pytest.raises(ParseError, match="not DAILY"):
         parse_ken_french(content, _prov(content, "Developed_3_Factors"), frequency=Frequency.DAILY)
+
+
+# --------------------------------------------------------------------------- portfolio files
+_IND = ",NoDur,Durbl,Manuf,Enrgy,HiTec,Telcm,Shops,Hlth ,Utils,Other"
+INDUSTRY_MONTHLY = f"""  This file was created by CMPT_IND_RETS using the 202609 CRSP database.
+  It contains value- and equal-weighted returns for 10 industry portfolios.
+  Missing data are indicated by -99.99 or -999.
+
+  Average Value Weighted Returns -- Monthly
+{_IND}
+202601,   1.00,   2.00,   3.00,   4.00,   5.00,   6.00,   7.00,   8.00,   9.00,  10.00
+202602,  -1.00,  -99.99,  0.50,   0.50,   0.50,   0.50,   0.50,   0.50,   0.50,   0.50
+
+  Average Equal Weighted Returns -- Monthly
+{_IND}
+202601,   0.10,   0.20,   0.30,   0.40,   0.50,   0.60,   0.70,   0.80,   0.90,   1.00
+202602,   0.10,   0.20,   0.30,   0.40,   0.50,   0.60,   0.70,   0.80,   0.90,   1.00
+
+  Average Value Weighted Returns -- Annual
+{_IND}
+2026,   1.00,   2.00,   3.00,   4.00,   5.00,   6.00,   7.00,   8.00,   9.00,  10.00
+
+  Number of Firms in Portfolios
+{_IND}
+202601,    10,     20,     30,     40,     50,     60,     70,     80,     90,    100
+202602,    11,     20,     30,     40,     50,     60,     70,     80,     90,    100
+
+  Average Firm Size
+{_IND}
+202601,   5.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00
+202602,   6.00,  -99.99,  1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00,   1.00
+"""
+
+INDUSTRY_DAILY = f"""  This file was created by CMPT_IND_RETS using the 202609 CRSP database.
+
+  Average Value Weighted Returns -- Daily
+{_IND}
+20260102,   0.10,   0.20,   0.30,   0.40,   0.50,   0.60,   0.70,   0.80,   0.90,   1.00
+
+  Average Equal Weighted Returns -- Daily
+{_IND}
+20260102,   0.01,   0.02,   0.03,   0.04,   0.05,   0.06,   0.07,   0.08,   0.09,   0.10
+"""
+
+
+def _portfolio(text: str, dataset: str) -> tuple[bytes, Provenance]:
+    content = _zip(text)
+    return content, _prov(content, dataset)
+
+
+def test_portfolio_sections_are_selected_by_title() -> None:
+    content, prov = _portfolio(INDUSTRY_MONTHLY, "10_Industry_Portfolios")
+    vw = parse_ken_french(
+        content, prov, frequency=Frequency.MONTHLY, section=VALUE_WEIGHTED_MONTHLY
+    )
+    ew = parse_ken_french(
+        content, prov, frequency=Frequency.MONTHLY, section=EQUAL_WEIGHTED_MONTHLY
+    )
+    assert list(vw.data.columns)[7] == "Hlth"
+    assert vw.data.iloc[0].tolist() == pytest.approx([0.01 * k for k in range(1, 11)])
+    assert np.isnan(vw.data.loc["2026-02-28", "Durbl"])
+    assert ew.data.iloc[0, 0] == pytest.approx(0.001)
+    assert any("Average Value Weighted" in note for note in vw.notes)
+
+
+def test_firm_tables_keep_published_units() -> None:
+    content, prov = _portfolio(INDUSTRY_MONTHLY, "10_Industry_Portfolios")
+    firms = parse_ken_french_table(
+        content, prov, frequency=Frequency.MONTHLY, section=NUMBER_OF_FIRMS
+    )
+    size = parse_ken_french_table(
+        content, prov, frequency=Frequency.MONTHLY, section=AVERAGE_FIRM_SIZE
+    )
+    assert firms.loc["2026-02-28", "NoDur"] == 11.0
+    assert size.loc["2026-01-31", "NoDur"] == 5.0
+    assert np.isnan(size.loc["2026-02-28", "Durbl"])
+
+
+def test_daily_portfolio_file() -> None:
+    content, prov = _portfolio(INDUSTRY_DAILY, "10_Industry_Portfolios_daily")
+    data = parse_ken_french(
+        content, prov, frequency=Frequency.DAILY, section=VALUE_WEIGHTED_DAILY
+    ).data
+    assert data.index[0] == pd.Timestamp("2026-01-02")
+    assert data.iloc[0, -1] == pytest.approx(0.01)
+
+
+def test_size_bm_columns() -> None:
+    names = KEN_FRENCH_DATASETS["25_Portfolios_5x5"].columns
+    assert names[:6] == ("SMALL LoBM", "ME1 BM2", "ME1 BM3", "ME1 BM4", "SMALL HiBM", "ME2 BM1")
+    assert names[-5:] == ("BIG LoBM", "ME5 BM2", "ME5 BM3", "ME5 BM4", "BIG HiBM")
+    assert len(set(names)) == 25
+
+
+def test_titled_section_errors() -> None:
+    content, prov = _portfolio(INDUSTRY_MONTHLY, "10_Industry_Portfolios")
+    with pytest.raises(ParseError, match="section must be one of"):
+        parse_ken_french(content, prov, frequency=Frequency.MONTHLY)
+    with pytest.raises(ParseError, match="section must be one of"):
+        parse_ken_french(content, prov, frequency=Frequency.MONTHLY, section=NUMBER_OF_FIRMS)
+    with pytest.raises(ParseError, match="table section must be one of"):
+        parse_ken_french_table(
+            content, prov, frequency=Frequency.MONTHLY, section=VALUE_WEIGHTED_MONTHLY
+        )
+    missing = INDUSTRY_MONTHLY.replace("Average Equal Weighted Returns -- Monthly", "Other title")
+    content, prov = _portfolio(missing, "10_Industry_Portfolios")
+    with pytest.raises(ParseError, match="titled 'Average Equal Weighted Returns -- Monthly'"):
+        parse_ken_french(content, prov, frequency=Frequency.MONTHLY, section=EQUAL_WEIGHTED_MONTHLY)
+    ff3 = _zip(MONTHLY_FF3)
+    with pytest.raises(ParseError, match="no titled sections"):
+        parse_ken_french(
+            ff3, _prov(ff3), frequency=Frequency.MONTHLY, section=VALUE_WEIGHTED_MONTHLY
+        )
+
+
+def test_duplicate_titles_raise() -> None:
+    doubled = INDUSTRY_MONTHLY.replace(
+        "Average Equal Weighted Returns -- Monthly", "Average Value Weighted Returns -- Monthly"
+    )
+    content, prov = _portfolio(doubled, "10_Industry_Portfolios")
+    with pytest.raises(ParseError, match="found 2"):
+        parse_ken_french(content, prov, frequency=Frequency.MONTHLY, section=VALUE_WEIGHTED_MONTHLY)

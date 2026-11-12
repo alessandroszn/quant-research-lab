@@ -27,7 +27,12 @@ from qrlab.data.ecb import (
 )
 from qrlab.data.errors import DataNotFoundError, FetchError, IntegrityError, ParseError
 from qrlab.data.fetch import Fetcher, UrlFetcher
-from qrlab.data.ken_french import KEN_FRENCH_DATASETS, download_ken_french, parse_ken_french
+from qrlab.data.ken_french import (
+    KEN_FRENCH_DATASETS,
+    download_ken_french,
+    parse_ken_french,
+    parse_ken_french_table,
+)
 from qrlab.data.provenance import Dataset, Provenance, Unit
 from qrlab.data.store import RawStore, StoredFile, download
 from qrlab.data.user_csv import (
@@ -69,5 +74,6 @@ __all__ = [
     "parse_estr",
     "parse_hicp",
     "parse_ken_french",
+    "parse_ken_french_table",
     "parse_price_csv",
 ]
