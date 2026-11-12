@@ -8,6 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Study 1 report, `docs/studies/01-volatility-managed.md`, and its three configs in
+  `configs/studies/` (main run, paper sample, demeaned variance), run on the Ken French data of
+  2026-11-12:
+  - in sample, Mkt-RF, RMW and Mom have significant positive alphas after Holm;
+  - in real time and after costs, only momentum with a 2x or 5x leverage cap has a
+    significantly higher net Sharpe ratio;
+  - SMB and CMA become significantly worse at 25 bp.
 - `qrlab.studies` (phase 5.3) with study 1, volatility-managed factors (Moreira and Muir 2017
   against Cederburg et al. 2020):
   - monthly realised variance from daily returns, the lagged inverse-variance signal (shifted
