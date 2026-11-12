@@ -333,8 +333,11 @@ def test_cli_runs_every_example(tmp_path: Path, capsys: pytest.CaptureFixture[st
     assert "portfolio_report" in capsys.readouterr().out
     assert {
         "backtest",
+        "optimisation",
         "portfolio_report",
         "projection",
+        "risk_report",
+        "scenario_analysis",
         "study_factor_zoo",
         "study_one_over_n",
         "study_rebalancing",

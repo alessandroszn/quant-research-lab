@@ -1,0 +1,23 @@
+# Example experiment: risk of a fixed 4-asset portfolio on synthetic monthly returns.
+# Run with: uv run qrlab run configs/experiments/example_risk_report.toml
+# Risk on the whole history is descriptive; the VaR backtest uses only past data per forecast.
+
+[experiment]
+name = "example-risk-report"
+kind = "risk_report"
+hypothesis = "descriptive"
+
+[inputs]
+returns = "../../examples/data/asset_returns.csv"
+
+[parameters]
+confidence = 0.95
+periods_per_year = 12
+returns_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", decimal_separator = "." }
+weights = { equity_world = 0.4, equity_em = 0.2, bonds = 0.3, cash = 0.1 }
+covariance = { estimator = "ledoit_wolf" }
+filtered = { decay = 0.94, warmup = 24 }
+backtest = { window = 60, model = "historical" }
+
+[output]
+directory = "../../results/example-risk-report"

@@ -64,7 +64,7 @@ def validate_experiment(
         raise ValidationError(f"unknown experiment kind {config.kind!r}; known: {sorted(kinds)}")
     kind = kinds[config.kind]
     missing = sorted(set(kind.inputs) - set(config.inputs))
-    unknown = sorted(set(config.inputs) - set(kind.inputs))
+    unknown = sorted(set(config.inputs) - set(kind.inputs) - set(kind.optional_inputs))
     if missing or unknown:
         raise ValidationError(f"[inputs] for {kind.name}: missing {missing}, unknown {unknown}")
     for name, path in config.inputs.items():

@@ -66,3 +66,4 @@ class ExperimentKind:
     parameters: tuple[str, ...]
     parse: Callable[[Mapping[str, object]], object]
     run: Callable[[RunContext], ExperimentOutput]
+    optional_inputs: tuple[str, ...] = ()  # files a config may give; absent ones are not in inputs

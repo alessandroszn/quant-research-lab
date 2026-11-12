@@ -7,8 +7,11 @@ from types import MappingProxyType
 
 from qrlab.experiments.kinds import (
     backtest,
+    optimisation,
     portfolio_report,
     projection,
+    risk_report,
+    scenario_analysis,
     study_factor_zoo,
     study_one_over_n,
     study_rebalancing,
@@ -25,6 +28,9 @@ KINDS: Mapping[str, ExperimentKind] = MappingProxyType(
             portfolio_report.KIND,
             backtest.KIND,
             projection.KIND,
+            risk_report.KIND,
+            scenario_analysis.KIND,
+            optimisation.KIND,
             study_volatility_managed.KIND,
             study_one_over_n.KIND,
             study_factor_zoo.KIND,

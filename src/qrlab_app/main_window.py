@@ -23,7 +23,10 @@ __all__ = ["ANALYSIS_SCREENS", "MainWindow"]
 
 ANALYSIS_SCREENS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("nav.portfolio", ("portfolio_report",)),
+    ("nav.risk", ("risk_report",)),
+    ("nav.scenarios", ("scenario_analysis",)),
     ("nav.projections", ("projection",)),
+    ("nav.optimiser", ("optimisation",)),
     (
         "nav.backtests",
         (
@@ -35,8 +38,7 @@ ANALYSIS_SCREENS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
 )
-"""Navigation key -> experiment kinds shown on that screen (Risk, Scenarios and the Optimiser
-arrive with their kinds in phase 6.1b)."""
+"""Navigation key -> experiment kinds shown on that screen."""
 
 
 class MainWindow(QMainWindow):
@@ -86,6 +88,13 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
         self.navigation.setCurrentRow(0)
         self.resize(1280, 800)
+
+    def screen_for(self, kind: str) -> ExperimentScreen:
+        """Return the analysis screen that shows ``kind``."""
+        for screen in self.analysis:
+            if kind in screen.model.kind_names:
+                return screen
+        raise KeyError(kind)
 
     def refresh_all(self) -> None:
         """Reload every screen after a workspace is opened."""

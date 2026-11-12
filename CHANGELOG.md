@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Experiment kinds for the app's Risk, Scenarios and Optimiser screens (phase 6.1b), thin
+  adapters over tested library functions, each with a synthetic example config:
+  - `risk_report`: covariance (sample, EWMA, Ledoit-Wolf), contributions to volatility and to
+    historical and normal ES, VaR/ES by four methods (Cornish-Fisher left empty with its
+    reason when not a quantile), and a VaR backtest with Kupiec and Christoffersen tests;
+  - `scenario_analysis`: phase 3.2 stress tests from a holdings CSV, with optional position
+    returns, factors, betas and FX;
+  - `optimisation`: 1/N, minimum variance, mean-variance, maximum Sharpe, risk parity,
+    maximum diversification and HRP, in sample, with bounds.
+- Optional inputs for experiment kinds (`ExperimentKind.optional_inputs`); the CLI and config
+  templates list them.
+- The app's Risk, Scenarios and Optimiser screens.
 - Desktop app `qrlab_app` (phase 6.1a, PySide6), started with `qrlab-app`:
   - Home (open or create a workspace), Portfolio, Projections, Backtests & studies, Data and
     History screens;
