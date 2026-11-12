@@ -51,3 +51,6 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Other linking methods (Menchero, Frongello) | 4.4 `attribution` | Carino is one convention; others give different splits of the same total. |
 | Studentized bootstrap for Sharpe differences | 5.1 inference | Ledoit-Wolf (2008) also propose a studentized circular-block bootstrap with better size in small samples. |
 | Romano-Wolf stepdown | 5.1 inference | Family-wise error control that uses the dependence between strategies, for the factor-zoo study. |
+| FX inputs for the portfolio_report kind | 5.2 `experiments` | Wire `EcbConverter` from a local ECB file so that multi-currency portfolios run through the CLI. |
+| Look-through, risk and projection in the portfolio_report kind | 5.2 `experiments` | Holdings files, tracking series and risk/projection settings as optional inputs. |
+| `qrlab fetch` | 5.2 `experiments` | An explicit download step into the raw store (Ken French, ECB), kept separate from runs. |

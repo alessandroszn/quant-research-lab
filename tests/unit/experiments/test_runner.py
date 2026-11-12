@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 import pytest
@@ -36,7 +37,7 @@ def _parse(parameters: Mapping[str, object]) -> float:
 
 
 def _run(context: RunContext) -> ExperimentOutput:
-    scale = float(context.parameters)  # type: ignore[arg-type]
+    scale = cast(float, context.parameters)
     if scale < 0:
         raise RuntimeError("the test kind was asked to fail")
     values = pd.read_csv(context.inputs["data"])["x"] * scale
@@ -169,9 +170,9 @@ def test_failures_are_recorded(tmp_path: Path) -> None:
         (lambda t: "not = valid = toml", "invalid TOML"),
     ],
 )
-def test_config_errors(tmp_path: Path, change: object, match: str) -> None:
+def test_config_errors(tmp_path: Path, change: Callable[[str], str], match: str) -> None:
     config = _write(tmp_path)
-    config.write_text(change(config.read_text(encoding="utf-8")), encoding="utf-8")  # type: ignore[operator]
+    config.write_text(change(config.read_text(encoding="utf-8")), encoding="utf-8")
     with pytest.raises(ValidationError, match=match):
         validate_experiment(config, kinds=KINDS)
 
@@ -244,5 +245,5 @@ def test_record_without_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
     monkeypatch.setattr(subprocess, "run", no_git)
     result = run_experiment(_write(tmp_path), kinds=KINDS, overwrite=False)
-    assert result.record["code"]["git_commit"] is None  # type: ignore[index]
-    assert result.record["code"]["git_dirty"] is None  # type: ignore[index]
+    assert result.record["code"]["git_commit"] is None
+    assert result.record["code"]["git_dirty"] is None

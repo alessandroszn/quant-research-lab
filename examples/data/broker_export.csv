@@ -1,0 +1,6 @@
+Riferimento;Data;Operazione;ISIN;Quantita;Prezzo;Divisa;Importo;Commissioni;Imposte;Controvalore;Divisa controvalore;Descrizione
+t5;31/03/2026;Vendita;IE0000000012;-50;54,00;EUR;;-10,00;;;;
+t4;27/02/2026;Dividendo;IE0000000012;;;EUR;100,00;;;;;
+t3;30/01/2026;Bonifico in entrata;;;;EUR;5.000,00;;;;;
+t2;02/01/2026;Acquisto;IE0000000012;100;50,00;EUR;;-10,00;;;;
+t1;02/01/2026;Bonifico in entrata;;;;EUR;10.000,00;;;;;

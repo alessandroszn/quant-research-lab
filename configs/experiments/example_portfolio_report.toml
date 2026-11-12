@@ -1,0 +1,29 @@
+# Example experiment: the HTML portfolio report of the synthetic example portfolio.
+# Run with: uv run qrlab run configs/experiments/example_portfolio_report.toml
+# For your real portfolio, copy this file and point [inputs] at files under data/ (git-ignored).
+
+[experiment]
+name = "example-portfolio-report"
+kind = "portfolio_report"
+hypothesis = "descriptive"
+
+[inputs]
+transactions = "../../examples/data/broker_export.csv"
+transactions_mapping = "../csv_mappings/example_broker.toml"
+prices = "../../examples/data/prices.csv"
+prices_mapping = "../../examples/data/prices_mapping.toml"
+instruments = "../../examples/data/instruments.toml"
+checks = "../checks/example.toml"
+
+[parameters]
+title = "Synthetic example"
+base_currency = "EUR"
+language = "it"
+flow_timing = "start"
+max_price_age_days = 0
+return_frequency = "none"
+generated_at = 2026-04-01T09:00:00Z
+target_weights = { IE0000000012 = 0.6, cash = 0.4 }
+
+[output]
+directory = "../../results/example-portfolio-report"

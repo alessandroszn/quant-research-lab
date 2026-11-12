@@ -29,8 +29,9 @@ Planning** and **M4 — Construction & Backtest** are implemented:
   (constrained portfolio construction and rebalancing policies), `backtest` (lagged execution
   with gross and net ledgers) and `attribution` (Brinson-Fachler, factor and currency).
 
-The other modules are planned (see `ROADMAP.md`), and each one is added together with its
-layering rule.
+Level 5 has started: `stats.multiple_testing` and `metrics.sharpe_inference` (phase 5.1), and
+`experiments` with the `qrlab` CLI (phase 5.2). The other modules are planned (see
+`ROADMAP.md`), and each one is added together with its layering rule.
 
 | Layer | Module | Responsibility |
 |---|---|---|
