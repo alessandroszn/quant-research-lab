@@ -12,6 +12,9 @@ uv run qrlab validate configs/experiments/example_backtest.toml
 uv run qrlab run configs/experiments/example_backtest.toml
 ```
 
+Examples exist for every general kind: `portfolio_report`, `risk_report`, `scenario_analysis`,
+`projection`, `optimisation` and `backtest`.
+
 Each run writes its outputs and a `record.json` under `results/` (git-ignored). The record holds
 the config, input hashes, the code version and the number of configurations tried. For your own
 data, copy an example, point `[inputs]` at files under `data/` (git-ignored) and keep the copy

@@ -39,6 +39,8 @@ def main(
         for kind in sorted(registry.values(), key=lambda k: k.name):
             print(f"{kind.name}: {kind.description}")
             print(f"  inputs: {', '.join(kind.inputs) or 'none'}")
+            if kind.optional_inputs:
+                print(f"  optional inputs: {', '.join(kind.optional_inputs)}")
             print(f"  parameters: {', '.join(kind.parameters)}")
             print(f"  seed: {'required' if kind.needs_seed else 'not used'}")
         return OK

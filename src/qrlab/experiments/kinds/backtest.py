@@ -21,7 +21,6 @@ after seeing the same history.
 
 from __future__ import annotations
 
-import io
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
@@ -35,6 +34,7 @@ from qrlab.core.money import Money
 from qrlab.core.returns import ReturnKind
 from qrlab.core.series import NanPolicy
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds._frames import read_returns
 from qrlab.experiments.kinds._params import choice, number, table, text, whole
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.optimization.constraints import Constraints
@@ -48,7 +48,7 @@ from qrlab.optimization.risk_based import (
 from qrlab.risk.covariance import CovarianceEstimate, ledoit_wolf_covariance
 from qrlab.simulation.plan import TaxModel
 
-__all__ = ["KIND"]
+__all__ = ["KIND", "read_returns"]
 
 _PARAMETERS = (
     "returns_format",
@@ -139,21 +139,6 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         ),
         periods_per_year=whole(parameters, "periods_per_year", minimum=1),
     )
-
-
-def read_returns(content: bytes, fmt: Mapping[str, str]) -> pd.DataFrame:
-    """Read a returns CSV with an explicit format (no guessing)."""
-    frame = pd.read_csv(
-        io.BytesIO(content),
-        sep=fmt["delimiter"],
-        decimal=fmt["decimal_separator"],
-        dtype={fmt["date_column"]: str},
-    )
-    if fmt["date_column"] not in frame.columns:
-        raise ValidationError(f"no date column {fmt['date_column']!r} in the returns file")
-    index = pd.to_datetime(frame.pop(fmt["date_column"]), format=fmt["date_format"])
-    frame.index = pd.DatetimeIndex(index, name="date")
-    return frame.astype("float64")
 
 
 def _strategy(spec: Mapping[str, object], assets: list[str]) -> Strategy:

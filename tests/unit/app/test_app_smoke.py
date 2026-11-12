@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from PySide6.QtCore import QCoreApplication, QModelIndex, Qt, QThreadPool
 from PySide6.QtWidgets import QApplication
 
@@ -104,7 +105,12 @@ def test_window_screens_and_a_full_run(qapp: QApplication, tmp_path: Path) -> No
     window = _window(user, pool)
     assert window.navigation.count() == 3 + len(ANALYSIS_SCREENS)
     # Before a workspace is open every screen says so.
-    portfolio, projections, backtests = window.analysis
+    portfolio = window.screen_for("portfolio_report")
+    projections = window.screen_for("projection")
+    backtests = window.screen_for("backtest")
+    assert window.screen_for("risk_report") is not window.screen_for("optimisation")
+    with pytest.raises(KeyError):
+        window.screen_for("nope")
     projections.refresh()
     assert "Open a workspace first" in projections.message.text()
     window.data.refresh()
@@ -217,7 +223,7 @@ def test_screen_handles_a_worker_failure(qapp: QApplication, tmp_path: Path) -> 
     user = FakeUser(root)
     window = _window(user, QThreadPool())
     window.home.open_button.click()
-    screen = window.analysis[1]
+    screen = window.screen_for("projection")
     screen.configs.itemClicked.emit(screen.configs.item(0))
     screen.model.status = "running"
     screen._failed("RuntimeError: lost")

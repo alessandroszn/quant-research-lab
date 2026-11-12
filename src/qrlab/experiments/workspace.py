@@ -186,6 +186,7 @@ def config_template(kind: ExperimentKind) -> str:
         lines.append("seed = 1")
     lines += ["", "[inputs]"]
     lines += [f'{name} = "../data/FILL-IN"' for name in kind.inputs]
+    lines += [f'# {name} = "../data/FILL-IN"  # optional' for name in kind.optional_inputs]
     lines += ["", "[parameters]"]
     lines += [f"# {name} = FILL-IN" for name in kind.parameters]
     lines += ["", "[output]", 'directory = "../results/my-experiment"', ""]

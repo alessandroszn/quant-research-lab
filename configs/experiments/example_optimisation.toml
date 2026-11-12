@@ -1,0 +1,21 @@
+# Example experiment: long-only minimum variance on synthetic monthly returns.
+# Run with: uv run qrlab run configs/experiments/example_optimisation.toml
+# Weights fitted on the whole history are in sample: a description, not a forecast or advice.
+
+[experiment]
+name = "example-minimum-variance"
+kind = "optimisation"
+hypothesis = "descriptive"
+
+[inputs]
+returns = "../../examples/data/asset_returns.csv"
+
+[parameters]
+periods_per_year = 12
+returns_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", decimal_separator = "." }
+method = { name = "minimum_variance" }
+covariance = { estimator = "sample" }
+bounds = { min = 0.0, max = 0.6 }
+
+[output]
+directory = "../../results/example-minimum-variance"

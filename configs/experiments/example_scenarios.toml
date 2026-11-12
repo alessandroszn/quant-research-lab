@@ -1,0 +1,26 @@
+# Example experiment: stress tests of a synthetic EUR portfolio (made-up ISINs).
+# Run with: uv run qrlab run configs/experiments/example_scenarios.toml
+# Stress tests are "what if" on today's weights, not forecasts. EXAMPLE SCENARIOS ONLY.
+
+[experiment]
+name = "example-stress-tests"
+kind = "scenario_analysis"
+hypothesis = "descriptive"
+
+[inputs]
+holdings = "../../examples/data/stress_holdings.csv"
+scenarios = "../scenarios/example.toml"
+position_returns = "../../examples/data/stress_position_returns.csv"
+factors = "../../examples/data/stress_factors.csv"
+betas = "../../examples/data/stress_betas.csv"
+fx = "../../examples/data/stress_fx.csv"
+
+[parameters]
+as_of = 2026-10-30
+value = 100000
+currency = "EUR"
+position_returns_currency = "EUR"
+csv_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", decimal_separator = "." }
+
+[output]
+directory = "../../results/example-stress-tests"
