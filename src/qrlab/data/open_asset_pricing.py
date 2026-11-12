@@ -85,7 +85,7 @@ SIGNAL_DOC_COLUMNS = (
 """Columns of ``SignalDoc.csv`` that are required and kept."""
 
 _BASE_URL = "https://huggingface.co/datasets/OpenSourceAP/CrossSection/resolve/"
-_SIGNAL_CATEGORIES = frozenset({"Predictor", "Placebo"})
+_SIGNAL_CATEGORIES = frozenset({"Predictor", "Placebo", "Drop"})
 _PREDICTABILITY = re.compile(r"^\d+_[a-z]+$")
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
 
@@ -122,8 +122,9 @@ def download_osap(
 def parse_signal_doc(content: bytes, provenance: Provenance) -> pd.DataFrame:
     """Parse ``SignalDoc.csv`` into a frame indexed by acronym with :data:`SIGNAL_DOC_COLUMNS`.
 
-    Predictors must have integer publication and sample years with start <= end; placebos may
-    lack them (NaN).
+    ``Cat.Signal`` is ``Predictor``, ``Placebo`` or ``Drop``. Predictors must have a
+    predictability level such as ``1_clear``, a sign of 1 or -1, and integer publication and
+    sample years with start <= end; the other rows may lack them (NaN).
     """
     _check(provenance, "signal_doc")
     try:
@@ -143,13 +144,15 @@ def parse_signal_doc(content: bytes, provenance: Provenance) -> pd.DataFrame:
     if frame["Cat.Signal"].isna().any() or not categories <= _SIGNAL_CATEGORIES:
         found = sorted(map(str, categories))
         raise ParseError(f"Cat.Signal must be one of {sorted(_SIGNAL_CATEGORIES)}, got {found}")
-    levels = frame["Predictability in OP"].dropna().astype(str)
+    # Strict rules for predictors, the rows studies use. Placebos and dropped signals are kept as
+    # published: the 2026.10 file has "indirect" predictability and missing signs for them.
+    predictors = frame[frame["Cat.Signal"] == "Predictor"]
+    levels = predictors["Predictability in OP"].astype(str)
     bad = sorted({v for v in levels if not _PREDICTABILITY.match(v)})
     if bad:
-        raise ParseError(f"unexpected 'Predictability in OP' values {bad}")
-    if frame["Sign"].isna().any() or not frame["Sign"].isin([1.0, -1.0]).all():
-        raise ParseError("Sign must be 1 or -1 for every signal")
-    predictors = frame[frame["Cat.Signal"] == "Predictor"]
+        raise ParseError(f"unexpected 'Predictability in OP' values for predictors: {bad}")
+    if not predictors["Sign"].isin([1.0, -1.0]).all():
+        raise ParseError("Sign must be 1 or -1 for every predictor")
     years = predictors[["Year", "SampleStartYear", "SampleEndYear"]]
     values = years.to_numpy(dtype=np.float64)
     if np.isnan(values).any() or (values != np.round(values)).any():

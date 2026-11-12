@@ -39,6 +39,7 @@ __all__ = [
     "Decay",
     "composites",
     "decay_regression",
+    "gap_shares",
     "long_panel",
     "phase_labels",
     "predictor_tests",
@@ -90,6 +91,24 @@ def phase_labels(
         default="post_publication",
     )
     return pd.Series(labels, index=index, name="phase")
+
+
+def gap_shares(returns: pd.DataFrame) -> pd.Series:
+    """Share of missing months between each column's first and last available month.
+
+    Columns without any value get 1.0. Used to exclude series above :data:`MAX_GAP_SHARE`
+    before the analysis (approved deviation, see the design note).
+    """
+    shares = {}
+    for name in returns.columns:
+        series = returns[name]
+        valid = series.dropna()
+        if valid.empty:
+            shares[str(name)] = 1.0
+            continue
+        span = series.loc[valid.index[0] : valid.index[-1]]
+        shares[str(name)] = float(span.isna().sum()) / len(span)
+    return pd.Series(shares, name="gap_share", dtype="float64")
 
 
 def long_panel(returns: pd.DataFrame, doc: pd.DataFrame) -> pd.DataFrame:

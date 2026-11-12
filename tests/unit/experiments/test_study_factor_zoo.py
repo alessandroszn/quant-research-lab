@@ -153,8 +153,12 @@ def test_study_runs_end_to_end_through_the_cli(tmp_path: Path, rng: np.random.Ge
 def test_gaps_and_empty_universe_fail(tmp_path: Path, rng: np.random.Generator) -> None:
     paths = _write_files(tmp_path / "gap", rng, gap=True)
     result = run_experiment(_config(tmp_path, paths, out="gap"), kinds=KINDS, overwrite=False)
-    assert not result.succeeded
-    assert "months missing inside the series" in str(result.record["error"])
+    assert result.succeeded, result.record["error"]
+    # P00 has 10 of 612 months missing (1.6 %): excluded and listed, not a failure.
+    assert result.record["scalars"]["excluded_for_gaps"]["value"] == 1.0
+    assert result.record["scalars"]["predictors"]["value"] == 8.0
+    html = (result.output_dir / "report.html").read_text(encoding="utf-8")
+    assert "P00 (1.6%)" in html
 
     paths = _write_files(tmp_path / "data", rng)
     empty = _config(tmp_path, paths, out="empty", **{'["1_clear"]': '["9_none"]'})
@@ -178,3 +182,21 @@ def test_parameters_are_validated(tmp_path: Path, old: str, new: str, message: s
         path.write_bytes(b"x")
     with pytest.raises(ValidationError, match=message):
         validate_experiment(_config(tmp_path, paths, **{old: new}), kinds=KINDS)
+
+
+def test_inconsistent_inputs_fail(tmp_path: Path, rng: np.random.Generator) -> None:
+    paths = _write_files(tmp_path / "extra", rng)
+    doc = pd.read_csv(paths["signal_doc"])
+    extra = doc.iloc[[0]].assign(Acronym="NotInReturns")
+    pd.concat([doc, extra]).to_csv(paths["signal_doc"], index=False)
+    result = run_experiment(_config(tmp_path, paths, out="extra"), kinds=KINDS, overwrite=False)
+    assert not result.succeeded
+    assert "no returns for predictors ['NotInReturns']" in str(result.record["error"])
+
+    paths = _write_files(tmp_path / "holes", rng)
+    wide = pd.read_parquet(paths["ls_returns"])
+    wide.iloc[200:220, 1:] = np.nan  # 20 months inside every series
+    wide.to_parquet(paths["ls_returns"], index=False)
+    result = run_experiment(_config(tmp_path, paths, out="holes"), kinds=KINDS, overwrite=False)
+    assert not result.succeeded
+    assert "every selected predictor has too many missing months" in str(result.record["error"])

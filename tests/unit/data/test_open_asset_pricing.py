@@ -207,3 +207,22 @@ def test_download_stores_the_raw_file(tmp_path: Path) -> None:
     assert stored.path.suffix == ".parquet"
     assert stored.provenance.source == "osap"
     assert stored.path.read_bytes() == content
+
+
+def test_placebo_and_dropped_rows_are_kept_as_published() -> None:
+    # Regression (real release 2026.10): Cat.Signal also has "Drop"; placebos have predictability
+    # "indirect" and dropped or placebo rows may have no sign. Only predictors are strict.
+    frame = _doc(
+        **{
+            "Cat.Signal": ["Predictor", "Drop", "Placebo"],
+            "Predictability in OP": ["1_clear", "9_drop", "indirect"],
+            "Sign": [-1.0, None, None],
+        }
+    )
+    content = _doc_bytes(frame)
+    doc = parse_signal_doc(content, _prov(content, "signal_doc"))
+    assert doc["Cat.Signal"].tolist() == ["Predictor", "Drop", "Placebo"]
+    assert doc["Sign"].isna().tolist() == [False, True, True]
+    bad = _doc_bytes(_doc(**{"Sign": [None, 1.0, 1.0]}))
+    with pytest.raises(ParseError, match="Sign must be 1 or -1 for every predictor"):
+        parse_signal_doc(bad, _prov(bad, "signal_doc"))

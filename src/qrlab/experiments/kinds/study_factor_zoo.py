@@ -1,5 +1,8 @@
 """Experiment kind ``study_factor_zoo``: study 3 on Open Source Asset Pricing files.
 
+Predictors with more than 1 % missing months inside their series are excluded and listed
+(approved deviation from the design note, which stopped the run).
+
 Inputs: ``ls_returns`` (``PredictorLSretWide.parquet``, needs ``qrlab[parquet]``) and
 ``signal_doc`` (``SignalDoc.csv``). Predictors are the signals with ``Cat.Signal = Predictor``
 whose ``Predictability in OP`` is one of ``categories``. Returns after ``end`` are not used.
@@ -30,8 +33,10 @@ from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunCont
 from qrlab.experiments.runner import configurations_tried
 from qrlab.reporting.html import render_html
 from qrlab.studies.factor_zoo import (
+    MAX_GAP_SHARE,
     composites,
     decay_regression,
+    gap_shares,
     long_panel,
     predictor_tests,
     significance_counts,
@@ -93,11 +98,21 @@ def _run(context: RunContext) -> ExperimentOutput:
     doc = parse_signal_doc(*files["signal_doc"])
     returns = parse_long_short_returns(*files["ls_returns"]).data
     returns = returns.loc[returns.index <= pd.Timestamp(p.end) + pd.offsets.MonthEnd(0)]
-    selected = doc[
+    chosen = doc[
         (doc["Cat.Signal"] == "Predictor") & doc["Predictability in OP"].isin(p.categories)
     ]
-    if selected.empty:
+    if chosen.empty:
         raise ValidationError(f"no predictors in categories {list(p.categories)}")
+    missing = sorted(set(chosen.index) - set(returns.columns))
+    if missing:
+        raise ValidationError(f"no returns for predictors {missing[:5]} ({len(missing)} in all)")
+    # Approved deviation: series with more than MAX_GAP_SHARE missing months inside them are
+    # excluded and listed, instead of stopping the run.
+    shares = gap_shares(returns[list(chosen.index)])
+    excluded = shares[shares > MAX_GAP_SHARE].sort_values(ascending=False)
+    selected = chosen.drop(index=excluded.index)
+    if selected.empty:
+        raise ValidationError("every selected predictor has too many missing months")
     panel = long_panel(returns, selected)
     tests = {
         phase: predictor_tests(panel, phase=phase, hac_lags=p.hac_lags, min_months=p.min_months)
@@ -121,6 +136,10 @@ def _run(context: RunContext) -> ExperimentOutput:
             (
                 "Universe",
                 f"{len(selected)} predictors with Predictability in OP in {list(p.categories)}",
+            ),
+            (
+                "Excluded for missing months",
+                ", ".join(f"{name} ({share:.1%})" for name, share in excluded.items()) or "none",
             ),
             (
                 "Specification",
@@ -153,6 +172,7 @@ def _run(context: RunContext) -> ExperimentOutput:
     scalars: dict[str, Tagged] = {
         "configurations_tried": Tagged(float(tried), "descriptive"),
         "predictors": Tagged(float(len(selected)), "descriptive"),
+        "excluded_for_gaps": Tagged(float(len(excluded)), "descriptive"),
         "decay_post_sample": Tagged(decay.decay_post_sample, "out_of_sample"),
         "decay_post_publication": Tagged(decay.decay_post_publication, "out_of_sample"),
         "p_post_publication": Tagged(decay.p_post_publication, "out_of_sample"),
