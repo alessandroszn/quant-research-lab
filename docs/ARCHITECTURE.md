@@ -20,7 +20,7 @@
 ## Target module map
 
 Status: milestones **M1 — Analytics core**, **M2 — Portfolio X-ray**, **M3 — Risk &
-Planning** and **M4 — Construction & Backtest** are implemented:
+Planning**, **M4 — Construction & Backtest** and **M5 — Research** are implemented:
 
 - Level 1: `core`, `data`, `instruments` and `metrics`;
 - Level 2: `portfolio`, `stats`, `reporting`, `checks` and `lookthrough`;
@@ -29,12 +29,16 @@ Planning** and **M4 — Construction & Backtest** are implemented:
   (constrained portfolio construction and rebalancing policies), `backtest` (lagged execution
   with gross and net ledgers) and `attribution` (Brinson-Fachler, factor and currency).
 
-Level 5 has started: `stats.multiple_testing` and `metrics.sharpe_inference` (phase 5.1),
-`experiments` with the `qrlab` CLI (phase 5.2) and `studies` with study 1, volatility-managed
-factors, study 2, 1/N against optimised portfolios, study 3, the factor zoo, and study 4,
-rebalancing for a EUR ETF investor (phase 5.3). The
-other modules are planned (see
-`ROADMAP.md`), and each one is added together with its layering rule.
+- Level 5: `stats.multiple_testing` and `metrics.sharpe_inference` (phase 5.1), `experiments`
+  with the `qrlab` CLI (phase 5.2), and `studies` with four reproducible studies and written
+  reports in `docs/studies/` (phase 5.3):
+  - volatility-managed factors;
+  - 1/N against optimised portfolios;
+  - the factor zoo;
+  - rebalancing for a EUR ETF investor.
+
+Level 6 (desktop app, packaging, v1.0) is planned (see `ROADMAP.md`); each new module is added
+together with its layering rule.
 
 | Layer | Module | Responsibility |
 |---|---|---|
