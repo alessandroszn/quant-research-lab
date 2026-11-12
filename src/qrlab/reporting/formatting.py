@@ -29,10 +29,14 @@ __all__ = [
     "format_money",
     "format_number",
     "format_percent",
+    "format_significant",
     "style_for",
 ]
 
 MAX_DECIMALS = 12
+MAX_SIGNIFICANT = 15
+_FIXED_RANGE = (Decimal("1e-4"), Decimal("1e12"))
+"""Magnitudes shown in fixed notation by :func:`format_significant`; others are scientific."""
 
 
 class Language(Enum):
@@ -91,6 +95,49 @@ def format_number(value: SupportsFloat, decimals: int, *, style: NumberStyle) ->
     if decimals:
         text += style.decimal + fraction
     return sign + text
+
+
+def format_significant(value: SupportsFloat, digits: int, *, style: NumberStyle) -> str:
+    """Format ``value`` with ``digits`` significant figures, without trailing zeros.
+
+    Rounding is half-up on the decimal value, as in :func:`format_number`. Magnitudes in
+    ``[1e-4, 1e12)`` and zero use fixed notation with thousands grouping (``1,234,570``);
+    others use scientific notation with the style's decimal separator (``2,5e-05``).
+
+    Parameters
+    ----------
+    value
+        A finite number.
+    digits
+        Significant figures, an int in ``[1, 15]``.
+    style
+        Separators to use.
+
+    Returns
+    -------
+    str
+        The formatted number; zero (also negative zero) is ``"0"``.
+    """
+    if type(digits) is not int or not 1 <= digits <= MAX_SIGNIFICANT:
+        raise ValidationError(f"digits must be an int in [1, {MAX_SIGNIFICANT}], got {digits!r}")
+    number = _to_decimal(value)
+    if number == 0:
+        return "0"
+    quantum = Decimal(1).scaleb(number.adjusted() - digits + 1)
+    rounded = number.quantize(quantum, rounding=ROUND_HALF_UP)
+    if _FIXED_RANGE[0] <= abs(rounded) < _FIXED_RANGE[1]:
+        exponent = int(rounded.as_tuple().exponent)
+        return _strip_zeros(format_number(rounded, max(0, -exponent), style=style), style)
+    power = rounded.adjusted()
+    mantissa = format_number(rounded.scaleb(-power), digits - 1, style=style)
+    sign = "+" if power >= 0 else "-"
+    return f"{_strip_zeros(mantissa, style)}e{sign}{abs(power):02d}"
+
+
+def _strip_zeros(text: str, style: NumberStyle) -> str:
+    if style.decimal not in text:
+        return text
+    return text.rstrip("0").rstrip(style.decimal)
 
 
 def format_percent(value: SupportsFloat, decimals: int, *, style: NumberStyle) -> str:

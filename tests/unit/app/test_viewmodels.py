@@ -45,7 +45,7 @@ def _screen(ws: WorkspaceViewModel) -> ExperimentViewModel:
 
 def test_workspace_open_create_and_require(tmp_path: Path) -> None:
     ws = WorkspaceViewModel()
-    with pytest.raises(AppError, match="no workspace"):
+    with pytest.raises(AppError, match="Open a workspace first"):
         ws.require()
     with pytest.raises(AppError, match="not a folder"):
         ws.open(tmp_path / "missing")
@@ -66,14 +66,14 @@ def test_configs_are_filtered_by_kind(tmp_path: Path) -> None:
     entries = _screen(ws).refresh()
     # The backtest config belongs to another screen; the broken one is shown everywhere.
     assert [e.path.name for e in entries] == ["broken.toml", "projection.toml"]
-    with pytest.raises(AppError, match="unknown kinds"):
+    with pytest.raises(AppError, match="Unknown kinds"):
         ExperimentViewModel(ws, kinds=KINDS, kind_names=["nope"])
 
 
 def test_select_edit_validate(tmp_path: Path) -> None:
     ws = _workspace(tmp_path)
     screen = _screen(ws)
-    with pytest.raises(AppError, match="no config is selected"):
+    with pytest.raises(AppError, match="No config is selected"):
         screen.save()
     path = tmp_path / "ws" / "configs" / "projection.toml"
     text = screen.select(path)
@@ -96,7 +96,7 @@ def test_run_state_machine(tmp_path: Path) -> None:
     assert not screen.output_exists()
     job = screen.start_run()
     assert screen.status == "running"
-    with pytest.raises(AppError, match="another run"):
+    with pytest.raises(AppError, match="Another run"):
         screen.start_run()
     result = screen.finish(job())
     assert screen.status == "done"

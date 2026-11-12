@@ -26,6 +26,7 @@ from qrlab.reporting.formatting import (
     format_money,
     format_number,
     format_percent,
+    format_significant,
     style_for,
 )
 from qrlab.reporting.html import Figure, Report, Section, render_html, write_report
@@ -50,6 +51,7 @@ __all__ = [
     "format_money",
     "format_number",
     "format_percent",
+    "format_significant",
     "label",
     "line_figure",
     "render_html",

@@ -1,4 +1,4 @@
-"""Reusable Qt pieces: a read-only DataFrame model, the results panel, the run worker, dialogs."""
+"""Reusable Qt pieces: tables, the results panel, the run worker, dialogs and the settings file."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from PySide6.QtCore import (
     QObject,
     QPersistentModelIndex,
     QRunnable,
+    QSettings,
     Qt,
     QUrl,
     Signal,
@@ -35,21 +36,31 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from qrlab_app.strings import tr
+from qrlab_app.display import cell_text
+from qrlab_app.strings import tr, tr_value
 from qrlab_app.viewmodels import ResultView
 
-__all__ = ["Dialogs", "FrameModel", "ResultsPanel", "RunWorker", "default_dialogs", "fill_table"]
+__all__ = [
+    "Dialogs",
+    "FrameModel",
+    "QtSettingsStore",
+    "ResultsPanel",
+    "RunWorker",
+    "default_dialogs",
+    "fill_table",
+]
 
 _ModelIndex = QModelIndex | QPersistentModelIndex
 
 
 class FrameModel(QAbstractTableModel):
-    """Read-only view of a DataFrame (index as the first column)."""
+    """Read-only view of a DataFrame (index as the first column), formatted for a language."""
 
-    def __init__(self, frame: pd.DataFrame) -> None:
+    def __init__(self, frame: pd.DataFrame, language: str) -> None:
         """Show ``frame`` with its index as the first column."""
         super().__init__()
         self._frame = frame.reset_index()
+        self._language = language
 
     def rowCount(self, parent: _ModelIndex = QModelIndex()) -> int:  # noqa: N802, B008
         """Return the number of rows."""
@@ -63,12 +74,12 @@ class FrameModel(QAbstractTableModel):
         """Cell text (``display`` role only)."""
         if role != Qt.ItemDataRole.DisplayRole or not index.isValid():
             return None
-        return _text(self._frame.iloc[index.row(), index.column()])
+        return cell_text(self._frame.iloc[index.row(), index.column()], self._language)
 
     def headerData(  # noqa: N802
         self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole
     ) -> Any:
-        """Column names and row numbers."""
+        """Column names (as recorded) and row numbers."""
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Horizontal:
@@ -76,23 +87,20 @@ class FrameModel(QAbstractTableModel):
         return str(section + 1)
 
 
-def _text(value: object) -> str:
-    if isinstance(value, float):
-        return f"{value:.6g}"
-    return "" if value is None else str(value)
-
-
 def fill_table(
-    table: QTableWidget, headers: Sequence[str], rows: Sequence[Sequence[object]]
+    table: QTableWidget,
+    headers: Sequence[str],
+    rows: Sequence[Sequence[object]],
+    language: str,
 ) -> None:
-    """Replace a table widget's content with text cells."""
+    """Replace a table widget's content with cells formatted for ``language``."""
     table.clear()
     table.setColumnCount(len(headers))
     table.setHorizontalHeaderLabels(list(headers))
     table.setRowCount(len(rows))
     for r, row in enumerate(rows):
         for c, value in enumerate(row):
-            table.setItem(r, c, QTableWidgetItem(_text(value)))
+            table.setItem(r, c, QTableWidgetItem(cell_text(value, language)))
     table.resizeColumnsToContents()
 
 
@@ -129,15 +137,19 @@ class ResultsPanel(QWidget):
         if view is None:
             self.title.setText("")
             return
-        self.title.setText(f"{view.output_dir.name}: {view.status}")
+        language = self._language
+        self.title.setText(f"{view.output_dir.name}: {tr_value('status', view.status, language)}")
         for table in view.tables:
             widget = QTableView()
-            widget.setModel(FrameModel(table.frame))
-            self.tabs.addTab(widget, f"{table.name} [{table.tag}]")
+            widget.setModel(FrameModel(table.frame, language))
+            self.tabs.addTab(widget, f"{table.name} [{tr_value('tag', table.tag, language)}]")
         if view.scalars:
             scalars = QTableWidget()
-            fill_table(scalars, ("name", "value", "tag"), view.scalars)
-            self.tabs.addTab(scalars, tr("results.scalars", self._language))
+            rows = [
+                (name, value, tr_value("tag", tag, language)) for name, value, tag in view.scalars
+            ]
+            fill_table(scalars, tr("results.scalar_columns", language).split("|"), rows, language)
+            self.tabs.addTab(scalars, tr("results.scalars", language))
         if view.figures:
             box = QWidget()
             column = QVBoxLayout(box)
@@ -147,7 +159,7 @@ class ResultsPanel(QWidget):
                 column.addWidget(label)
             scroll = QScrollArea()
             scroll.setWidget(box)
-            self.tabs.addTab(scroll, tr("results.figures", self._language))
+            self.tabs.addTab(scroll, tr("results.figures", language))
 
     def _open_report(self) -> None:
         if self._view is not None and self._view.report is not None:
@@ -182,18 +194,60 @@ class RunWorker(QRunnable):
         self.signals.finished.emit(result)
 
 
+class QtSettingsStore:
+    """Settings in an INI file through ``QSettings`` (never the Windows registry)."""
+
+    def __init__(self, settings: QSettings) -> None:
+        """Wrap ``settings``, which must use the INI format."""
+        if settings.format() != QSettings.Format.IniFormat:
+            raise ValueError("settings must use the INI format")
+        self._settings = settings
+
+    @classmethod
+    def at(cls, path: Path) -> QtSettingsStore:
+        """Use the INI file at ``path`` (tests)."""
+        return cls(QSettings(str(path), QSettings.Format.IniFormat))
+
+    @classmethod
+    def for_user(cls) -> QtSettingsStore:  # pragma: no cover - writes to the user's profile
+        """Use the user's file (on Windows ``%APPDATA%/qrlab/qrlab-app.ini``)."""
+        return cls(
+            QSettings(QSettings.Format.IniFormat, QSettings.Scope.UserScope, "qrlab", "qrlab-app")
+        )
+
+    @property
+    def file_name(self) -> str:
+        """Where the settings are written."""
+        return self._settings.fileName()
+
+    def get(self, key: str) -> str | None:
+        """Return the stored value or ``None``."""
+        value = self._settings.value(key)
+        return None if value is None else str(value)
+
+    def set(self, key: str, value: str) -> None:
+        """Store a value and write the file."""
+        self._settings.setValue(key, value)
+        self._settings.sync()
+
+
 @dataclass(frozen=True)
 class Dialogs:
-    """Everything that needs a user's answer (replaced by fakes in tests)."""
+    """Everything that needs a user's answer (replaced by fakes in tests).
+
+    ``ask_save`` answers ``"save"``, ``"discard"`` or ``None`` (cancel).
+    """
 
     pick_folder: Callable[[str], Path | None]
     ask_text: Callable[[str], str | None]
     ask_choice: Callable[[str, Sequence[str]], str | None]
     confirm: Callable[[str], bool]
+    ask_save: Callable[[str], str | None]
+    inform: Callable[[str], None]
     open_path: Callable[[Path], None]
 
 
-def default_dialogs(parent: QWidget) -> Dialogs:  # pragma: no cover - needs a user
+def default_dialogs(parent: QWidget | None) -> Dialogs:  # pragma: no cover - needs a user
     """Real Qt dialogs."""
 
     def pick_folder(title: str) -> Path | None:
@@ -212,7 +266,17 @@ def default_dialogs(parent: QWidget) -> Dialogs:  # pragma: no cover - needs a u
         answer = QMessageBox.question(parent, "", question)
         return bool(answer == QMessageBox.StandardButton.Yes)
 
+    def ask_save(question: str) -> str | None:
+        buttons = QMessageBox.StandardButton
+        answer = QMessageBox.question(
+            parent, "", question, buttons.Save | buttons.Discard | buttons.Cancel, buttons.Save
+        )
+        return {buttons.Save: "save", buttons.Discard: "discard"}.get(answer)
+
+    def inform(message: str) -> None:
+        QMessageBox.information(parent, "", message)
+
     def open_path(path: Path) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
-    return Dialogs(pick_folder, ask_text, ask_choice, confirm, open_path)
+    return Dialogs(pick_folder, ask_text, ask_choice, confirm, ask_save, inform, open_path)
