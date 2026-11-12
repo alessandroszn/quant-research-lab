@@ -11,6 +11,7 @@ Returns are rarely independent, so inference here is explicit about dependence:
 
 - ``multiple_testing``: :func:`adjust_pvalues` with Holm, Benjamini-Hochberg and
   Benjamini-Yekutieli corrections.
+- ``panel``: :func:`fixed_effects_ols` with entity fixed effects and cluster-robust errors.
 
 Sharpe-ratio inference (PSR, DSR, tests of differences) is in :mod:`qrlab.metrics`.
 """
@@ -22,6 +23,7 @@ from qrlab.stats.bootstrap import (
 )
 from qrlab.stats.factors import FactorModel, FactorResult, factor_exposures
 from qrlab.stats.multiple_testing import Correction, CorrectionResult, adjust_pvalues
+from qrlab.stats.panel import LinearContrast, PanelResult, contrast, fixed_effects_ols
 from qrlab.stats.regression import CovType, OlsResult, newey_west_lags, ols
 from qrlab.stats.rolling import RollingResult, rolling_ols
 
@@ -32,10 +34,14 @@ __all__ = [
     "CovType",
     "FactorModel",
     "FactorResult",
+    "LinearContrast",
     "OlsResult",
+    "PanelResult",
     "RollingResult",
     "adjust_pvalues",
+    "contrast",
     "factor_exposures",
+    "fixed_effects_ols",
     "newey_west_lags",
     "ols",
     "rolling_ols",

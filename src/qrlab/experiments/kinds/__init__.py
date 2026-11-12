@@ -9,6 +9,7 @@ from qrlab.experiments.kinds import (
     backtest,
     portfolio_report,
     projection,
+    study_factor_zoo,
     study_one_over_n,
     study_volatility_managed,
 )
@@ -25,6 +26,7 @@ KINDS: Mapping[str, ExperimentKind] = MappingProxyType(
             projection.KIND,
             study_volatility_managed.KIND,
             study_one_over_n.KIND,
+            study_factor_zoo.KIND,
         )
     }
 )

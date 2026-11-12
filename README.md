@@ -30,6 +30,9 @@ before speed or feature count.
 uv sync
 ```
 
+Reading Parquet files (study 3, Open Source Asset Pricing data) needs the optional extra:
+`uv sync --extra parquet` (`pyarrow`; also part of the dev environment).
+
 ## Quality gate
 
 Every change must pass:

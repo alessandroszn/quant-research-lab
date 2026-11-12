@@ -8,6 +8,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Study 3 (phase 5.3), the factor zoo (Harvey, Liu and Zhu 2016; McLean and Pontiff 2016) on
+  Open Source Asset Pricing data:
+  - `qrlab.studies.factor_zoo`:
+    - phases of each predictor (original sample, post-sample, post-publication);
+    - per-predictor Newey-West tests and counts under single-test, t > 3, Holm, BH and BY
+      rules;
+    - the McLean-Pontiff decay regression;
+    - equal-weighted composites by phase;
+    - an HTML report;
+  - experiment kind `study_factor_zoo`, tested end to end on synthetic files.
+- `data.open_asset_pricing`: pinned downloads into the raw store and strict parsers for the
+  predictor long-short returns (Parquet) and `SignalDoc.csv`. The terms (CC BY 4.0) are
+  recorded in the data-source table.
+- `stats.panel`: fixed-effects OLS with cluster-robust errors and linear contrasts,
+  cross-checked against statsmodels with dummies.
+- Optional extra `parquet` (`pyarrow`), also in the dev group. Reason: OSAP publishes returns
+  only as Parquet.
+
 - Study 2 report, `docs/studies/02-one-over-n.md`, and its two configs in `configs/studies/`
   (main run and paper period), run on the Ken French data of 2026-11-12:
   - no optimised strategy has a significantly higher net Sharpe ratio than 1/N after Holm

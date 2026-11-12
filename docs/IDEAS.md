@@ -54,3 +54,5 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | FX inputs for the portfolio_report kind | 5.2 `experiments` | Wire `EcbConverter` from a local ECB file so that multi-currency portfolios run through the CLI. |
 | Look-through, risk and projection in the portfolio_report kind | 5.2 `experiments` | Holdings files, tracking series and risk/projection settings as optional inputs. |
 | `qrlab fetch` | 5.2 `experiments` | An explicit download step into the raw store (Ken French, ECB), kept separate from runs. |
+| Trading costs of anomalies | 5.3 study 3 | Chen and Velikov (2023) estimate effective spreads; net-of-cost survival of the factor zoo needs their cost data. |
+| Anomalies by category | 5.3 study 3 | Decay by data type (accounting, price, analyst) or by economic category, with the same panel regression. |

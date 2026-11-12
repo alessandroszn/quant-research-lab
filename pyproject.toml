@@ -29,6 +29,11 @@ dependencies = [
 [project.scripts]
 qrlab = "qrlab.cli:main_entry"
 
+[project.optional-dependencies]
+parquet = [
+    "pyarrow>=18",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=8.3",
@@ -38,6 +43,7 @@ dev = [
     "pandas-stubs>=3.1.0.261029",
     "scipy-stubs>=1.17.1.5",
     "scikit-learn>=1.9.1",
+    "pyarrow>=18",
 ]
 
 [tool.hatch.build.targets.wheel]
