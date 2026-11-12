@@ -118,7 +118,7 @@ def test_predictor_tests_match_the_classical_t_with_zero_lags(rng: np.random.Gen
     assert tests.loc["A", "t"] == pytest.approx(t_classic)
     assert tests.loc["A", "p"] == pytest.approx(2 * sps.t.sf(abs(t_classic), len(values) - 1))
     short = predictor_tests(panel, phase="in_sample", hac_lags=0, min_months=200)
-    assert np.isnan(short.loc["A", "t"])
+    assert short["t"].isna()["A"]
     assert short.loc["A", "n"] == 120
     with pytest.raises(ValidationError, match="phase must be one of"):
         predictor_tests(panel, phase="pre_sample", hac_lags=0, min_months=12)
