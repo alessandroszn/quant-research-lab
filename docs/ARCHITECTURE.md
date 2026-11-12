@@ -29,8 +29,9 @@ Planning** and **M4 — Construction & Backtest** are implemented:
   (constrained portfolio construction and rebalancing policies), `backtest` (lagged execution
   with gross and net ledgers) and `attribution` (Brinson-Fachler, factor and currency).
 
-Level 5 has started: `stats.multiple_testing` and `metrics.sharpe_inference` (phase 5.1), and
-`experiments` with the `qrlab` CLI (phase 5.2). The other modules are planned (see
+Level 5 has started: `stats.multiple_testing` and `metrics.sharpe_inference` (phase 5.1),
+`experiments` with the `qrlab` CLI (phase 5.2) and `studies` with study 1, volatility-managed
+factors (phase 5.3). The other modules are planned (see
 `ROADMAP.md`), and each one is added together with its layering rule.
 
 | Layer | Module | Responsibility |
@@ -51,6 +52,7 @@ Level 5 has started: `stats.multiple_testing` and `metrics.sharpe_inference` (ph
 | 5 | `attribution` | Brinson–Fachler, factor and currency attribution |
 | 5 | `backtest` | Signal → weights → P&L with mandatory execution lag and costs |
 | 6 | `reporting` | Tables, figures, HTML/PDF reports, experiment records |
+| 6.5 | `studies` | Empirical studies (pure functions + report), each run by an experiment kind |
 | 7 | `experiments` | Config-driven runner; the single entry point |
 | 7 | `cli` | `qrlab run <config>` and utilities |
 | app | `qrlab_app` | PySide6 GUI; imports only `qrlab.experiments` and `qrlab.reporting` |

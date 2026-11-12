@@ -29,7 +29,13 @@ from qrlab.core.errors import ValidationError
 from qrlab.experiments.config import ExperimentConfig, file_sha256, load_config
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext
 
-__all__ = ["RunResult", "count_trials", "run_experiment", "validate_experiment"]
+__all__ = [
+    "RunResult",
+    "configurations_tried",
+    "count_trials",
+    "run_experiment",
+    "validate_experiment",
+]
 
 LEDGER = "trials.jsonl"
 RECORD = "record.json"
@@ -130,15 +136,28 @@ def run_experiment(
 
 def count_trials(ledger_dir: Path, name: str) -> int:
     """Return the number of distinct config hashes run under ``name``."""
+    return len(_ledger_hashes(ledger_dir, name))
+
+
+def configurations_tried(ledger_dir: Path, name: str, *, including: str) -> int:
+    """Return the distinct config hashes run under ``name``, counting ``including`` as well.
+
+    A kind calls this during its run, before the runner records the run in the ledger, to use
+    the number of configurations tried (this one included) in a deflated Sharpe ratio.
+    """
+    return len(_ledger_hashes(ledger_dir, name) | {including})
+
+
+def _ledger_hashes(ledger_dir: Path, name: str) -> set[str]:
     path = Path(ledger_dir) / LEDGER
     if not path.exists():
-        return 0
+        return set()
     hashes = set()
     for line in path.read_text(encoding="utf-8").splitlines():
         entry = json.loads(line)
         if entry["name"] == name:
-            hashes.add(entry["config_sha256"])
-    return len(hashes)
+            hashes.add(str(entry["config_sha256"]))
+    return hashes
 
 
 def _write_outputs(
