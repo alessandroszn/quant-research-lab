@@ -1,0 +1,37 @@
+# Study 2, 1/N against optimised portfolios: Paper period: 1963-07 to 2004-12, close to DeMiguel, Garlappi and Uppal (2009).
+# Design note: docs/design/5.3-study-2-one-over-n.md; report: docs/studies/02-one-over-n.md.
+# Inputs are Ken French files of the 2026-11-12 vintage in the git-ignored raw store; to
+# reproduce, download the same datasets and update the paths (the report lists the SHA-256
+# of every file). Both configs share the experiment name, so the trial ledger counts them.
+
+[experiment]
+name = "study2-one-over-n"
+kind = "study_one_over_n"
+hypothesis = "H1: no optimised strategy has a significantly higher net Sharpe ratio than 1/N (Holm across strategies). H2: Ledoit-Wolf minimum variance beats sample minimum variance, and Black-Litterman maximum Sharpe beats sample maximum Sharpe."
+seed = 20261112
+
+[inputs]
+ind10_daily = "../../data/raw/ken_french/10_Industry_Portfolios_daily/20261112T144221Z_4c79bad80b6f.zip"
+ind10_monthly = "../../data/raw/ken_french/10_Industry_Portfolios/20261112T144218Z_cee051709825.zip"
+p25_daily = "../../data/raw/ken_french/25_Portfolios_5x5_Daily/20261112T144238Z_820936bd3087.zip"
+p25_monthly = "../../data/raw/ken_french/25_Portfolios_5x5/20261112T144224Z_ec3a80f94edf.zip"
+ff3_monthly = "../../data/raw/ken_french/F-F_Research_Data_Factors/20261112T134510Z_b03d39e4bb25.zip"
+
+[parameters]
+datasets = ["industries_10", "size_bm_25"]
+start = 1963-07-01
+end = 2004-12-31
+windows = [60, 120]
+strategies = [
+  "ew", "vw", "maxsharpe_sample", "minvar_sample", "minvar_lw", "maxsharpe_bl", "risk_parity",
+  "hrp",
+]
+costs_bp = [0, 10, 50]
+bl_risk_aversion = 2.5
+ceq_risk_aversion = 1.0
+hac_lags = 6
+significance = 0.05
+bootstrap = { mean_block_length = 6.0, n_resamples = 2000, confidence = 0.95 }
+
+[output]
+directory = "../../results/studies/one-over-n/paper"

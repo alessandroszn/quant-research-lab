@@ -100,9 +100,11 @@ VALUE_WEIGHTED_DAILY = "Average Value Weighted Returns -- Daily"
 EQUAL_WEIGHTED_DAILY = "Average Equal Weighted Returns -- Daily"
 NUMBER_OF_FIRMS = "Number of Firms in Portfolios"
 AVERAGE_FIRM_SIZE = "Average Firm Size"
+AVERAGE_MARKET_CAP = "Average Market Cap"  # the size section of the 25 size/BM file
 _MONTHLY_RETURNS = frozenset({VALUE_WEIGHTED_MONTHLY, EQUAL_WEIGHTED_MONTHLY})
 _DAILY_RETURNS = frozenset({VALUE_WEIGHTED_DAILY, EQUAL_WEIGHTED_DAILY})
 _FIRM_TABLES = frozenset({NUMBER_OF_FIRMS, AVERAGE_FIRM_SIZE})
+_MARKET_CAP_TABLES = frozenset({NUMBER_OF_FIRMS, AVERAGE_MARKET_CAP})
 
 KEN_FRENCH_DATASETS: Mapping[str, _Spec] = MappingProxyType(
     {
@@ -122,7 +124,7 @@ KEN_FRENCH_DATASETS: Mapping[str, _Spec] = MappingProxyType(
         # Portfolio files (titled sections). Monthly files also carry firm counts and sizes.
         "10_Industry_Portfolios": _Spec(_INDUSTRIES_10, _MONTHLY, _MONTHLY_RETURNS, _FIRM_TABLES),
         "10_Industry_Portfolios_daily": _Spec(_INDUSTRIES_10, _DAILY, _DAILY_RETURNS),
-        "25_Portfolios_5x5": _Spec(_SIZE_BM_25, _MONTHLY, _MONTHLY_RETURNS, _FIRM_TABLES),
+        "25_Portfolios_5x5": _Spec(_SIZE_BM_25, _MONTHLY, _MONTHLY_RETURNS, _MARKET_CAP_TABLES),
         "25_Portfolios_5x5_Daily": _Spec(_SIZE_BM_25, _DAILY, _DAILY_RETURNS),
     }
 )
@@ -214,7 +216,8 @@ def parse_ken_french_table(
 ) -> pd.DataFrame:
     """Parse a non-return section of a portfolio file, with values as published.
 
-    ``Number of Firms in Portfolios`` is a count; ``Average Firm Size`` is in millions of USD.
+    ``Number of Firms in Portfolios`` is a count; ``Average Firm Size`` (industry files) and
+    ``Average Market Cap`` (25 size/BM file) are in millions of USD.
     Missing-value codes become NaN; nothing is rescaled.
     """
     spec = _checked_spec(provenance, frequency)

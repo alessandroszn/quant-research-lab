@@ -22,6 +22,7 @@ from qrlab.core.calendar import Frequency
 from qrlab.core.errors import ValidationError
 from qrlab.data.ken_french import (
     AVERAGE_FIRM_SIZE,
+    AVERAGE_MARKET_CAP,
     NUMBER_OF_FIRMS,
     VALUE_WEIGHTED_DAILY,
     VALUE_WEIGHTED_MONTHLY,
@@ -59,7 +60,7 @@ from qrlab.studies.one_over_n import (
 from qrlab.studies.one_over_n_report import build_one_over_n_report
 from qrlab.studies.volatility_managed import BootstrapSettings
 
-__all__ = ["DATASETS", "INPUTS", "KIND", "PAIRS"]
+__all__ = ["DATASETS", "INPUTS", "KIND", "PAIRS", "SIZE_SECTIONS"]
 
 INPUTS: Mapping[str, str] = {
     "ind10_daily": "10_Industry_Portfolios_daily",
@@ -75,6 +76,12 @@ DATASETS: Mapping[str, tuple[str, str]] = {
     "size_bm_25": ("p25_daily", "p25_monthly"),
 }
 """Universe -> (daily input, monthly input)."""
+
+SIZE_SECTIONS: Mapping[str, str] = {
+    "industries_10": AVERAGE_FIRM_SIZE,
+    "size_bm_25": AVERAGE_MARKET_CAP,
+}
+"""Universe -> title of its average-size section (the files name it differently)."""
 
 PAIRS = (("minvar_lw", "minvar_sample"), ("maxsharpe_bl", "maxsharpe_sample"))
 """H2: (robust, sample-estimate) strategy pairs."""
@@ -207,7 +214,7 @@ def _load(context: RunContext, p: _Parameters) -> tuple[dict[str, _Universe], pd
                 frequency=Frequency.MONTHLY,
                 section=title,
             )
-            for title in (NUMBER_OF_FIRMS, AVERAGE_FIRM_SIZE)
+            for title in (NUMBER_OF_FIRMS, SIZE_SECTIONS[dataset])
         ]
         returns = _months(monthly, p.start, p.end, f"{dataset} monthly")
         universes[dataset] = _Universe(

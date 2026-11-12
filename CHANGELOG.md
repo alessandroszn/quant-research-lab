@@ -8,6 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Study 2 report, `docs/studies/02-one-over-n.md`, and its two configs in `configs/studies/`
+  (main run and paper period), run on the Ken French data of 2026-11-12:
+  - no optimised strategy has a significantly higher net Sharpe ratio than 1/N after Holm
+    (H1 supported);
+  - shrinkage and Black-Litterman do not significantly improve on sample estimates (H2 not
+    supported).
+- `data.ken_french.AVERAGE_MARKET_CAP`: the 25 size/BM file names its size section
+  "Average Market Cap".
+
 - Study 2 (phase 5.3), 1/N against optimised portfolios (DeMiguel, Garlappi and Uppal 2009),
   extended with Ledoit-Wolf shrinkage, risk parity, HRP and Black-Litterman:
   - `qrlab.studies.one_over_n`:
@@ -57,6 +66,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - probabilistic and deflated Sharpe ratios;
   - Jobson-Korkie-Memmel and Ledoit-Wolf HAC tests of Sharpe-ratio differences;
   - a stationary-bootstrap interval for the difference.
+
+### Fixed
+
+- `optimization.maximum_sharpe` accepted only a solver success. SLSQP can stop at the optimum
+  with a line-search status: this happened in 2 of about 4,000 real Black-Litterman inputs.
+  The function now also accepts a feasible point that meets the KKT conditions of the convex
+  problem, which makes it the global optimum. Regression tests added.
+- The 25 size/BM portfolio file was read with the wrong size-section title; the strict parser
+  refused it, and no data was misread. Regression test added.
 
 ## [0.3.0] - 2026-11-12
 

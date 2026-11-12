@@ -32,6 +32,9 @@ from qrlab.risk.decomposition import RiskContributions, volatility_contributions
 ZERO_VARIANCE = 1e-24
 """Portfolio variance below this (volatility below 1e-12) is treated as zero."""
 
+KKT_TOLERANCE = 1e-6
+"""Relative tolerance of the KKT check that accepts a stalled maximum-Sharpe solution."""
+
 __all__ = [
     "OptimizationResult",
     "efficient_frontier",
@@ -175,7 +178,10 @@ def maximum_sharpe(expected: pd.Series, covariance: CovarianceEstimate) -> Optim
         options={"ftol": 1e-15, "maxiter": 2000},
     )
     y = np.clip(np.asarray(result.x, dtype=np.float64), 0.0, None)
-    if not result.success or abs(float(mu @ y) - 1.0) > 1e-6:
+    feasible = abs(float(mu @ y) - 1.0) <= 1e-6
+    # SLSQP can stop at the optimum with a line-search status (8) because of the tight ftol; the
+    # problem is convex, so a point meeting the KKT conditions is the global optimum.
+    if not (feasible and (result.success or _is_kkt_point(y, mu, sigma))):
         raise ValidationError(f"maximum Sharpe optimisation failed: {result.message}")
     w = y / y.sum()
     w = np.where(w <= SNAP, 0.0, w)
@@ -183,6 +189,22 @@ def maximum_sharpe(expected: pd.Series, covariance: CovarianceEstimate) -> Optim
     sharpe = float(w @ mu / np.sqrt(w @ sigma @ w))
     active = tuple(a for a, wi in zip(assets, w, strict=True) if wi == 0.0)
     return _result(covariance, w, "maximum_sharpe", sharpe, _LONG_ONLY, {}, active, int(result.nit))
+
+
+def _is_kkt_point(y: np.ndarray, mu: np.ndarray, sigma: np.ndarray) -> bool:
+    r"""Check the KKT conditions of :math:`\min y^\top\Sigma y` s.t. :math:`\mu^\top y=1, y\ge 0`.
+
+    At a feasible point the multiplier of the budget is :math:`\nu=2y^\top\Sigma y`; the reduced
+    gradient :math:`(2\Sigma y-\nu\mu)/\nu` must be zero where :math:`y>0` and non-negative where
+    :math:`y=0`, within :data:`KKT_TOLERANCE` times the largest :math:`|\mu|`.
+    """
+    nu = 2.0 * float(y @ sigma @ y)
+    if not nu > 0:
+        return False
+    reduced = (2.0 * sigma @ y - nu * mu) / nu
+    tolerance = KKT_TOLERANCE * float(np.max(np.abs(mu)))
+    held = y > SNAP * float(y.sum())
+    return bool(np.all(np.abs(reduced[held]) <= tolerance) and np.all(reduced[~held] >= -tolerance))
 
 
 def efficient_frontier(
