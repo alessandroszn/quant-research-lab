@@ -9,7 +9,10 @@ Returns are rarely independent, so inference here is explicit about dependence:
   returns and factors must be excess returns in the same currency.
 - ``bootstrap``: :func:`stationary_bootstrap` (Politis-Romano) with a required seeded generator.
 
-Planned for phase 5.1: multiple-testing corrections and Sharpe-ratio inference.
+- ``multiple_testing``: :func:`adjust_pvalues` with Holm, Benjamini-Hochberg and
+  Benjamini-Yekutieli corrections.
+
+Sharpe-ratio inference (PSR, DSR, tests of differences) is in :mod:`qrlab.metrics`.
 """
 
 from qrlab.stats.bootstrap import (
@@ -18,16 +21,20 @@ from qrlab.stats.bootstrap import (
     stationary_bootstrap_indices,
 )
 from qrlab.stats.factors import FactorModel, FactorResult, factor_exposures
+from qrlab.stats.multiple_testing import Correction, CorrectionResult, adjust_pvalues
 from qrlab.stats.regression import CovType, OlsResult, newey_west_lags, ols
 from qrlab.stats.rolling import RollingResult, rolling_ols
 
 __all__ = [
     "BootstrapResult",
+    "Correction",
+    "CorrectionResult",
     "CovType",
     "FactorModel",
     "FactorResult",
     "OlsResult",
     "RollingResult",
+    "adjust_pvalues",
     "factor_exposures",
     "newey_west_lags",
     "ols",
