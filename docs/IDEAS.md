@@ -55,4 +55,5 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Look-through, risk and projection in the portfolio_report kind | 5.2 `experiments` | Holdings files, tracking series and risk/projection settings as optional inputs. |
 | `qrlab fetch` | 5.2 `experiments` | An explicit download step into the raw store (Ken French, ECB), kept separate from runs. |
 | Trading costs of anomalies | 5.3 study 3 | Chen and Velikov (2023) estimate effective spreads; net-of-cost survival of the factor zoo needs their cost data. |
+| Time effects in the decay regression | 5.3 study 3 | Month fixed effects or a time trend, to separate publication from a general decline of anomaly returns (McLean and Pontiff's robustness check). |
 | Anomalies by category | 5.3 study 3 | Decay by data type (accounting, price, analyst) or by economic category, with the same panel regression. |
