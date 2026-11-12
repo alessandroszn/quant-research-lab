@@ -31,7 +31,8 @@ Planning** and **M4 — Construction & Backtest** are implemented:
 
 Level 5 has started: `stats.multiple_testing` and `metrics.sharpe_inference` (phase 5.1),
 `experiments` with the `qrlab` CLI (phase 5.2) and `studies` with study 1, volatility-managed
-factors, study 2, 1/N against optimised portfolios, and study 3, the factor zoo (phase 5.3). The
+factors, study 2, 1/N against optimised portfolios, study 3, the factor zoo, and study 4,
+rebalancing for a EUR ETF investor (phase 5.3). The
 other modules are planned (see
 `ROADMAP.md`), and each one is added together with its layering rule.
 

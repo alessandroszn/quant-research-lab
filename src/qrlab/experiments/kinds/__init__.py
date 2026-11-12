@@ -11,6 +11,7 @@ from qrlab.experiments.kinds import (
     projection,
     study_factor_zoo,
     study_one_over_n,
+    study_rebalancing,
     study_volatility_managed,
 )
 from qrlab.experiments.registry import ExperimentKind
@@ -27,6 +28,7 @@ KINDS: Mapping[str, ExperimentKind] = MappingProxyType(
             study_volatility_managed.KIND,
             study_one_over_n.KIND,
             study_factor_zoo.KIND,
+            study_rebalancing.KIND,
         )
     }
 )

@@ -1,4 +1,4 @@
-"""European Central Bank data: euro reference FX rates, €STR and euro-area HICP.
+"""European Central Bank data: euro reference FX rates, €STR, euro-area HICP and AAA spot rates.
 
 Terms (checked 2026-11-10, ECB website disclaimer): free use of information taken from the site
 if reproduced accurately with the ECB cited as source; modifications must be stated. The
@@ -52,6 +52,7 @@ __all__ = [
     "parse_ecb_fx",
     "parse_estr",
     "parse_hicp",
+    "parse_yield_curve",
 ]
 
 SOURCE = "ecb"
@@ -96,6 +97,25 @@ ECB_SERIES: Mapping[str, _Series] = MappingProxyType(
             unit_field="UNIT",
             unit_code="IX",
             scale=1.0,
+        ),
+        # AAA euro-area government spot rates (Svensson, continuously compounded), percent p.a.
+        "yc_aaa_spot_6y": _Series(
+            flow="YC",
+            key="B.U2.EUR.4F.G_N_A.SV_C_YM.SR_6Y",
+            column="SR_6Y",
+            frequency=Frequency.DAILY,
+            unit_field="UNIT",
+            unit_code="PCPA",
+            scale=0.01,
+        ),
+        "yc_aaa_spot_7y": _Series(
+            flow="YC",
+            key="B.U2.EUR.4F.G_N_A.SV_C_YM.SR_7Y",
+            column="SR_7Y",
+            frequency=Frequency.DAILY,
+            unit_field="UNIT",
+            unit_code="PCPA",
+            scale=0.01,
         ),
     }
 )
@@ -228,6 +248,35 @@ def parse_estr(content: bytes, provenance: Provenance) -> Dataset:
             "Day-count convention ACT/360; conversion to per-period returns is left to callers.",
         ),
         available_from=available,
+        status=status,
+    )
+
+
+def parse_yield_curve(content: bytes, provenance: Provenance) -> Dataset:
+    """Parse an AAA euro-area spot rate (``yc_aaa_spot_6y`` or ``yc_aaa_spot_7y``).
+
+    Values are annual rates in decimals, **continuously compounded** (ECB technical notes), so a
+    zero-coupon bond with maturity :math:`T` years is priced :math:`e^{-zT}`. The curve is
+    estimated every TARGET working day and published at 12:00 CET the same day.
+    """
+    name = provenance.dataset
+    if name not in ("yc_aaa_spot_6y", "yc_aaa_spot_7y"):
+        raise ParseError(f"not a supported yield-curve series: {name!r}")
+    spec = _series_spec(name)
+    _require_source(provenance, name)
+    frame, status = _parse_sdmx(content, spec)
+    return Dataset(
+        data=frame,
+        provenance=provenance,
+        frequency=Frequency.DAILY,
+        unit=Unit.RATE_PER_YEAR,
+        return_kind=None,
+        currency=Currency("EUR"),
+        availability="Estimated and published at 12:00 CET on the same TARGET working day.",
+        notes=(
+            "Converted from percent per year to decimal (divided by 100).",
+            "Continuously compounded zero-coupon rate (Svensson model, AAA government bonds).",
+        ),
         status=status,
     )
 

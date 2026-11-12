@@ -273,3 +273,38 @@ def test_decision_schedule_and_empty_returns() -> None:
     assert result.settings["decide_every"] == 2.0
     with pytest.raises(ValidationError, match="at least one period"):
         _run(returns=TOY.iloc[:0])
+
+
+def test_final_basis_by_hand() -> None:
+    # 50/50 of 100; A +20 % in period 1 -> holdings 60 / 50, rebalanced to 55 / 55.
+    # A sells 5 of 60 (1/12): basis 50 x 11/12 = 45.833; B buys 5: basis 50 + 5 = 55.
+    index = pd.date_range("2020-01-31", periods=2, freq="ME")
+    returns = pd.DataFrame({"A": [0.2, 0.0], "B": [0.0, 0.0]}, index=index)
+    result = run_backtest(
+        returns,
+        lambda history: None,
+        decide_every=1,
+        execution_lag=1,
+        policy=CalendarPolicy(1),
+        costs=CostModel(0.0, 0.0),
+        taxes=None,
+        initial_weights=pd.Series({"A": 0.5, "B": 0.5}),
+        initial_value=Money.of("100", "EUR"),
+        long_only=True,
+    )
+    assert result.final_basis.to_numpy() == pytest.approx([50 * 11 / 12, 55.0])
+    taxed = run_backtest(
+        returns,
+        lambda history: None,
+        decide_every=1,
+        execution_lag=1,
+        policy=CalendarPolicy(1),
+        costs=CostModel(0.0, 0.0),
+        taxes=TaxModel(0.26, 0.0),
+        initial_weights=pd.Series({"A": 0.5, "B": 0.5}),
+        initial_value=Money.of("100", "EUR"),
+        long_only=True,
+    )
+    # Realised gain 10/12 taxed at 26 %; holdings and basis shrink by the same factor.
+    keep = 1 - 0.26 * (10 / 12) / 110
+    assert taxed.final_basis.to_numpy() == pytest.approx([50 * 11 / 12 * keep, 55.0 * keep])

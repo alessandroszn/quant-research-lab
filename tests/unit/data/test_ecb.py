@@ -36,6 +36,7 @@ from qrlab.data.ecb import (
     parse_ecb_fx,
     parse_estr,
     parse_hicp,
+    parse_yield_curve,
 )
 from qrlab.data.errors import DataNotFoundError, ParseError
 from qrlab.data.provenance import Dataset, Provenance, Unit
@@ -266,7 +267,11 @@ def test_available_from_and_status_must_align_with_data() -> None:
 
 # --------------------------------------------------------------------------- downloads
 def test_series_catalogue_and_urls() -> None:
-    assert set(ECB_SERIES) == {"estr", "hicp_euro_area"}
+    assert set(ECB_SERIES) == {"estr", "hicp_euro_area", "yc_aaa_spot_6y", "yc_aaa_spot_7y"}
+    assert ecb_series_url("yc_aaa_spot_7y") == (
+        "https://data-api.ecb.europa.eu/service/data/YC/"
+        "B.U2.EUR.4F.G_N_A.SV_C_YM.SR_7Y?format=csvdata"
+    )
     assert ecb_series_url("hicp_euro_area") == (
         "https://data-api.ecb.europa.eu/service/data/HICP/M.U2.N.000000.4D0.INX?format=csvdata"
     )
@@ -312,3 +317,28 @@ def test_available_from_must_be_dates() -> None:
     as_numbers = pd.Series([1.0, 2.0, 3.0], index=ds.data.index)
     with pytest.raises(ValidationError, match="dates"):
         Dataset(**(ds.__dict__ | {"available_from": as_numbers}))
+
+
+YC_CSV = _SDMX_HEADER + (
+    "YC.B.U2.EUR.4F.G_N_A.SV_C_YM.SR_7Y,B,2004-09-06,3.828505244973507,A,,PCPA,0,\n"
+    "YC.B.U2.EUR.4F.G_N_A.SV_C_YM.SR_7Y,B,2004-09-07,3.8392935757604096,A,,PCPA,0,\n"
+)
+
+
+def test_yield_curve_hand_example() -> None:
+    ds = parse_yield_curve(*_series(YC_CSV, "yc_aaa_spot_7y"))
+    assert ds.unit is Unit.RATE_PER_YEAR
+    assert list(ds.data.columns) == ["SR_7Y"]
+    assert ds.data.iloc[0, 0] == pytest.approx(0.03828505244973507)
+    assert any("continuously compounded" in note.lower() for note in ds.notes)
+
+
+def test_yield_curve_strictness() -> None:
+    with pytest.raises(ParseError, match="not a supported yield-curve series"):
+        parse_yield_curve(*_series(ESTR_CSV, "estr"))
+    wrong_unit = YC_CSV.replace("PCPA", "PC")
+    with pytest.raises(ParseError, match="unit"):
+        parse_yield_curve(*_series(wrong_unit, "yc_aaa_spot_7y"))
+    wrong_key = YC_CSV.replace("SR_7Y", "SR_6Y")
+    with pytest.raises(ParseError, match="series key"):
+        parse_yield_curve(*_series(wrong_key, "yc_aaa_spot_7y"))
