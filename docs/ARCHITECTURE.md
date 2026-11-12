@@ -37,8 +37,9 @@ Planning**, **M4 — Construction & Backtest** and **M5 — Research** are imple
   - the factor zoo;
   - rebalancing for a EUR ETF investor.
 
-Level 6 (desktop app, packaging, v1.0) is planned (see `ROADMAP.md`); each new module is added
-together with its layering rule.
+Level 6 has started: the desktop app `qrlab_app` (phase 6.1a: workspace, Portfolio, Projections,
+Backtests & studies, Data and History screens) over `experiments.workspace`. Packaging and v1.0
+are planned (see `ROADMAP.md`); each new module is added together with its layering rule.
 
 | Layer | Module | Responsibility |
 |---|---|---|

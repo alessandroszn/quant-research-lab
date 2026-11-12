@@ -6,6 +6,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Desktop app `qrlab_app` (phase 6.1a, PySide6), started with `qrlab-app`:
+  - Home (open or create a workspace), Portfolio, Projections, Backtests & studies, Data and
+    History screens;
+  - a TOML editor with Validate and Run;
+  - runs in a worker thread, one at a time, with confirmation before outputs are replaced;
+  - results with their sample tags, scalars and figures;
+  - the report and folder open in the system browser.
+
+  There is no financial logic in the app: a test enforces that it imports only
+  `qrlab.experiments` and `qrlab.reporting`. Qt-free view-models are unit-tested; an off-screen
+  smoke test runs an experiment end to end.
+- `experiments.workspace`: `create_workspace`, `list_configs` (with validation status),
+  `list_runs`, `list_raw_files` (provenance and age) and `config_template`.
+- Optional extra `app` (`PySide6-Essentials`, also in the dev group). Reason: the roadmap's GUI
+  toolkit; "Essentials" avoids the large add-ons such as QtWebEngine.
+
+### Changed
+
+- CI installs the Qt system libraries on Linux for the off-screen app tests.
+
 ## [0.4.0] - 2026-11-12
 
 Milestone M5 (Research): phases 5.1 to 5.3. There are four reproducible studies with written

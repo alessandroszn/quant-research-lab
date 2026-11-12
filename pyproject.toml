@@ -28,10 +28,14 @@ dependencies = [
 
 [project.scripts]
 qrlab = "qrlab.cli:main_entry"
+qrlab-app = "qrlab_app.app:main"
 
 [project.optional-dependencies]
 parquet = [
     "pyarrow>=18",
+]
+app = [
+    "pyside6-essentials>=6.8",
 ]
 
 [dependency-groups]
@@ -44,13 +48,14 @@ dev = [
     "scipy-stubs>=1.17.1.5",
     "scikit-learn>=1.9.1",
     "pyarrow>=18",
+    "pyside6-essentials>=6.8",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/qrlab"]
+packages = ["src/qrlab", "src/qrlab_app"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/qrlab", "tests", "README.md", "CHANGELOG.md"]
+include = ["src/qrlab", "src/qrlab_app", "tests", "README.md", "CHANGELOG.md"]
 
 # --------------------------------------------------------------------------- ruff
 [tool.ruff]
@@ -111,7 +116,8 @@ markers = [
 
 # --------------------------------------------------------------------------- coverage
 [tool.coverage.run]
-source = ["qrlab"]
+source = ["qrlab", "qrlab_app"]
+omit = ["*/qrlab_app/__main__.py"]  # two lines that start the event loop
 branch = true
 
 [tool.coverage.report]

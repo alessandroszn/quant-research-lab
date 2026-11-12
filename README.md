@@ -33,6 +33,16 @@ uv sync
 Reading Parquet files (study 3, Open Source Asset Pricing data) needs the optional extra:
 `uv sync --extra parquet` (`pyarrow`; also part of the dev environment).
 
+The desktop app (phase 6.1) needs the `app` extra (`PySide6-Essentials`, LGPL-3.0):
+
+```bash
+uv sync --extra app
+uv run qrlab-app
+```
+
+Open or create a workspace folder (`configs/`, `data/`, `results/`), pick a config, *Validate*,
+*Run*. The app has no financial logic: it calls the same runner as `qrlab run`.
+
 ## Quality gate
 
 Every change must pass:
