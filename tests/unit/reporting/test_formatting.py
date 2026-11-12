@@ -6,6 +6,7 @@ import math
 from datetime import date
 from decimal import Decimal
 
+import numpy as np
 import pytest
 
 from qrlab.core.errors import ValidationError
@@ -19,6 +20,7 @@ from qrlab.reporting.formatting import (
     format_money,
     format_number,
     format_percent,
+    format_significant,
     style_for,
 )
 from qrlab.reporting.labels import LABELS, label
@@ -110,3 +112,58 @@ def test_non_numbers_are_refused() -> None:
         format_number(True, 0, style=EN)
     with pytest.raises(ValidationError, match="str"):
         format_number("12", 0, style=EN)  # type: ignore[arg-type]
+
+
+# ------------------------------------------------------------------ significant figures
+@pytest.mark.parametrize(
+    ("value", "en", "it"),
+    [
+        (0.0317, "0.0317", "0,0317"),  # trailing zeros removed
+        (0.333333333, "0.333333", "0,333333"),  # six significant figures
+        (1234567.891, "1,234,570", "1.234.570"),  # 1234567.891 -> 1234570, grouped
+        (-22500.0, "-22,500", "-22.500"),  # grouped, no decimals
+        (1.000005, "1.00001", "1,00001"),  # half-up on the decimal value
+        (0.0, "0", "0"),
+        (-0.0, "0", "0"),  # no negative zero
+        (2.5e-05, "2.5e-05", "2,5e-05"),  # below 1e-4: scientific
+        (-2.5e-05, "-2.5e-05", "-2,5e-05"),
+        (3.2e12, "3.2e+12", "3,2e+12"),  # 1e12 or above: scientific
+        (9.999995, "10", "10"),  # rounding carries into a new digit
+        (999999999999.9, "1e+12", "1e+12"),  # the carry crosses into scientific
+        (0.000099999995, "0.0001", "0,0001"),  # the carry crosses into fixed
+        (1e-300, "1e-300", "1e-300"),  # three-digit exponents
+        (42, "42", "42"),
+    ],
+)
+def test_format_significant(value: float, en: str, it: str) -> None:
+    assert format_significant(value, 6, style=EN) == en
+    assert format_significant(value, 6, style=IT) == it
+
+
+def test_format_significant_with_few_digits() -> None:
+    assert format_significant(0.25, 1, style=EN) == "0.3"  # half-up
+    assert format_significant(0.123456, 3, style=IT) == "0,123"
+    assert format_significant(Decimal("15480"), 2, style=IT) == "15.000"
+
+
+def test_format_significant_refuses_bad_input() -> None:
+    for bad_digits in (0, 16, 2.0, True):
+        with pytest.raises(ValidationError, match="digits"):
+            format_significant(1.0, bad_digits, style=EN)  # type: ignore[arg-type]
+    for bad in (math.nan, math.inf, -math.inf):
+        with pytest.raises(ValidationError, match="finite"):
+            format_significant(bad, 6, style=EN)
+    with pytest.raises(ValidationError, match="booleans"):
+        format_significant(True, 6, style=EN)
+
+
+def test_format_significant_matches_python_rounding(rng: np.random.Generator) -> None:
+    """Read back as a number, the text equals Python's ``g`` rounding (away from ties)."""
+    values = rng.standard_normal(500) * 10.0 ** rng.integers(-8, 14, 500)
+    for digits in (3, 6, 9):
+        for x in values:
+            english = format_significant(x, digits, style=EN).replace(",", "")
+            italian = format_significant(x, digits, style=IT).replace(".", "").replace(",", ".")
+            expected = float(f"{x:.{digits}g}")
+            assert float(english) == expected
+            assert float(italian) == expected

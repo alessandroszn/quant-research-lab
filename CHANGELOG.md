@@ -8,6 +8,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- The app in Italian and English (phase 6.1c):
+  - every app string, error message, sample tag and run status is in both languages;
+  - numbers and dates on screen follow the language (`0,0317`, `1.234.570`, `12/11/2026`);
+    missing values show as `—`, and the files on disk never change;
+  - the runner's messages and all identifiers (kinds, files, tables, columns, scalars) stay as
+    recorded.
+- The app's Settings screen: language (applied at once by rebuilding the window, never during a
+  run), recent workspaces, version information and where the settings file is. Settings live in
+  an INI file (`%APPDATA%/qrlab/qrlab-app.ini` on Windows), not in the registry.
+- Recent workspaces on the Home screen (at most 8; missing folders are marked and cannot be
+  opened). The window title shows the open workspace, and the window size is remembered.
+- `reporting.formatting.format_significant`: significant figures with the language's
+  separators, half-up on the decimal value, scientific notation outside `[1e-4, 1e12)`.
+
 - Experiment kinds for the app's Risk, Scenarios and Optimiser screens (phase 6.1b), thin
   adapters over tested library functions, each with a synthetic example config:
   - `risk_report`: covariance (sample, EWMA, Ledoit-Wolf), contributions to volatility and to
@@ -39,6 +53,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - CI installs the Qt system libraries on Linux for the off-screen app tests.
+- The app no longer loses unsaved edits: changing config, creating or duplicating one, opening
+  another workspace, changing language or closing the window first asks *Save / Discard /
+  Cancel*. Closing the window during a run is refused, because runs cannot be cancelled.
+- App editor: monospace font without line wrapping; `Ctrl+S` saves and `F5` refreshes the
+  screen.
 
 ## [0.4.0] - 2026-11-12
 

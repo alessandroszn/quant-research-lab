@@ -38,8 +38,8 @@ Planning**, **M4 — Construction & Backtest** and **M5 — Research** are imple
   - rebalancing for a EUR ETF investor.
 
 Level 6 has started: the desktop app `qrlab_app` (phase 6.1: workspace, Portfolio, Risk, Scenarios,
-Projections, Optimiser, Backtests & studies, Data and History screens) over
-`experiments.workspace` and the experiment kinds. Packaging and v1.0
+Projections, Optimiser, Backtests & studies, Data, History and Settings screens, in English and
+Italian) over `experiments.workspace` and the experiment kinds. Packaging and v1.0
 are planned (see `ROADMAP.md`); each new module is added together with its layering rule.
 
 | Layer | Module | Responsibility |
