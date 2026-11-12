@@ -30,7 +30,7 @@ from qrlab.data.provenance import Provenance
 __all__ = ["RawStore", "StoredFile", "download"]
 
 _SIDECAR = ".provenance.json"
-_KNOWN_EXTENSIONS = frozenset({".zip", ".csv", ".txt", ".xml", ".json"})
+_KNOWN_EXTENSIONS = frozenset({".zip", ".csv", ".txt", ".xml", ".json", ".parquet"})
 
 
 @dataclass(frozen=True)

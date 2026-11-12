@@ -31,7 +31,8 @@ Planning** and **M4 — Construction & Backtest** are implemented:
 
 Level 5 has started: `stats.multiple_testing` and `metrics.sharpe_inference` (phase 5.1),
 `experiments` with the `qrlab` CLI (phase 5.2) and `studies` with study 1, volatility-managed
-factors, and study 2, 1/N against optimised portfolios (phase 5.3). The other modules are planned (see
+factors, study 2, 1/N against optimised portfolios, and study 3, the factor zoo (phase 5.3). The
+other modules are planned (see
 `ROADMAP.md`), and each one is added together with its layering rule.
 
 | Layer | Module | Responsibility |
@@ -39,7 +40,7 @@ factors, and study 2, 1/N against optimised portfolios (phase 5.3). The other mo
 | 0 | `core` | Validated time series, frequencies and calendars, return conventions, currency-aware amounts, errors |
 | 1 | `data` | Raw store with provenance and vintages, strict parsers; Ken French, ECB (FX, €STR, HICP), user price CSV |
 | 1 | `instruments` | ETF/asset master data (ISIN, TER, domicile, replication, distribution), holdings snapshots with as-of dates |
-| 2 | `stats` | HAC regressions, factor exposures, bootstrap, multiple-testing corrections, Sharpe inference |
+| 2 | `stats` | HAC regressions, fixed-effects panel regressions with clustered errors, factor exposures, bootstrap, multiple-testing corrections |
 | 2 | `metrics` | Performance, risk and benchmark-relative metrics with standard errors |
 | 3 | `risk` | Covariance estimators, risk decomposition, factor risk model, VaR/ES and VaR backtests |
 | 3 | `validation` | Walk-forward, purged and embargoed time-series splits |
