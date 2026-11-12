@@ -1,0 +1,26 @@
+# Study 3, the factor zoo: Robustness: "clear" and "likely" predictors.
+# Design note: docs/design/5.3-study-3-factor-zoo.md; report: docs/studies/03-factor-zoo.md.
+# Inputs are Open Source Asset Pricing files (release 2026.10, revision ad1dfba5) in the
+# git-ignored raw store, CC BY 4.0, cite Chen and Zimmermann (2022). To reproduce, download
+# them with qrlab.data.open_asset_pricing.download_osap and update the paths. Both configs
+# share the experiment name, so the trial ledger counts them together.
+
+[experiment]
+name = "study3-factor-zoo"
+kind = "study_factor_zoo"
+hypothesis = "H1 (descriptive): counts of significant predictors under single-test, t > 3, Holm, BH and BY rules. H2: long-short returns fall after the original sample and again after publication. H3: the post-publication composite is still positive."
+
+[inputs]
+ls_returns = "../../data/raw/osap/long_short_returns/20261112T161458Z_fc01df25d438.parquet"
+signal_doc = "../../data/raw/osap/signal_doc/20261112T161457Z_0ceb11020c21.csv"
+
+[parameters]
+categories = ["1_clear", "2_likely"]
+end = 2025-12-31
+hac_lags = 6
+min_months = 12
+hlz_threshold = 3.0
+significance = 0.05
+
+[output]
+directory = "../../results/studies/factor-zoo/broad"

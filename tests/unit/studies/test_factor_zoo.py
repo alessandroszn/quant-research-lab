@@ -13,6 +13,7 @@ from qrlab.core.errors import ValidationError
 from qrlab.studies.factor_zoo import (
     composites,
     decay_regression,
+    gap_shares,
     long_panel,
     phase_labels,
     predictor_tests,
@@ -211,3 +212,16 @@ def test_report_needs_counts_and_composites() -> None:
             decay=decay,
             composites=pd.DataFrame(),
         )
+
+
+def test_gap_shares_by_hand() -> None:
+    index = _months("1990-01-31", "1999-12-31")  # 120 months
+    a = pd.Series(0.01, index=index)
+    a.iloc[:10] = np.nan  # leading months do not count
+    a.iloc[50] = np.nan  # 1 gap in 110 months
+    b = pd.Series(0.01, index=index)
+    b.iloc[[20, 30, 40]] = np.nan  # 3 of 120
+    shares = gap_shares(pd.DataFrame({"A": a, "B": b, "C": np.nan}, index=index))
+    assert shares["A"] == pytest.approx(1 / 110)
+    assert shares["B"] == pytest.approx(3 / 120)
+    assert shares["C"] == 1.0

@@ -8,6 +8,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Study 3 report, `docs/studies/03-factor-zoo.md`, and its two configs in `configs/studies/`
+  ("clear" and "clear and likely" predictors), run on OSAP release 2026.10:
+  - in their original samples, 92.5 % of "clear" predictors pass a single test, 63 % pass
+    t > 3 and 52 % pass Holm;
+  - returns are 35 % lower after the sample and 58 % lower after publication;
+  - the post-publication composite is still positive (0.68 % per month, t = 6.0).
+- `studies.factor_zoo.gap_shares`; the factor-zoo kind excludes and lists predictors with more
+  than 1 % missing months (approved deviation).
 - Study 3 (phase 5.3), the factor zoo (Harvey, Liu and Zhu 2016; McLean and Pontiff 2016) on
   Open Source Asset Pricing data:
   - `qrlab.studies.factor_zoo`:
@@ -87,6 +95,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- `data.open_asset_pricing.parse_signal_doc` refused the real release 2026.10: it has a "Drop"
+  category, "indirect" predictability and missing signs for non-predictors. Only predictors
+  are strict now. Regression test added.
 - `optimization.maximum_sharpe` accepted only a solver success. SLSQP can stop at the optimum
   with a line-search status: this happened in 2 of about 4,000 real Black-Litterman inputs.
   The function now also accepts a feasible point that meets the KKT conditions of the convex
