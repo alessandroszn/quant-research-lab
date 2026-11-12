@@ -88,6 +88,7 @@ class BacktestResult:
     not_executed: tuple[date, ...]
     settings: dict[str, str | float]
     currency: str
+    final_basis: pd.Series  # net-ledger cost basis per asset at the end (average cost)
 
     @property
     def costs_paid(self) -> float:
@@ -271,6 +272,7 @@ def _run(
         not_executed=tuple(not_executed),
         settings=settings,
         currency=initial_value.currency.code,
+        final_basis=pd.Series(basis, index=assets, name="basis"),
     )
 
 

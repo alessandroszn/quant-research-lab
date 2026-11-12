@@ -24,6 +24,7 @@ from qrlab.data.ecb import (
     parse_ecb_fx,
     parse_estr,
     parse_hicp,
+    parse_yield_curve,
 )
 from qrlab.data.errors import DataNotFoundError, FetchError, IntegrityError, ParseError
 from qrlab.data.fetch import Fetcher, UrlFetcher
@@ -76,4 +77,5 @@ __all__ = [
     "parse_ken_french",
     "parse_ken_french_table",
     "parse_price_csv",
+    "parse_yield_curve",
 ]

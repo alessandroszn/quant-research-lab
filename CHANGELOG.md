@@ -8,6 +8,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Study 4 (phase 5.3), rebalancing rules for a EUR ETF investor after costs, Italian tax and
+  currency:
+  - `qrlab.studies.rebalancing`:
+    - world equity converted to EUR at ECB month-end rates;
+    - a rolled 7-year AAA zero-coupon bond built from continuously compounded ECB spot rates;
+    - seven policies (buy-and-hold, three calendars, three bands) run through the backtest
+      engine;
+    - after-tax wealth with liquidation tax, and path metrics;
+    - stationary-bootstrap paths shared by all policies, paired comparisons and hypothesis
+      shares;
+    - an HTML report;
+  - experiment kind `study_rebalancing`, tested end to end on synthetic files.
+- `data.ecb`: AAA euro-area spot rates at 6 and 7 years (`yc_aaa_spot_6y`, `yc_aaa_spot_7y`)
+  and `parse_yield_curve`.
+- `backtest.BacktestResult.final_basis`: net-ledger cost basis per asset at the end.
+
 - Study 3 report, `docs/studies/03-factor-zoo.md`, and its two configs in `configs/studies/`
   ("clear" and "clear and likely" predictors), run on OSAP release 2026.10:
   - in their original samples, 92.5 % of "clear" predictors pass a single test, 63 % pass
