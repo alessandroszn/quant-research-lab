@@ -28,6 +28,7 @@ from qrlab.core.returns import ReturnKind
 from qrlab.data.errors import ParseError
 from qrlab.data.ken_french import (
     AVERAGE_FIRM_SIZE,
+    AVERAGE_MARKET_CAP,
     EQUAL_WEIGHTED_MONTHLY,
     KEN_FRENCH_DATASETS,
     NUMBER_OF_FIRMS,
@@ -439,3 +440,28 @@ def test_duplicate_titles_raise() -> None:
     content, prov = _portfolio(doubled, "10_Industry_Portfolios")
     with pytest.raises(ParseError, match="found 2"):
         parse_ken_french(content, prov, frequency=Frequency.MONTHLY, section=VALUE_WEIGHTED_MONTHLY)
+
+
+def test_size_bm_file_names_its_size_section_average_market_cap() -> None:
+    # Regression (real 2026-11 files): the 25 size/BM monthly file calls the size section
+    # "Average Market Cap", not "Average Firm Size" as in the industry files.
+    columns = ",".join(KEN_FRENCH_DATASETS["25_Portfolios_5x5"].columns)
+    row = ",".join(["   1.00"] * 25)
+    titles = [
+        "Average Value Weighted Returns -- Monthly",
+        "Average Market Cap",
+        "Where Mth is a month from June of t to June of t+1",
+        "Where Mth is a month from June of t to June of t+1",
+    ]
+    blocks = ["This file was created using the 202609 CRSP database."]
+    blocks += [f"  {title}\n,{columns}\n202601,{row}" for title in titles]
+    text = "\n\n".join(blocks) + "\n"
+    content, prov = _portfolio(text, "25_Portfolios_5x5")
+    caps = parse_ken_french_table(
+        content, prov, frequency=Frequency.MONTHLY, section=AVERAGE_MARKET_CAP
+    )
+    assert caps.iloc[0, 0] == 1.0
+    with pytest.raises(ParseError, match="table section must be one of"):
+        parse_ken_french_table(
+            content, prov, frequency=Frequency.MONTHLY, section=AVERAGE_FIRM_SIZE
+        )

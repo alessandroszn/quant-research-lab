@@ -87,3 +87,40 @@ def test_solver_failure_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     cov = _cov([[0.01, 0.0], [0.0, 0.04]], ["a", "b"])
     with pytest.raises(ValidationError, match="optimisation failed"):
         maximum_sharpe(pd.Series({"a": 0.01, "b": 0.02}), cov)
+
+
+def test_solver_status_is_overridden_by_a_verified_optimum(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Regression (study 2, real data): SLSQP stopped at the optimum with "Positive directional
+    # derivative for linesearch" (status 8). The convex problem's KKT conditions decide instead.
+    # Optimum for mu = (1 %, 2 %), sigma^2 = (0.01, 0.04): y = (50, 25), mu'y = 1.
+    stalled = SimpleNamespace(
+        x=np.array([50.0, 25.0]),
+        success=False,
+        message="Positive directional derivative for linesearch",
+        nit=3,
+    )
+    monkeypatch.setattr("scipy.optimize.minimize", lambda *a, **k: stalled)
+    cov = _cov([[0.01, 0.0], [0.0, 0.04]], ["a", "b"])
+    result = maximum_sharpe(pd.Series({"a": 0.01, "b": 0.02}), cov)
+    assert result.weights.to_numpy() == pytest.approx([2 / 3, 1 / 3])
+
+
+def test_a_stalled_non_optimal_point_still_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Feasible (mu'y = 1) but not optimal: all in a. The KKT check rejects it.
+    stalled = SimpleNamespace(x=np.array([100.0, 0.0]), success=False, message="stalled", nit=3)
+    monkeypatch.setattr("scipy.optimize.minimize", lambda *a, **k: stalled)
+    cov = _cov([[0.01, 0.0], [0.0, 0.04]], ["a", "b"])
+    with pytest.raises(ValidationError, match="optimisation failed: stalled"):
+        maximum_sharpe(pd.Series({"a": 0.01, "b": 0.02}), cov)
+
+
+def test_kkt_check_by_hand() -> None:
+    from qrlab.optimization.mean_variance import _is_kkt_point
+
+    sigma = np.diag([0.01, 0.04])
+    mu = np.array([0.01, 0.02])
+    # At y = (50, 25): nu = 2 y'Sigma y = 2 (25 + 25) = 100; 2 Sigma y = (1, 2) = nu mu.
+    assert _is_kkt_point(np.array([50.0, 25.0]), mu, sigma)
+    # At y = (100, 0): nu = 200; reduced gradient of b = (0 - 200 x 0.02) / 200 < 0: not optimal.
+    assert not _is_kkt_point(np.array([100.0, 0.0]), mu, sigma)
+    assert not _is_kkt_point(np.zeros(2), mu, sigma)

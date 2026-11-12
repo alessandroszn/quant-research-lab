@@ -16,7 +16,7 @@ from qrlab.core.errors import ValidationError
 from qrlab.data.ken_french import KEN_FRENCH_DATASETS
 from qrlab.experiments import run_experiment, validate_experiment
 from qrlab.experiments.kinds import KINDS
-from qrlab.experiments.kinds.study_one_over_n import DATASETS, INPUTS
+from qrlab.experiments.kinds.study_one_over_n import DATASETS, INPUTS, SIZE_SECTIONS
 
 
 def _zip(text: str) -> bytes:
@@ -41,7 +41,7 @@ def _write_files(
     days = pd.bdate_range("1990-01-01", month_ends[-1])
     folder.mkdir(parents=True, exist_ok=True)
     paths: dict[str, Path] = {}
-    for daily_name, monthly_name in DATASETS.values():
+    for dataset, (daily_name, monthly_name) in DATASETS.items():
         columns = list(KEN_FRENCH_DATASETS[INPUTS[monthly_name]].columns)
         n = len(columns)
         common = rng.standard_normal(len(days))
@@ -68,7 +68,7 @@ def _write_files(
                 _section("Average Value Weighted Returns -- Monthly", monthly, "%Y%m"),
                 _section("Average Equal Weighted Returns -- Monthly", monthly * 1.1, "%Y%m"),
                 _section("Number of Firms in Portfolios", firms, "%Y%m", 0),
-                _section("Average Firm Size", size, "%Y%m"),
+                _section(SIZE_SECTIONS[dataset], size, "%Y%m"),
             ]
         )
         daily_text = "\n\n".join(
