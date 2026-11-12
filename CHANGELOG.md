@@ -8,6 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Study 4 report, `docs/studies/04-rebalancing.md`, and its two configs in `configs/studies/`
+  (60/40 and 80/20), run on Ken French and ECB data of 2026-11-12, October 2004 to September
+  2026:
+  - monthly rebalancing ends with about €14k less after tax than annual over 20 years (worse in
+    99.9 % of paths);
+  - buy-and-hold ends richer in 84 % of paths, but drifts to about 86 % equity with more
+    volatility and deeper drawdowns;
+  - a 5-point band trades far less than quarterly but tracks the target like annual
+    rebalancing, so H1 is not supported.
 - Study 4 (phase 5.3), rebalancing rules for a EUR ETF investor after costs, Italian tax and
   currency:
   - `qrlab.studies.rebalancing`:

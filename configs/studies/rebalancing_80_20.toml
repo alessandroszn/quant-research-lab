@@ -1,0 +1,39 @@
+# Study 4, rebalancing for a EUR ETF investor: Robustness: 80 % equity, 20 % bonds.
+# Design note: docs/design/5.3-study-4-rebalancing.md; report: docs/studies/04-rebalancing.md.
+# Inputs are Ken French and ECB files of 2026-11-12 in the git-ignored raw store; to reproduce,
+# download the same datasets and update the paths (the report lists the SHA-256 of every
+# file). Both configs share the experiment name, so the trial ledger counts them together.
+
+[experiment]
+name = "study4-rebalancing"
+kind = "study_rebalancing"
+hypothesis = "H1: a 5-point band keeps the equity weight as close to target as quarterly rebalancing with lower costs and taxes. H2: monthly rebalancing ends with less after-tax wealth than annual. H3: buy-and-hold ends with more after-tax wealth than annual rebalancing but with more risk."
+seed = 20261112
+
+[inputs]
+kf_developed = "../../data/raw/ken_french/Developed_3_Factors/20261112T181930Z_3f99cfdeddd1.zip"
+ecb_fx = "../../data/raw/ecb/eurofxref-hist/20261112T181934Z_1388fe0047cb.zip"
+yc_6y = "../../data/raw/ecb/yc_aaa_spot_6y/20261112T181952Z_650da8ebc5d9.bin"
+yc_7y = "../../data/raw/ecb/yc_aaa_spot_7y/20261112T182006Z_231b2ca19078.bin"
+
+[parameters]
+equity_weight = 0.8
+policies = [
+  "buy_and_hold", "calendar_monthly", "calendar_quarterly", "calendar_annual", "band_5_target",
+  "band_10_target", "band_5_edge",
+]
+reference = "calendar_annual"
+tax_rate = 0.26
+initial_value = 100000
+end = 2026-09-30
+horizon_months = 240
+n_paths = 2000
+mean_block_length = 12.0
+support_share = 0.6667
+
+[parameters.cost_scenarios]
+low = { proportional = 0.0005, fixed = 2.0 }
+high = { proportional = 0.002, fixed = 10.0 }
+
+[output]
+directory = "../../results/studies/rebalancing/80_20"
