@@ -8,6 +8,9 @@ never committed or redistributed.
 
 File format: free text, then sections. A section starts with a header line beginning with a
 comma (``,Mkt-RF,SMB,HML,RF``) and continues with ``date, value, ...`` rows until a blank line.
+The non-blank line before the header is the section's title. Portfolio files hold several
+sections of the same frequency (value- and equal-weighted returns, number of firms, average firm
+size); for them the section is selected by its exact title.
 Dates are ``YYYYMMDD`` (daily), ``YYYYMM`` (monthly) or ``YYYY`` (annual). Values are percent;
 missing values are coded ``-99.99`` or ``-999``.
 
@@ -43,6 +46,7 @@ __all__ = [
     "download_ken_french",
     "ken_french_url",
     "parse_ken_french",
+    "parse_ken_french_table",
 ]
 
 SOURCE = "ken_french"
@@ -59,12 +63,46 @@ _DATA_ROW = re.compile(r"^\s*\d+\s*,")
 class _Spec:
     columns: tuple[str, ...]
     frequencies: frozenset[Frequency]
+    # Titled files: the return sections and the other (non-return) sections that can be read.
+    return_sections: frozenset[str] = frozenset()
+    table_sections: frozenset[str] = frozenset()
 
 
 _FF3 = ("Mkt-RF", "SMB", "HML", "RF")
 _FF5 = ("Mkt-RF", "SMB", "HML", "RMW", "CMA", "RF")
 _MONTHLY_ANNUAL = frozenset({Frequency.MONTHLY, Frequency.ANNUAL})
 _DAILY = frozenset({Frequency.DAILY})
+_MONTHLY = frozenset({Frequency.MONTHLY})
+_INDUSTRIES_10 = (
+    "NoDur",
+    "Durbl",
+    "Manuf",
+    "Enrgy",
+    "HiTec",
+    "Telcm",
+    "Shops",
+    "Hlth",
+    "Utils",
+    "Other",
+)
+_SIZE_NAMES = {1: "SMALL", 5: "BIG"}
+_BM_NAMES = {1: "LoBM", 5: "HiBM"}
+_SIZE_BM_25 = tuple(
+    f"{_SIZE_NAMES[size]} {_BM_NAMES[bm]}"
+    if size in _SIZE_NAMES and bm in _BM_NAMES
+    else f"ME{size} BM{bm}"
+    for size in range(1, 6)
+    for bm in range(1, 6)
+)
+VALUE_WEIGHTED_MONTHLY = "Average Value Weighted Returns -- Monthly"
+EQUAL_WEIGHTED_MONTHLY = "Average Equal Weighted Returns -- Monthly"
+VALUE_WEIGHTED_DAILY = "Average Value Weighted Returns -- Daily"
+EQUAL_WEIGHTED_DAILY = "Average Equal Weighted Returns -- Daily"
+NUMBER_OF_FIRMS = "Number of Firms in Portfolios"
+AVERAGE_FIRM_SIZE = "Average Firm Size"
+_MONTHLY_RETURNS = frozenset({VALUE_WEIGHTED_MONTHLY, EQUAL_WEIGHTED_MONTHLY})
+_DAILY_RETURNS = frozenset({VALUE_WEIGHTED_DAILY, EQUAL_WEIGHTED_DAILY})
+_FIRM_TABLES = frozenset({NUMBER_OF_FIRMS, AVERAGE_FIRM_SIZE})
 
 KEN_FRENCH_DATASETS: Mapping[str, _Spec] = MappingProxyType(
     {
@@ -81,6 +119,11 @@ KEN_FRENCH_DATASETS: Mapping[str, _Spec] = MappingProxyType(
         "Europe_3_Factors": _Spec(_FF3, _MONTHLY_ANNUAL),
         "Europe_5_Factors": _Spec(_FF5, _MONTHLY_ANNUAL),
         "Europe_Mom_Factor": _Spec(("WML",), _MONTHLY_ANNUAL),
+        # Portfolio files (titled sections). Monthly files also carry firm counts and sizes.
+        "10_Industry_Portfolios": _Spec(_INDUSTRIES_10, _MONTHLY, _MONTHLY_RETURNS, _FIRM_TABLES),
+        "10_Industry_Portfolios_daily": _Spec(_INDUSTRIES_10, _DAILY, _DAILY_RETURNS),
+        "25_Portfolios_5x5": _Spec(_SIZE_BM_25, _MONTHLY, _MONTHLY_RETURNS, _FIRM_TABLES),
+        "25_Portfolios_5x5_Daily": _Spec(_SIZE_BM_25, _DAILY, _DAILY_RETURNS),
     }
 )
 """Supported datasets: expected columns and available frequencies."""
@@ -109,7 +152,9 @@ def download_ken_french(
     )
 
 
-def parse_ken_french(content: bytes, provenance: Provenance, *, frequency: Frequency) -> Dataset:
+def parse_ken_french(
+    content: bytes, provenance: Provenance, *, frequency: Frequency, section: str | None = None
+) -> Dataset:
     """Parse one section of a Ken French zip file into a :class:`Dataset` of decimal returns.
 
     Parameters
@@ -120,31 +165,28 @@ def parse_ken_french(content: bytes, provenance: Provenance, *, frequency: Frequ
         Provenance of ``content``; its dataset selects the expected columns.
     frequency
         Section to parse: ``DAILY`` for daily files, ``MONTHLY`` or ``ANNUAL`` for the others.
+    section
+        Title of the return section, required for portfolio files (e.g.
+        :data:`VALUE_WEIGHTED_MONTHLY`) and forbidden for factor files.
 
     Returns
     -------
     Dataset
         Simple returns in decimals (percent divided by 100), USD, missing codes as NaN.
     """
-    if provenance.source != SOURCE:
-        raise ParseError(f"provenance source must be {SOURCE!r}, got {provenance.source!r}")
-    spec = _spec(provenance.dataset)
-    if frequency not in spec.frequencies:
-        available = sorted(f.name.lower() for f in spec.frequencies)
-        raise ParseError(f"{provenance.dataset} has {available} data, not {frequency.name}")
-    text = _single_member(content)
-    sections = _sections(text)
-    matching = [s for s in sections if s.date_length == _DATE_LENGTH[frequency]]
-    if len(matching) != 1:
+    spec = _checked_spec(provenance, frequency)
+    if spec.return_sections and section not in spec.return_sections:
         raise ParseError(
-            f"expected one {frequency.name} section in {provenance.dataset}, found {len(matching)}"
+            f"{provenance.dataset}: section must be one of {sorted(spec.return_sections)}, "
+            f"got {section!r}"
         )
-    section = matching[0]
-    if section.columns != spec.columns:
-        raise ParseError(f"unexpected columns {section.columns}, expected {spec.columns}")
-    frame = _to_frame(section, frequency)
+    if not spec.return_sections and section is not None:
+        raise ParseError(f"{provenance.dataset} has no titled sections; do not pass a section")
+    found = _select(content, provenance.dataset, spec, frequency, section)
+    frame = _to_frame(found, frequency) / 100.0
 
     notes = [
+        *([f"Section: {section}."] if section else []),
         "Converted from percent to decimal (divided by 100).",
         "Missing-value codes -99.99 and -999 replaced by NaN.",
     ]
@@ -167,9 +209,27 @@ def parse_ken_french(content: bytes, provenance: Provenance, *, frequency: Frequ
     )
 
 
+def parse_ken_french_table(
+    content: bytes, provenance: Provenance, *, frequency: Frequency, section: str
+) -> pd.DataFrame:
+    """Parse a non-return section of a portfolio file, with values as published.
+
+    ``Number of Firms in Portfolios`` is a count; ``Average Firm Size`` is in millions of USD.
+    Missing-value codes become NaN; nothing is rescaled.
+    """
+    spec = _checked_spec(provenance, frequency)
+    if section not in spec.table_sections:
+        raise ParseError(
+            f"{provenance.dataset}: table section must be one of {sorted(spec.table_sections)}, "
+            f"got {section!r}"
+        )
+    return _to_frame(_select(content, provenance.dataset, spec, frequency, section), frequency)
+
+
 # --------------------------------------------------------------------------- parsing helpers
 @dataclass(frozen=True)
 class _Section:
+    title: str
     columns: tuple[str, ...]
     dates: tuple[str, ...]
     rows: tuple[tuple[str, ...], ...]
@@ -178,6 +238,34 @@ class _Section:
     @property
     def date_length(self) -> int:
         return len(self.dates[0])
+
+
+def _checked_spec(provenance: Provenance, frequency: Frequency) -> _Spec:
+    if provenance.source != SOURCE:
+        raise ParseError(f"provenance source must be {SOURCE!r}, got {provenance.source!r}")
+    spec = _spec(provenance.dataset)
+    if frequency not in spec.frequencies:
+        available = sorted(f.name.lower() for f in spec.frequencies)
+        raise ParseError(f"{provenance.dataset} has {available} data, not {frequency.name}")
+    return spec
+
+
+def _select(
+    content: bytes, dataset: str, spec: _Spec, frequency: Frequency, title: str | None
+) -> _Section:
+    sections = _sections(_single_member(content))
+    matching = [
+        s
+        for s in sections
+        if s.date_length == _DATE_LENGTH[frequency] and (title is None or s.title == title)
+    ]
+    if len(matching) != 1:
+        what = f"{frequency.name} section" + (f" titled {title!r}" if title else "")
+        raise ParseError(f"expected one {what} in {dataset}, found {len(matching)}")
+    found = matching[0]
+    if found.columns != spec.columns:
+        raise ParseError(f"unexpected columns {found.columns}, expected {spec.columns}")
+    return found
 
 
 def _spec(dataset: str) -> _Spec:
@@ -204,6 +292,7 @@ def _single_member(content: bytes) -> str:
 def _sections(text: str) -> list[_Section]:
     lines = text.splitlines()
     sections: list[_Section] = []
+    title = ""
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -223,11 +312,14 @@ def _sections(text: str) -> list[_Section]:
                 j += 1
             if not rows:
                 raise ParseError(f"section at line {i + 1} has no rows")
-            sections.append(_Section(columns, tuple(dates), tuple(rows), i + 1))
+            sections.append(_Section(title, columns, tuple(dates), tuple(rows), i + 1))
+            title = ""
             i = j
             continue
         if _DATA_ROW.match(line):
             raise ParseError(f"line {i + 1}: data row outside a section")
+        if line.strip():
+            title = " ".join(line.split())
         i += 1
     return sections
 
@@ -241,7 +333,7 @@ def _to_frame(section: _Section, frequency: Frequency) -> pd.DataFrame:
     except ValueError as exc:
         raise ParseError(f"section at line {section.first_line}: not a number ({exc})") from exc
     values[np.isin(values, _MISSING_CODES)] = np.nan
-    return pd.DataFrame(values / 100.0, index=index, columns=list(section.columns))
+    return pd.DataFrame(values, index=index, columns=list(section.columns))
 
 
 def _parse_date(text: str, frequency: Frequency) -> pd.Timestamp:

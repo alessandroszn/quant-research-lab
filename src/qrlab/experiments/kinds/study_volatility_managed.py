@@ -13,22 +13,25 @@ are tagged ``in_sample``; real-time results ``out_of_sample``.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
-from pathlib import Path
+from datetime import date
 
 import numpy as np
 import pandas as pd
 
 from qrlab.core.calendar import Frequency
 from qrlab.core.errors import ValidationError
-from qrlab.data.errors import IntegrityError
-from qrlab.data.ken_french import SOURCE, TERMS, parse_ken_french
-from qrlab.data.provenance import Provenance
-from qrlab.experiments.config import file_sha256, require_keys
-from qrlab.experiments.kinds._params import boolean, day, number, table, whole
+from qrlab.data.ken_french import parse_ken_french
+from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds._params import boolean, day, number, whole
+from qrlab.experiments.kinds._studies import (
+    bootstrap_settings,
+    describe,
+    ken_french_provenance,
+    names,
+    numbers,
+)
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.experiments.runner import configurations_tried
 from qrlab.reporting.html import render_html
@@ -83,7 +86,6 @@ _PARAMETERS = (
     "significance",
     "bootstrap",
 )
-_SIDECAR = ".provenance.json"
 
 
 @dataclass(frozen=True)
@@ -102,28 +104,22 @@ class _Parameters:
 
 def _parse(parameters: Mapping[str, object]) -> _Parameters:
     require_keys(parameters, required=set(_PARAMETERS), optional=set(), where="[parameters]")
-    factors = _strings(parameters, "factors")
+    factors = names(parameters, "factors")
     unknown = sorted(set(factors) - set(FACTORS))
     if unknown:
         raise ValidationError(f"unknown factors {unknown}; known: {list(FACTORS)}")
     start, end = day(parameters, "start"), day(parameters, "end")
     if start >= end:
         raise ValidationError("start must be before end")
-    caps = _numbers(parameters, "leverage_caps", allow_inf=True)
+    caps = numbers(parameters, "leverage_caps", allow_inf=True)
     if any(not c > 0 for c in caps):
         raise ValidationError("leverage_caps must be positive (inf for no cap)")
-    costs = _numbers(parameters, "costs_bp", allow_inf=False)
+    costs = numbers(parameters, "costs_bp", allow_inf=False)
     if any(c < 0 for c in costs):
         raise ValidationError("costs_bp must be >= 0")
     significance = number(parameters, "significance")
     if not 0.0 < significance < 1.0:
         raise ValidationError("significance must be in (0, 1)")
-    boot = table(
-        parameters,
-        "bootstrap",
-        required={"mean_block_length", "n_resamples", "confidence"},
-        optional=set(),
-    )
     return _Parameters(
         factors=factors,
         start=start,
@@ -134,64 +130,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         caps=caps,
         costs=tuple(c / 1e4 for c in costs),
         significance=significance,
-        bootstrap=BootstrapSettings(
-            mean_block_length=number(boot, "mean_block_length"),
-            n_resamples=whole(boot, "n_resamples", minimum=1),
-            confidence=number(boot, "confidence"),
-        ),
-    )
-
-
-def _strings(parent: Mapping[str, object], key: str) -> tuple[str, ...]:
-    value = parent[key]
-    if not isinstance(value, list) or not value or not all(isinstance(v, str) for v in value):
-        raise ValidationError(f"{key} must be a non-empty list of names")
-    if len(set(value)) != len(value):
-        raise ValidationError(f"{key} has duplicates")
-    return tuple(value)
-
-
-def _numbers(parent: Mapping[str, object], key: str, *, allow_inf: bool) -> tuple[float, ...]:
-    value = parent[key]
-    if not isinstance(value, list) or not value:
-        raise ValidationError(f"{key} must be a non-empty list of numbers")
-    out = []
-    for item in value:
-        if (
-            type(item) not in (int, float)
-            or math.isnan(item)
-            or (math.isinf(item) and not allow_inf)
-        ):
-            raise ValidationError(f"{key} must contain numbers{' or inf' if allow_inf else ''}")
-        out.append(float(item))
-    if len(set(out)) != len(out):
-        raise ValidationError(f"{key} has duplicates")
-    return tuple(out)
-
-
-def _provenance(path: Path, dataset: str) -> Provenance:
-    """Provenance from the raw store's sidecar when present, else from the local file."""
-    sidecar = path.with_name(path.name + _SIDECAR)
-    sha = file_sha256(path)
-    if sidecar.is_file():
-        stored = Provenance.from_json(sidecar.read_text(encoding="utf-8"))
-        if stored.sha256 != sha:
-            raise IntegrityError(f"{path.name}: SHA-256 differs from its provenance sidecar")
-        if stored.source != SOURCE or stored.dataset != dataset:
-            raise ValidationError(
-                f"{path.name}: provenance says {stored.source}/{stored.dataset}, "
-                f"expected {SOURCE}/{dataset}"
-            )
-        return stored
-    stat = path.stat()
-    return Provenance(
-        source=SOURCE,
-        dataset=dataset,
-        url=f"file:{path.name}",
-        retrieved_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC),
-        sha256=sha,
-        size_bytes=stat.st_size,
-        terms=TERMS,
+        bootstrap=bootstrap_settings(parameters),
     )
 
 
@@ -201,12 +140,9 @@ def _load(context: RunContext, family: str) -> tuple[pd.DataFrame, pd.DataFrame,
     for frequency, suffix in ((Frequency.DAILY, "daily"), (Frequency.MONTHLY, "monthly")):
         name = f"{family}_{suffix}"
         path = context.inputs[name]
-        provenance = _provenance(path, INPUTS[name])
+        provenance = ken_french_provenance(path, INPUTS[name])
         frames.append(parse_ken_french(path.read_bytes(), provenance, frequency=frequency).data)
-        facts.append(
-            f"{provenance.dataset}: {provenance.url}, retrieved "
-            f"{provenance.retrieved_at.date().isoformat()}, SHA-256 {provenance.sha256[:12]}"
-        )
+        facts.append(describe(provenance))
     return frames[0], frames[1], facts
 
 

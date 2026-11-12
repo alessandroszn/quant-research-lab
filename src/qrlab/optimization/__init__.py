@@ -5,6 +5,7 @@ from qrlab.optimization.mean_variance import (
     OptimizationResult,
     efficient_frontier,
     equal_weights,
+    maximum_sharpe,
     mean_variance,
     minimum_variance,
 )
@@ -37,6 +38,7 @@ __all__ = [
     "equal_weights",
     "hierarchical_risk_parity",
     "maximum_diversification",
+    "maximum_sharpe",
     "mean_variance",
     "minimum_variance",
     "risk_budgeting",

@@ -8,6 +8,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Study 2 (phase 5.3), 1/N against optimised portfolios (DeMiguel, Garlappi and Uppal 2009),
+  extended with Ledoit-Wolf shrinkage, risk parity, HRP and Black-Litterman:
+  - `qrlab.studies.one_over_n`:
+    - rolling-window targets for eight long-only strategies;
+    - execution through the backtest engine on daily returns, one trading day after each
+      month-end decision;
+    - net excess returns, Sharpe ratio, CEQ, turnover and drawdown;
+    - Ledoit-Wolf HAC and Jobson-Korkie-Memmel tests against 1/N, with bootstrap intervals of
+      the Sharpe and CEQ differences;
+    - Holm and BH corrections, the deflated Sharpe ratio and an HTML report;
+  - experiment kind `study_one_over_n` (tested end to end on synthetic files).
+- `optimization.maximum_sharpe`: the long-only maximum Sharpe ratio (Cornuejols-Tutuncu change
+  of variables).
+- `data.ken_french`:
+  - the 10 industry and 25 size and book-to-market portfolio files, daily and monthly;
+  - sections selected by their exact title;
+  - `parse_ken_french_table` for the number of firms and the average firm size.
 - Study 1 report, `docs/studies/01-volatility-managed.md`, and its three configs in
   `configs/studies/` (main run, paper sample, demeaned variance), run on the Ken French data of
   2026-11-12:
