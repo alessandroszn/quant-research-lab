@@ -331,7 +331,12 @@ def test_cli_runs_every_example(tmp_path: Path, capsys: pytest.CaptureFixture[st
         assert main(["run", str(config)]) == 0, capsys.readouterr().err
     assert main(["kinds"]) == 0
     assert "portfolio_report" in capsys.readouterr().out
-    assert {"backtest", "portfolio_report", "projection"} == set(KINDS)
+    assert {
+        "backtest",
+        "portfolio_report",
+        "projection",
+        "study_volatility_managed",
+    } == set(KINDS)
 
 
 def test_short_backtests_have_no_annualised_figures(tmp_path: Path) -> None:

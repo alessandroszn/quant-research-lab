@@ -14,7 +14,13 @@ from qrlab.experiments.registry import (
     RunContext,
     Tagged,
 )
-from qrlab.experiments.runner import RunResult, count_trials, run_experiment, validate_experiment
+from qrlab.experiments.runner import (
+    RunResult,
+    configurations_tried,
+    count_trials,
+    run_experiment,
+    validate_experiment,
+)
 
 __all__ = [
     "TAGS",
@@ -25,6 +31,7 @@ __all__ = [
     "RunResult",
     "Tagged",
     "config_hash",
+    "configurations_tried",
     "count_trials",
     "file_sha256",
     "load_config",

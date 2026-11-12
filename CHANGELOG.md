@@ -8,6 +8,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- `qrlab.studies` (phase 5.3) with study 1, volatility-managed factors (Moreira and Muir 2017
+  against Cederburg et al. 2020):
+  - monthly realised variance from daily returns, the lagged inverse-variance signal (shifted
+    by calendar months), full-sample and real-time scales, leverage caps and turnover costs;
+  - the in-sample spanning regression with Newey-West errors and the real-time comparison of
+    net Sharpe ratios (Ledoit-Wolf HAC test, stationary-bootstrap interval);
+  - Holm and Benjamini-Hochberg corrections across factors, and the deflated Sharpe ratio of
+    the best variant with the number of trials taken from the trial ledger;
+  - an HTML report that keeps in-sample and out-of-sample results apart.
+- Experiment kind `study_volatility_managed`, which runs study 1 on the six Ken French factor
+  files (tested end to end on synthetic files), and `experiments.configurations_tried`.
 - `qrlab.experiments` and the `qrlab` CLI (phase 5.2):
   - TOML experiment configs, with strict keys and hashed inputs;
   - a `record.json` per run (config, inputs, outputs with sample tags, code version,

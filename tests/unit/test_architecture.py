@@ -61,7 +61,28 @@ ALLOWED: dict[str, set[str]] = {
         "attribution",
         "backtest",
     },
+    # Studies (5.3) sit between the library and experiments: they may use every library
+    # package, including reporting, and are run by experiment kinds.
+    "studies": {
+        "core",
+        "data",
+        "instruments",
+        "stats",
+        "metrics",
+        "risk",
+        "validation",
+        "portfolio",
+        "checks",
+        "lookthrough",
+        "scenarios",
+        "simulation",
+        "optimization",
+        "attribution",
+        "backtest",
+        "reporting",
+    },
     "experiments": {
+        "studies",
         "core",
         "data",
         "instruments",
