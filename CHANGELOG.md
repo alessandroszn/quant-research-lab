@@ -8,6 +8,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- `qrlab.experiments` and the `qrlab` CLI (phase 5.2):
+  - TOML experiment configs, with strict keys and hashed inputs;
+  - a `record.json` per run (config, inputs, outputs with sample tags, code version,
+    status);
+  - a trial ledger that counts the distinct configurations tried;
+  - the commands `qrlab run`, `validate` and `kinds`.
+- Experiment kinds `portfolio_report`, `backtest` and `projection`, with example configs in
+  `configs/experiments/` and synthetic inputs in `examples/data/`.
 - `stats.multiple_testing` (phase 5.1): Holm, Benjamini-Hochberg and Benjamini-Yekutieli
   corrections, cross-checked against statsmodels.
 - `metrics.sharpe_inference` (phase 5.1):

@@ -1,0 +1,16 @@
+# Synthetic master data for the example portfolio (made-up ISIN with a valid check digit).
+[IE0000000012]
+name = "Example World Equity UCITS ETF"
+instrument_type = "etf"
+asset_class = "equity"
+currency = "EUR"
+as_of = 2026-01-02
+domicile = "IE"
+replication = "physical_sampling"
+distribution = "accumulating"
+ter = "0.0020"
+benchmark = "Example World Index"
+hedged_to = "none"
+inception = "unknown"
+fund_size = "unknown"
+source = "synthetic example"

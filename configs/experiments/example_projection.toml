@@ -1,0 +1,41 @@
+# Example experiment: a 20-year monthly savings plan, 60/40, projected by Monte Carlo.
+# Run with: uv run qrlab run configs/experiments/example_projection.toml
+# Assumptions are stated below; results are scenarios, not forecasts. Tax rates are examples.
+
+[experiment]
+name = "example-savings-projection"
+kind = "projection"
+hypothesis = "descriptive"
+seed = 20261112
+
+[inputs]
+
+[parameters]
+engine = { name = "student_t", dof = 5 }
+paths = 5000
+periods = 240
+start = 2026-06-30
+goal_real = 200000
+percentiles = [5, 25, 50, 75, 95]
+early_periods = 60
+sensitivity = true
+correlation = [[1.0, 0.2], [0.2, 1.0]]
+flows = [{ kind = "contribution", amount = 500, first = 0, last = 239, indexed = true }]
+
+[parameters.assets]
+equity = { mean = 0.005, volatility = 0.045, weight = 0.6 }
+bonds = { mean = 0.002, volatility = 0.012, weight = 0.4 }
+
+[parameters.plan]
+initial_wealth = 20000
+currency = "EUR"
+periods_per_year = 12
+flow_timing = "start"
+rebalance_every = 12
+annual_cost = 0.003
+inflation = 0.02
+capital_gains_tax = 0.26
+wealth_tax = 0.002
+
+[output]
+directory = "../../results/example-savings-projection"

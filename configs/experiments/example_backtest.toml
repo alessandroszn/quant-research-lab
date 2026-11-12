@@ -1,0 +1,26 @@
+# Example experiment: walk-forward minimum variance on synthetic monthly returns.
+# Run with: uv run qrlab run configs/experiments/example_backtest.toml
+# Decisions use only past data (tagged out of sample); trades happen one month later.
+
+[experiment]
+name = "example-walk-forward-minvar"
+kind = "backtest"
+hypothesis = "Walk-forward minimum variance has lower volatility than buy-and-hold after costs"
+
+[inputs]
+returns = "../../examples/data/asset_returns.csv"
+
+[parameters]
+execution_lag = 1
+capital_gains_tax = 0.26          # example rate, not tax advice
+initial_value = 100000
+currency = "EUR"
+periods_per_year = 12
+returns_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", decimal_separator = "." }
+strategy = { name = "walk_forward", method = "minimum_variance", min_train = 36, step = 12, max_weight = 0.6 }
+policy = { type = "trade_on_signal" }
+costs = { proportional = 0.001, fixed = 1.0 }
+initial_weights = { equity_world = 0.25, equity_em = 0.25, bonds = 0.25, cash = 0.25 }
+
+[output]
+directory = "../../results/example-walk-forward-minvar"

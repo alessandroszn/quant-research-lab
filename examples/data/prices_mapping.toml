@@ -1,0 +1,13 @@
+# Synthetic price file mapping: the price column is named by the fund's ISIN.
+date_column = "Data"
+date_format = "%d/%m/%Y"
+delimiter = ";"
+decimal_separator = ","
+thousands_separator = "."
+encoding = "utf-8"
+currency = "EUR"
+frequency = "monthly"
+
+[columns."IE0000000012"]
+instrument = "IE0000000012"
+price_type = "price"

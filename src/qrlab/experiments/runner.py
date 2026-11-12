@@ -20,6 +20,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -40,12 +41,12 @@ class RunResult:
     """Where a run wrote its outputs and how it ended."""
 
     output_dir: Path
-    record: Mapping[str, object]
+    record: Mapping[str, Any]  # JSON-like: the content of record.json
 
     @property
     def succeeded(self) -> bool:
         """Return whether the run succeeded."""
-        return self.record["status"] == "success"
+        return bool(self.record["status"] == "success")
 
 
 def validate_experiment(
