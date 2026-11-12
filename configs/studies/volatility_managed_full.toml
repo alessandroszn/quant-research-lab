@@ -1,0 +1,35 @@
+# Study 1, volatility-managed factors: Full history of the 2026-11-12 vintage (main specification).
+# Design note: docs/design/5.3-study-1-volatility-managed.md; report: docs/studies/01-volatility-managed.md.
+# Inputs are the Ken French files of the 2026-11-12 vintage in the git-ignored raw store; to
+# reproduce, download them with qrlab.data.ken_french.download_ken_french and update the paths
+# (the report lists the SHA-256 of every file). All three configs share the experiment name, so
+# the trial ledger counts them together.
+
+[experiment]
+name = "study1-volatility-managed"
+kind = "study_volatility_managed"
+hypothesis = "H1: in sample, managed factors have positive alpha on the unmanaged factor. H2: in real time and after costs, they do not have a significantly higher Sharpe ratio (Holm across factors)."
+seed = 20261112
+
+[inputs]
+ff3_daily = "../../data/raw/ken_french/F-F_Research_Data_Factors_daily/20261112T134510Z_96c23b88e651.zip"
+ff3_monthly = "../../data/raw/ken_french/F-F_Research_Data_Factors/20261112T134510Z_b03d39e4bb25.zip"
+ff5_daily = "../../data/raw/ken_french/F-F_Research_Data_5_Factors_2x3_daily/20261112T134511Z_e58577223032.zip"
+ff5_monthly = "../../data/raw/ken_french/F-F_Research_Data_5_Factors_2x3/20261112T134511Z_17d7a575e71d.zip"
+mom_daily = "../../data/raw/ken_french/F-F_Momentum_Factor_daily/20261112T134512Z_e56d5bc84554.zip"
+mom_monthly = "../../data/raw/ken_french/F-F_Momentum_Factor/20261112T134513Z_27ed60e5b2ca.zip"
+
+[parameters]
+factors = ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "Mom"]
+start = 1926-07-01
+end = 2026-09-30
+demean_daily = false
+hac_lags = 6
+burn_in_months = 120
+leverage_caps = [5.0, 2.0, inf]
+costs_bp = [0, 10, 25]
+significance = 0.05
+bootstrap = { mean_block_length = 6.0, n_resamples = 2000, confidence = 0.95 }
+
+[output]
+directory = "../../results/studies/volatility-managed/full"
