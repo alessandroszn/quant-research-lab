@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- `stats.multiple_testing` (phase 5.1): Holm, Benjamini-Hochberg and Benjamini-Yekutieli
+  corrections, cross-checked against statsmodels.
+- `metrics.sharpe_inference` (phase 5.1):
+  - probabilistic and deflated Sharpe ratios;
+  - Jobson-Korkie-Memmel and Ledoit-Wolf HAC tests of Sharpe-ratio differences;
+  - a stationary-bootstrap interval for the difference.
+
 ## [0.3.0] - 2026-11-12
 
 Milestones M3 (Risk & Planning) and M4 (Construction & Backtest): phases 3.1 to 4.4.
