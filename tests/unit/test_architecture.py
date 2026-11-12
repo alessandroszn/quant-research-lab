@@ -61,6 +61,25 @@ ALLOWED: dict[str, set[str]] = {
         "attribution",
         "backtest",
     },
+    "experiments": {
+        "core",
+        "data",
+        "instruments",
+        "stats",
+        "metrics",
+        "risk",
+        "validation",
+        "portfolio",
+        "checks",
+        "lookthrough",
+        "scenarios",
+        "simulation",
+        "optimization",
+        "attribution",
+        "backtest",
+        "reporting",
+    },
+    "cli": {"core", "experiments"},
 }
 
 

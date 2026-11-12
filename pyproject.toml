@@ -26,6 +26,9 @@ dependencies = [
     "matplotlib>=3.9",
 ]
 
+[project.scripts]
+qrlab = "qrlab.cli:main_entry"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3",
