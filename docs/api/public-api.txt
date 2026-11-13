@@ -122,6 +122,8 @@ qrlab.data.Fetcher  class(*args, **kwargs)
 qrlab.data.Fetcher.fetch  method(url: 'str') -> 'bytes'
 qrlab.data.IntegrityError  exception(inherited)
 qrlab.data.KEN_FRENCH_DATASETS  constant mappingproxy
+qrlab.data.OSAP_FILES  constant mappingproxy
+qrlab.data.OSAP_REVISION  constant str = 'ad1dfba5a6d80c4ce53ce6b8127f5a949dda1e40'
 qrlab.data.ParseError  exception(inherited)
 qrlab.data.PriceData  class(dataset: 'Dataset', price_types: 'Mapping[str, PriceType]') -> None
 qrlab.data.PriceType  enum
@@ -149,6 +151,7 @@ qrlab.data.download  function(fetcher: 'Fetcher', store: 'RawStore', *, url: 'st
 qrlab.data.download_ecb_fx  function(fetcher: 'Fetcher', store: 'RawStore', *, now: 'Callable[[], datetime]') -> 'StoredFile'
 qrlab.data.download_ecb_series  function(fetcher: 'Fetcher', store: 'RawStore', name: 'str', *, now: 'Callable[[], datetime]') -> 'StoredFile'
 qrlab.data.download_ken_french  function(fetcher: 'Fetcher', store: 'RawStore', dataset: 'str', *, now: 'Callable[[], datetime]') -> 'StoredFile'
+qrlab.data.download_osap  function(fetcher: 'Fetcher', store: 'RawStore', dataset: 'str', *, revision: 'str', now: 'Callable[[], datetime]') -> 'StoredFile'
 qrlab.data.fx_rate  function(dataset: 'Dataset', *, quote: 'Currency', on: 'date') -> 'FxRate'
 qrlab.data.import_local_file  function(path: 'Path', store: 'RawStore', *, dataset: 'str', now: 'Callable[[], datetime]', source: 'str' = 'user') -> 'StoredFile'
 qrlab.data.load_csv_mapping  function(path: 'Path') -> 'CsvMapping'
@@ -157,7 +160,9 @@ qrlab.data.parse_estr  function(content: 'bytes', provenance: 'Provenance') -> '
 qrlab.data.parse_hicp  function(content: 'bytes', provenance: 'Provenance', *, publication_lag_days: 'int') -> 'Dataset'
 qrlab.data.parse_ken_french  function(content: 'bytes', provenance: 'Provenance', *, frequency: 'Frequency', section: 'str | None' = None) -> 'Dataset'
 qrlab.data.parse_ken_french_table  function(content: 'bytes', provenance: 'Provenance', *, frequency: 'Frequency', section: 'str') -> 'pd.DataFrame'
+qrlab.data.parse_long_short_returns  function(content: 'bytes', provenance: 'Provenance') -> 'Dataset'
 qrlab.data.parse_price_csv  function(content: 'bytes', provenance: 'Provenance', mapping: 'CsvMapping') -> 'PriceData'
+qrlab.data.parse_signal_doc  function(content: 'bytes', provenance: 'Provenance') -> 'pd.DataFrame'
 qrlab.data.parse_yield_curve  function(content: 'bytes', provenance: 'Provenance') -> 'Dataset'
 qrlab.experiments.ExperimentConfig  class(path: 'Path', name: 'str', kind: 'str', hypothesis: 'str', seed: 'int | None', inputs: 'Mapping[str, Path]', given_inputs: 'Mapping[str, str]', parameters: 'Mapping[str, object]', output_dir: 'Path', raw: 'Mapping[str, object]', hash: 'str') -> None
 qrlab.experiments.ExperimentKind  class(name: 'str', description: 'str', inputs: 'tuple[str, ...]', needs_seed: 'bool', parameters: 'tuple[str, ...]', parse: 'Callable[[Mapping[str, object]], object]', run: 'Callable[[RunContext], ExperimentOutput]', optional_inputs: 'tuple[str, ...]' = ()) -> None

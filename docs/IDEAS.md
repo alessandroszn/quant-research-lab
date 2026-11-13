@@ -59,6 +59,11 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Form editor for experiment parameters | 6.1 app | A typed form per kind instead of the TOML editor; needs parameter schemas in the kinds. |
 | Cancelling runs and a run queue | 6.1 app | The runner has no cancellation hook; long studies cannot be stopped from the app. |
 | Interactive charts in the app | 6.1 app | Today the app shows the PNG figures the runner writes. |
+| Check `periods_per_year` against the data | 6.3b methodology | Metrics and the backtest summary trust the caller's `periods_per_year`; the dates could confirm it. |
+| Return kind carried by the data | 6.3b methodology | Metrics assume simple returns by contract; a series that carries its `ReturnKind` would catch log returns passed by mistake. |
+| Price type in returns CSVs | 6.3b methodology | The backtest, risk, optimisation and scenario kinds cannot tell total-return from price-return inputs. |
+| Multi-currency and look-through in the `portfolio_report` kind | 6.3b methodology | The library supports both, but the kind used by the CLI and the app is single-currency and passes no look-through. |
+| Disclaimer in the `projection` kind's outputs | 6.3b methodology | Its CSV and PNG files carry no "not a forecast" note; only the HTML portfolio report does. |
 | Code signing of the Windows build | 6.2 build | Removes the SmartScreen warning; needs a paid certificate or Azure Trusted Signing. |
 | macOS build | 6.2 build | A PyInstaller `.app` and a disk image, built on a macOS runner with the same source-versus-frozen check. |
 | App icon | 6.2 build | The Windows build uses PyInstaller's default icon. |
