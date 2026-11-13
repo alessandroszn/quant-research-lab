@@ -312,3 +312,13 @@ def test_source_runs_are_marked_not_frozen(tmp_path: Path) -> None:
     result = run_experiment(_write(tmp_path), kinds=KINDS, overwrite=False)
     assert result.record["code"]["frozen"] is False
     assert "built" not in result.record["code"]
+
+
+def test_records_carry_their_format(tmp_path: Path) -> None:
+    from qrlab.experiments import RECORD_FORMAT
+
+    assert RECORD_FORMAT == 1
+    result = run_experiment(_write(tmp_path), kinds=KINDS, overwrite=False)
+    assert result.record["format"] == 1
+    written = json.loads((result.output_dir / "record.json").read_text(encoding="utf-8"))
+    assert written["format"] == 1

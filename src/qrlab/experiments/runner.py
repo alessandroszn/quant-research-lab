@@ -36,6 +36,7 @@ from qrlab.experiments.config import ExperimentConfig, file_sha256, load_config
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext
 
 __all__ = [
+    "RECORD_FORMAT",
     "RunResult",
     "configurations_tried",
     "count_trials",
@@ -46,6 +47,8 @@ __all__ = [
 LEDGER = "trials.jsonl"
 RECORD = "record.json"
 BUILD_INFO = "build-info.json"
+RECORD_FORMAT = 1
+"""Version of the ``record.json`` layout; it changes only with a major release (design 6.3a)."""
 _PACKAGES = ("numpy", "pandas", "scipy", "statsmodels", "matplotlib")
 
 
@@ -113,6 +116,7 @@ def run_experiment(
     finished = datetime.now(UTC)
     tried = _append_trial(out.parent, config, status, finished)
     record: dict[str, object] = {
+        "format": RECORD_FORMAT,
         "experiment": {"name": config.name, "kind": config.kind, "hypothesis": config.hypothesis},
         "config": {"path": str(config.path), "sha256": config.hash, "content": config.raw},
         "inputs": {

@@ -13,7 +13,8 @@
    study) is a config run by `qrlab.experiments`. Scripts, the CLI and the desktop app all go
    through it, so every result is reproducible headless.
 6. **Library vs. research vs. app.** `src/qrlab` is tested and typed; `research/` is exploratory;
-   `src/qrlab_app` is a thin GUI with no financial logic.
+   `src/qrlab_app` is a thin GUI with no financial logic. The public API of `qrlab` is listed in
+   `docs/api/public-api.txt` and covered by `docs/compatibility.md`.
 7. **Minimal dependencies.** Runtime: NumPy, pandas, SciPy, statsmodels, Matplotlib. The app
    adds PySide6 as an optional extra. Each further dependency needs a documented reason.
 

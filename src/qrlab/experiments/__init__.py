@@ -15,6 +15,7 @@ from qrlab.experiments.registry import (
     Tagged,
 )
 from qrlab.experiments.runner import (
+    RECORD_FORMAT,
     RunResult,
     configurations_tried,
     count_trials,
@@ -23,6 +24,7 @@ from qrlab.experiments.runner import (
 )
 
 __all__ = [
+    "RECORD_FORMAT",
     "TAGS",
     "ExperimentConfig",
     "ExperimentKind",

@@ -18,7 +18,7 @@ import pandas as pd
 from qrlab.core import ReturnKind, convert_return_currency
 from qrlab.stats import (
     CovType,
-    FactorModel,
+    FactorSet,
     factor_exposures,
     newey_west_lags,
     stationary_bootstrap,
@@ -60,7 +60,7 @@ def main() -> None:
     result = factor_exposures(
         excess,
         factors,
-        model=FactorModel.FF3_MOM,
+        model=FactorSet.FF3_MOM,
         periods_per_year=PERIODS_PER_YEAR,
         cov_type=CovType.HAC,
         hac_lags=lags,

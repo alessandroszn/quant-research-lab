@@ -8,6 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- The public API is frozen for 1.0 (phase 6.3a):
+  - `docs/api/public-api.txt` lists every public name with its signature, and
+    `tests/unit/test_public_api.py` fails on any change that is not reflected there;
+  - `docs/compatibility.md` states the Semantic Versioning promise, what is and is not public,
+    and the deprecation rule.
+- `qrlab.experiments.RECORD_FORMAT`: every `record.json` now has `"format": 1`.
+
 - Windows build (phase 6.2), in `packaging/`, built by the new workflow
   `.github/workflows/app-build.yml`:
   - **Contents:** a PyInstaller one-folder build holding `QuantResearchLab.exe` (the app) and
@@ -69,6 +76,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- **Breaking:** `qrlab.stats.FactorModel` is renamed to `qrlab.stats.FactorSet`, so it is no
+  longer confused with the factor risk model `qrlab.risk.FactorModel`. It is the only rename
+  from the review of the 341 public names before the API freeze.
 - Run records gain `code.frozen`. In a frozen program the commit comes from the bundled
   `build-info.json`, with the build time in `code.built`, and `git` is never started. A missing
   or incomplete file refuses the run before anything is written.
