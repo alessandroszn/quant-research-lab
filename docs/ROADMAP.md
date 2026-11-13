@@ -310,7 +310,7 @@ An honest null result is a valid result and is reported as such.
 - API freeze; docs site (MkDocs Material) with guides, API reference, one methodology page per
   risk in the risk register, and the studies.
 - PyPI release; Zenodo DOI; a combined working paper of the studies.
-- Launch: README with figures, a post on alessandrozanichelli.com, a LinkedIn post.
+- Launch: README with figures, a post on alessandrozanichelli.com. (No LinkedIn post: decided by the owner on 2026-11-13.)
 
 **M6 — v1.0.**
 
