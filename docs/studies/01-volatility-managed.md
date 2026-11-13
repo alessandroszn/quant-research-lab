@@ -132,8 +132,8 @@ Main run, cap 5×. Annualised Sharpe ratios; z and the Holm p-value test managed
 | Mkt-RF | 0.52 | 0.44 | 0.40 | 0.35 | −0.87 / −1.26 / −1.85 | 1.00 / 0.62 / 0.19 | 1.49 | 8.9 |
 | SMB | 0.18 | 0.08 | 0.03 | −0.05 | −1.14 / −1.77 / −2.68 | 1.00 / 0.39 / **0.037** | 1.35 | 7.1 |
 | HML | 0.40 | 0.40 | 0.35 | 0.27 | 0.09 / −0.53 / −1.46 | 1.00 / 0.92 / 0.29 | 1.84 | 9.5 |
-| RMW | 0.38 | 0.56 | 0.47 | 0.33 | 1.47 / 0.74 / −0.37 | 0.72 / 0.92 / 0.71 | 0.78 | 4.1 |
-| CMA | 0.47 | 0.40 | 0.31 | 0.17 | −0.67 / −1.55 / −2.86 | 1.00 / 0.48 / **0.026** | 0.97 | 5.2 |
+| RMW | 0.38 | 0.56 | 0.47 | 0.33 | 1.46 / 0.74 / −0.37 | 0.71 / 0.92 / 0.71 | 0.77 | 4.1 |
+| CMA | 0.47 | 0.40 | 0.31 | 0.17 | −0.66 / −1.55 / −2.86 | 1.00 / 0.48 / **0.026** | 0.97 | 5.2 |
 | Mom | 0.51 | 0.88 | 0.82 | 0.75 | 3.27 / 2.81 / 2.12 | **0.007** / **0.030** / 0.137 | 1.77 | 9.8 |
 
 Turnover p.a. is $\sum|\Delta w|$ per year: 9.8 means the strategy trades about ten times its
@@ -141,7 +141,7 @@ exposure each year.
 
 **Other caps for momentum** (the factor with the largest differences):
 
-- With a 2× cap the managed Sharpe ratios are 0.87, 0.83 and 0.79 at 0, 10 and 25 bp, with Holm
+- With a 2× cap the managed Sharpe ratios are 0.87, 0.83 and 0.78 at 0, 10 and 25 bp, with Holm
   p-values 0.003, 0.009 and 0.040.
 - Without a cap the weight reaches 24.8×, the Sharpe ratios fall to 0.71, 0.65 and 0.57, and no
   difference is significant (Holm p-values of 0.84 or more).

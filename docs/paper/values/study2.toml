@@ -1,0 +1,526 @@
+# Values of section "Study 2: 1/N against optimised portfolios" (design note 6.3d).
+# Main run: one-over-n/full (to the end of the vintage). Paper period: one-over-n/paper.
+
+# --- Samples -------------------------------------------------------------------------
+
+[values.s2_main_start]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "start"
+truncate = 7
+
+[values.s2_main_end]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "end"
+truncate = 7
+
+[values.s2_main_n]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "n"
+decimals = 0
+
+[values.s2_paper_start]
+run = "one-over-n/paper"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "start"
+truncate = 7
+
+[values.s2_paper_end]
+run = "one-over-n/paper"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "end"
+truncate = 7
+
+[values.s2_paper_n]
+run = "one-over-n/paper"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "n"
+decimals = 0
+
+# --- Fallback months (main run) -----------------------------------------------------
+
+[values.s2_fb_sample_d1]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 60, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "fallbacks"
+decimals = 0
+
+[values.s2_fb_sample_d2]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "fallbacks"
+decimals = 0
+
+[values.s2_fb_bl_d1]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 60, cost_per_unit = 0.0, strategy = "maxsharpe_bl" }
+column = "fallbacks"
+decimals = 0
+
+[values.s2_fb_bl_d2]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.0, strategy = "maxsharpe_bl" }
+column = "fallbacks"
+decimals = 0
+
+[values.s2_fb_bl_d1_120]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "maxsharpe_bl" }
+column = "fallbacks"
+decimals = 0
+
+# --- Main run, D1 (10 industries) ----------------------------------------------------
+
+[values.s2_d1_ew_sharpe]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d1_ew_sharpe_50]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.005, strategy = "ew" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d1_ew_vol]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "volatility"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d1_ew_turnover]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "turnover"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d1_ew_ceq]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "ceq"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d1_mss_sharpe_60]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 60, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d1_mss_sharpe_120_50]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.005, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d1_mss_turnover]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "turnover"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d1_mss_turnover_60]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 60, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "turnover"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d1_bl_sharpe]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "maxsharpe_bl" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d1_mvs_sharpe]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "minvar_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d1_mvlw_sharpe]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "minvar_lw" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d1_mvs_vol]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "minvar_sample" }
+column = "volatility"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d1_mvs_ceq]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "minvar_sample" }
+column = "ceq"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d1_rp_turnover]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "risk_parity" }
+column = "turnover"
+decimals = 1
+scale = 100
+unit = " %"
+
+# --- Main run, D2 (25 size and book-to-market portfolios) ----------------------------
+
+[values.s2_d2_ew_sharpe]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d2_ew_turnover]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "turnover"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d2_mss_sharpe_60]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d2_mss_sharpe_120]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d2_mss_sharpe_60_50]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.005, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d2_mss_sharpe_120_50]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.005, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_d2_mss_turnover]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "turnover"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s2_d2_rp_turnover]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "risk_parity" }
+column = "turnover"
+decimals = 1
+scale = 100
+unit = " %"
+
+# --- Main run, tests against 1/N -----------------------------------------------------
+
+[values.s2_better_main]
+run = "one-over-n/full"
+scalar = "better_than_1n_holm"
+decimals = 0
+
+[values.s2_worse_main]
+run = "one-over-n/full"
+scalar = "worse_than_1n_holm"
+decimals = 0
+
+[values.s2_min_holm]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.0, strategy = "hrp" }
+column = "holm"
+decimals = 2
+
+[values.s2_min_holm_z]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.0, strategy = "hrp" }
+column = "z_hac"
+decimals = 2
+
+[values.s2_rp_d2_z]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.0, strategy = "risk_parity" }
+column = "z_hac"
+decimals = 2
+
+[values.s2_rp_d2_holm]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.0, strategy = "risk_parity" }
+column = "holm"
+decimals = 2
+
+[values.s2_hrp_d2_50_z]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.005, strategy = "hrp" }
+column = "z_hac"
+decimals = 2
+
+[values.s2_hrp_d2_50_holm]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.005, strategy = "hrp" }
+column = "holm"
+decimals = 2
+
+[values.s2_hrp_d2_50_ceq_60]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 60, cost_per_unit = 0.005, strategy = "hrp" }
+column = "ceq_difference_annual"
+decimals = 1
+scale = 100
+unit = " %"
+absolute = true
+
+[values.s2_hrp_d2_50_ceq_120]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.005, strategy = "hrp" }
+column = "ceq_difference_annual"
+decimals = 1
+scale = 100
+unit = " %"
+absolute = true
+
+# --- Paper period, tests against 1/N -------------------------------------------------
+
+[values.s2_better_paper]
+run = "one-over-n/paper"
+scalar = "better_than_1n_holm"
+decimals = 0
+
+[values.s2_worse_paper]
+run = "one-over-n/paper"
+scalar = "worse_than_1n_holm"
+decimals = 0
+
+[values.s2_paper_vw_z_0]
+run = "one-over-n/paper"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "vw" }
+column = "z_hac"
+decimals = 2
+
+[values.s2_paper_vw_z_50]
+run = "one-over-n/paper"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.005, strategy = "vw" }
+column = "z_hac"
+decimals = 2
+
+[values.s2_paper_vw_holm_50]
+run = "one-over-n/paper"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.005, strategy = "vw" }
+column = "holm"
+decimals = 2
+
+[values.s2_paper_vw_ceq_0]
+run = "one-over-n/paper"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "vw" }
+column = "ceq_difference_annual"
+decimals = 1
+scale = 100
+unit = " %"
+absolute = true
+
+[values.s2_paper_vw_ceq_50]
+run = "one-over-n/paper"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.005, strategy = "vw" }
+column = "ceq_difference_annual"
+decimals = 1
+scale = 100
+unit = " %"
+absolute = true
+
+[values.s2_paper_d1_ew_sharpe]
+run = "one-over-n/paper"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.0, strategy = "ew" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_paper_d1_mss_sharpe_50]
+run = "one-over-n/paper"
+table = "performance.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.005, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_paper_d2_mss_sharpe]
+run = "one-over-n/paper"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+[values.s2_paper_d2_mss_sharpe_50]
+run = "one-over-n/paper"
+table = "performance.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.005, strategy = "maxsharpe_sample" }
+column = "sharpe"
+decimals = 2
+
+# --- Robust pairs (H2) ---------------------------------------------------------------
+
+[values.s2_robust_better_main]
+run = "one-over-n/full"
+scalar = "robust_better_holm"
+decimals = 0
+
+[values.s2_robust_better_paper]
+run = "one-over-n/paper"
+scalar = "robust_better_holm"
+decimals = 0
+
+[values.s2_pair_min_holm_main]
+run = "one-over-n/full"
+table = "robust_pairs.csv"
+where = { dataset = "industries_10", window = 60, cost_per_unit = 0.005, robust = "minvar_lw" }
+column = "holm"
+decimals = 2
+
+[values.s2_pair_min_z_main]
+run = "one-over-n/full"
+table = "robust_pairs.csv"
+where = { dataset = "industries_10", window = 60, cost_per_unit = 0.005, robust = "minvar_lw" }
+column = "z_hac"
+decimals = 2
+
+[values.s2_pair_min_holm_paper]
+run = "one-over-n/paper"
+table = "robust_pairs.csv"
+where = { dataset = "industries_10", window = 120, cost_per_unit = 0.005, robust = "minvar_lw" }
+column = "holm"
+decimals = 2
+
+# --- Deflated Sharpe ratio -----------------------------------------------------------
+
+[values.s2_dsr_main]
+run = "one-over-n/full"
+scalar = "dsr_probability"
+decimals = 4
+
+[values.s2_dsr_paper]
+run = "one-over-n/paper"
+scalar = "dsr_probability"
+decimals = 2
+
+[values.s2_dsr_trials]
+run = "one-over-n/full"
+scalar = "dsr_trials"
+decimals = 0
+
+[values.s2_configs_tried]
+run = "one-over-n/full"
+record = "configurations_tried"
+
+[values.s2_dsr_holm_main]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "holm"
+decimals = 2
+
+[values.s2_dsr_holm_paper]
+run = "one-over-n/paper"
+table = "against_1n.csv"
+where = { dataset = "size_bm_25", window = 120, cost_per_unit = 0.0, strategy = "maxsharpe_sample" }
+column = "holm"
+decimals = 2
+
+# --- Tables --------------------------------------------------------------------------
+
+[tables.s2_performance]
+run = "one-over-n/full"
+table = "performance.csv"
+where = { window = 120, cost_per_unit = 0.005 }
+columns = [
+    { column = "dataset", header = "Universe", labels = { industries_10 = "D1", size_bm_25 = "D2" } },
+    { column = "strategy", header = "Strategy", labels = { ew = "1/N", vw = "Value weights", maxsharpe_sample = "Max Sharpe", minvar_sample = "Min var.", minvar_lw = "Min var. (LW)", maxsharpe_bl = "Max Sharpe (BL)", risk_parity = "Risk parity", hrp = "HRP" } },
+    { column = "mean", header = "Mean (%)", decimals = 1, scale = 100 },
+    { column = "volatility", header = "Vol. (%)", decimals = 1, scale = 100 },
+    { column = "sharpe", header = "Sharpe", decimals = 2 },
+    { column = "ceq", header = "CEQ (%)", decimals = 1, scale = 100 },
+    { column = "turnover", header = "Turnover (% a month)", decimals = 1, scale = 100 },
+    { column = "max_drawdown", header = "Max DD (%)", decimals = 1, scale = 100 },
+]
+
+[tables.s2_tests]
+run = "one-over-n/full"
+table = "against_1n.csv"
+where = { window = 120, cost_per_unit = 0.005 }
+columns = [
+    { column = "dataset", header = "Universe", labels = { industries_10 = "D1", size_bm_25 = "D2" } },
+    { column = "strategy", header = "Strategy", labels = { ew = "1/N", vw = "Value weights", maxsharpe_sample = "Max Sharpe", minvar_sample = "Min var.", minvar_lw = "Min var. (LW)", maxsharpe_bl = "Max Sharpe (BL)", risk_parity = "Risk parity", hrp = "HRP" } },
+    { column = "z_hac", header = "HAC z", decimals = 2 },
+    { column = "pvalue_hac", header = "p", decimals = 2 },
+    { column = "holm", header = "Holm p", decimals = 2 },
+    { column = "z_jkm", header = "JKM z", decimals = 2 },
+    { column = "ceq_difference_annual", header = "ΔCEQ (%)", decimals = 1, scale = 100 },
+    { column = "ceq_low_annual", header = "95 % low", decimals = 1, scale = 100 },
+    { column = "ceq_high_annual", header = "95 % high", decimals = 1, scale = 100 },
+]
