@@ -146,6 +146,9 @@ def test_a_distribution_without_licence_stops_the_build(site: Path) -> None:
     reviewed = notices.notices(found, python_licence="PSF", reviewed={"bare": "checked by hand"})
     assert "reviewed licence text" in reviewed
     assert "checked by hand" in reviewed
+    # Regression: PySide6's Linux wheels have no licence file; the texts we ship are enough.
+    shipped = notices.notices(found, python_licence="PSF", added={"bare": [("lgpl", "LGPL")]})
+    assert "LGPL" in shipped
 
 
 def test_a_missing_requirement_is_reported(tmp_path: Path) -> None:

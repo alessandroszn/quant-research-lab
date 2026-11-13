@@ -140,13 +140,13 @@ def notices(
     missing = []
     for dist in dists:
         name = dist.metadata["Name"]
-        texts = licence_files(dist)
+        # Texts shipped by us count too: PySide6's Linux wheels carry no licence file at all.
+        texts = licence_files(dist) + list((added or {}).get(canonicalize_name(name), ()))
         if not texts and canonicalize_name(name) in reviewed:
             texts = [("reviewed licence text", reviewed[canonicalize_name(name)])]
         if not texts:
             missing.append(name)
             continue
-        texts += list((added or {}).get(canonicalize_name(name), ()))
         meta = dist.metadata.json
         declared = str(meta.get("license_expression") or meta.get("license") or "")
         parts += [
