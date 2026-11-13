@@ -1,0 +1,18 @@
+﻿Quant Research Lab - analisi a scopo di ricerca, non consulenza finanziaria
+
+Quant Research Lab è uno strumento di ricerca. Ogni numero che mostra viene dalla libreria
+qrlab, tramite lo stesso runner della riga di comando, con le ipotesi dichiarate in ogni
+configurazione e report.
+
+- I risultati descrivono dati e modelli. Non sono raccomandazioni di comprare, vendere o
+  tenere alcun titolo, né consulenza finanziaria personale.
+- I risultati in campione non dimostrano che una strategia funzioni; le proiezioni sono
+  distribuzioni di esiti sotto ipotesi dichiarate, non previsioni.
+- I file del tuo portafoglio restano nelle cartelle di workspace che scegli tu. Il programma
+  non si collega a Internet e non invia nulla.
+
+Il programma non è firmato digitalmente, quindi Windows SmartScreen potrebbe mostrare un avviso
+al primo avvio. Puoi verificare l'installer con lo SHA-256 pubblicato insieme a esso.
+
+Il software di terze parti e le relative licenze sono elencati in THIRD_PARTY_NOTICES.txt nella
+cartella del programma.

@@ -247,3 +247,68 @@ def test_record_without_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     result = run_experiment(_write(tmp_path), kinds=KINDS, overwrite=False)
     assert result.record["code"]["git_commit"] is None
     assert result.record["code"]["git_dirty"] is None
+
+
+# -------------------------------------------------------------- frozen builds (design 6.2)
+COMMIT = "0123456789abcdef0123456789abcdef01234567"
+
+
+def _frozen(monkeypatch: pytest.MonkeyPatch, folder: Path) -> None:
+    """Pretend to be a PyInstaller program in ``folder``; starting a process fails the test."""
+    import subprocess
+    import sys
+
+    def no_process(*args: object, **kwargs: object) -> None:
+        raise AssertionError("a frozen build must not start git")
+
+    monkeypatch.setattr(subprocess, "run", no_process)
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(folder / "qrlab.exe"))
+
+
+def test_frozen_record_takes_the_commit_from_build_info(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    program = tmp_path / "program"
+    program.mkdir()
+    info = {"commit": COMMIT, "dirty": False, "built": "2026-11-13T10:00:00+00:00"}
+    (program / "build-info.json").write_text(json.dumps(info), encoding="utf-8")
+    _frozen(monkeypatch, program)
+    result = run_experiment(_write(tmp_path), kinds=KINDS, overwrite=False)
+    code = result.record["code"]
+    assert code["frozen"] is True
+    assert code["git_commit"] == COMMIT
+    assert code["git_dirty"] is False
+    assert code["built"] == "2026-11-13T10:00:00+00:00"
+    assert set(code["packages"]) == {"numpy", "pandas", "scipy", "statsmodels", "matplotlib"}
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (None, "no build-info.json"),
+        ("{not json", "not valid JSON"),
+        ('{"commit": "abc", "dirty": false, "built": "x"}', "commit"),
+        (json.dumps({"commit": COMMIT, "dirty": True, "built": "x"}), "dirty"),
+        (json.dumps({"commit": COMMIT, "dirty": False}), "built"),
+        ("[1, 2]", "JSON object"),
+    ],
+)
+def test_frozen_build_info_must_be_complete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, content: str | None, message: str
+) -> None:
+    program = tmp_path / "program"
+    program.mkdir()
+    if content is not None:
+        (program / "build-info.json").write_text(content, encoding="utf-8")
+    _frozen(monkeypatch, program)
+    config = _write(tmp_path)
+    with pytest.raises(ValidationError, match=message):
+        run_experiment(config, kinds=KINDS, overwrite=False)
+    assert not (tmp_path / "results" / "demo").exists()  # refused before writing anything
+
+
+def test_source_runs_are_marked_not_frozen(tmp_path: Path) -> None:
+    result = run_experiment(_write(tmp_path), kinds=KINDS, overwrite=False)
+    assert result.record["code"]["frozen"] is False
+    assert "built" not in result.record["code"]
