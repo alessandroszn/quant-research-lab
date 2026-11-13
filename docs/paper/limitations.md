@@ -50,5 +50,3 @@ results can show; none of them is corrected in this paper.
   tests are not estimated.
 - **Low power.** Out-of-sample differences between Sharpe ratios are noisy. A null result in
   studies 1 and 2 means "no detectable difference with this sample", not "no difference".
-- **The commit caveat.** The run records show uncommitted changes at run time (Appendix A). A
-  clean re-run from the merged code has not yet confirmed the tables.

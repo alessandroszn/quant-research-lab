@@ -4,11 +4,6 @@
 
 # Run metadata
 
-[values.s1_run_date]
-run = "volatility-managed/full"
-record = "started"
-truncate = 10
-
 [values.s1_tried]
 run = "volatility-managed/full"
 record = "configurations_tried"

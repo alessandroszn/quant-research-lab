@@ -18,17 +18,14 @@ and date, so one row per study suffices.
 | 3. The factor zoo | {{ a_s3_date }} | {{ a_s3_version }} | {{ a_s3_commit }} | {{ a_s3_dirty }} | {{ a_s3_seed }} | {{ a_s3_tried }} |
 | 4. Rebalancing for a EUR ETF investor | {{ a_s4_date }} | {{ a_s4_version }} | {{ a_s4_commit }} | {{ a_s4_dirty }} | {{ a_s4_seed }} | {{ a_s4_tried }} |
 
-**A caveat on the commits.** Every run records "uncommitted changes: True". The studies were run
-while their code was being finalised, before it was committed, so the recorded commit is the
-base the code started from, not the exact code that ran. The study code was committed on the
-same day, in the pull requests that added each study, with its tests and reports. Two things
-follow:
+**A clean re-run.** The studies were first run on 2026-11-12, from a working tree whose records
+flag uncommitted changes. That flag counts any change or untracked file in the checkout, so it
+cannot tell which code ran. To settle it, every config was re-run on {{ a_s1_date }} from a
+clean checkout of commit {{ a_s1_commit }}, with the same data files and trial ledgers.
 
-- with the data files below and the configs in `configs/studies/`, the merged code is expected
-  to reproduce the published tables;
-- this expectation has not been verified by a second, clean run.
-
-A clean re-run of every study is listed in `docs/IDEAS.md`.
+Every output of every run was **byte-identical** to the first run: tables, scalars, figures and
+reports, as checked with `packaging/compare_runs.py`. The table above and every number in this
+paper come from the records of the clean re-run.
 
 **Configurations tried** counts the distinct configs run under each study's name. It includes
 the robustness configs reported in each study, and it enters the deflated Sharpe ratios of

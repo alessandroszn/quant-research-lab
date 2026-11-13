@@ -19,6 +19,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - **Reproducibility appendix.** Run dates, versions, commits, seeds, configurations tried and
     the exact data files with their hashes.
 
+### Changed
+
+- The four studies were re-run from a clean checkout of commit 63f808a, with the same data
+  files and trial ledgers: all nine runs gave byte-identical outputs. The paper's reproducibility
+  appendix now cites these records, and the reports note the re-run.
+
 ### Fixed
 
 - Last-digit figures in the study reports, found while generating the paper from the records:
