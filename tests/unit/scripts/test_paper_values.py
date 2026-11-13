@@ -105,7 +105,7 @@ run = "study-x/main"
 table = "performance.csv"
 where = { window = 60 }
 columns = [
-    { column = "strategy", header = "Strategy" },
+    { column = "strategy", header = "Strategy", labels = { ew = "1/N" } },
     { column = "sharpe", header = "Sharpe", decimals = 2 },
 ]
 
@@ -145,7 +145,7 @@ def test_generate_values_and_tables(tmp_path: Path) -> None:
         "vw_sharpe_pct": "0.0 %",  # a rounded zero has no sign
     }
     assert files["_generated/sharpes.md"] == (
-        "| Strategy | Sharpe |\n|---|---:|\n| ew | 0.48 |\n| vw | 0.00 |\n"
+        "| Strategy | Sharpe |\n|---|---:|\n| 1/N | 0.48 |\n| vw | 0.00 |\n"
     )
     assert files["_generated/notes.md"].splitlines()[-1] == "| — |"
     assert files["_generated/inputs.md"].splitlines()[2:] == [

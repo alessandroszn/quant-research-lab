@@ -499,14 +499,14 @@ run = "one-over-n/full"
 table = "performance.csv"
 where = { window = 120, cost_per_unit = 0.005 }
 columns = [
-    { column = "dataset", header = "Universe" },
-    { column = "strategy", header = "Strategy" },
+    { column = "dataset", header = "Universe", labels = { industries_10 = "D1", size_bm_25 = "D2" } },
+    { column = "strategy", header = "Strategy", labels = { ew = "1/N", vw = "Value weights", maxsharpe_sample = "Max Sharpe", minvar_sample = "Min var.", minvar_lw = "Min var. (LW)", maxsharpe_bl = "Max Sharpe (BL)", risk_parity = "Risk parity", hrp = "HRP" } },
     { column = "mean", header = "Mean (%)", decimals = 1, scale = 100 },
-    { column = "volatility", header = "Volatility (%)", decimals = 1, scale = 100 },
+    { column = "volatility", header = "Vol. (%)", decimals = 1, scale = 100 },
     { column = "sharpe", header = "Sharpe", decimals = 2 },
     { column = "ceq", header = "CEQ (%)", decimals = 1, scale = 100 },
-    { column = "turnover", header = "Turnover/month (%)", decimals = 1, scale = 100 },
-    { column = "max_drawdown", header = "Max drawdown (%)", decimals = 1, scale = 100 },
+    { column = "turnover", header = "Turnover (% a month)", decimals = 1, scale = 100 },
+    { column = "max_drawdown", header = "Max DD (%)", decimals = 1, scale = 100 },
 ]
 
 [tables.s2_tests]
@@ -514,8 +514,8 @@ run = "one-over-n/full"
 table = "against_1n.csv"
 where = { window = 120, cost_per_unit = 0.005 }
 columns = [
-    { column = "dataset", header = "Universe" },
-    { column = "strategy", header = "Strategy" },
+    { column = "dataset", header = "Universe", labels = { industries_10 = "D1", size_bm_25 = "D2" } },
+    { column = "strategy", header = "Strategy", labels = { ew = "1/N", vw = "Value weights", maxsharpe_sample = "Max Sharpe", minvar_sample = "Min var.", minvar_lw = "Min var. (LW)", maxsharpe_bl = "Max Sharpe (BL)", risk_parity = "Risk parity", hrp = "HRP" } },
     { column = "z_hac", header = "HAC z", decimals = 2 },
     { column = "pvalue_hac", header = "p", decimals = 2 },
     { column = "holm", header = "Holm p", decimals = 2 },

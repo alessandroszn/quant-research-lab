@@ -30,8 +30,8 @@ not.
 **Universes.** Both come from the Kenneth R. French Data Library: US stocks, USD,
 value-weighted simple returns.
 
-- **D1** (`industries_10` in the tables): 10 industry portfolios.
-- **D2** (`size_bm_25`): 25 portfolios formed on size and book-to-market.
+- **D1:** 10 industry portfolios.
+- **D2:** 25 portfolios formed on size and book-to-market.
 
 Daily returns drive execution and monthly returns drive estimation. Market weights, used by
 value weights and by the BL prior, are the number of firms times the average firm size, lagged
@@ -56,16 +56,16 @@ Proportional costs are 0, 10 or 50 bp of the amount traded; 50 bp is DGU's cost.
 
 **Strategies.** Eight strategies are run:
 
-- `ew`: 1/N, the benchmark;
-- `vw`: value weights, which is also the BL prior without views;
-- `maxsharpe_sample` and `minvar_sample`: maximum Sharpe ratio and minimum variance from the
-  sample moments;
-- `minvar_lw`: minimum variance with the Ledoit–Wolf covariance;
-- `maxsharpe_bl`: maximum Sharpe ratio with the BL posterior. The prior is $\delta = 2.5$
+- **1/N**, the benchmark;
+- **Value weights**, which is also the BL prior without views;
+- **Max Sharpe** and **Min var.**: maximum Sharpe ratio and minimum variance from the sample
+  moments;
+- **Min var. (LW)**: minimum variance with the Ledoit–Wolf covariance;
+- **Max Sharpe (BL)**: maximum Sharpe ratio with the BL posterior. The prior is $\delta = 2.5$
   times the covariance times the lagged market weights. The views are the window's sample
   means, with $\tau = 1/M$;
-- `risk_parity`: equal risk contributions with the Ledoit–Wolf covariance;
-- `hrp`: HRP with the sample covariance.
+- **Risk parity**: equal risk contributions with the Ledoit–Wolf covariance;
+- **HRP** with the sample covariance.
 
 When no expected excess return is positive, a maximum-Sharpe portfolio is not defined, and the
 strategy holds minimum variance for that month. In the main run with $M = 60$, this happened in

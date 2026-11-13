@@ -93,4 +93,17 @@ latex_documents = [
         "howto",
     )
 ]
-latex_elements = {"papersize": "a4paper", "pointsize": "11pt", "printindex": ""}
+latex_elements = {
+    "papersize": "a4paper",
+    "pointsize": "11pt",
+    "printindex": "",
+    # Greek letters used in the text, which pdflatex does not map by itself.
+    "preamble": r"""
+\DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{03B2}{\ensuremath{\beta}}
+\DeclareUnicodeCharacter{03C3}{\ensuremath{\sigma}}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}
+""",
+}

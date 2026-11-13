@@ -841,17 +841,17 @@ run = "rebalancing/60_40"
 table = "historical.csv"
 where = { scenario = "low" }
 columns = [
-    { column = "policy", header = "Policy" },
-    { column = "after_tax_wealth", header = "After-tax wealth (k EUR)", decimals = 1, scale = 0.001 },
-    { column = "after_tax_return", header = "After-tax return p.a. (%)", decimals = 2, scale = 100 },
-    { column = "volatility", header = "Volatility (%)", decimals = 2, scale = 100 },
-    { column = "max_drawdown", header = "Max drawdown (%)", decimals = 1, scale = 100 },
-    { column = "mean_abs_deviation", header = "Mean abs. equity deviation (points)", decimals = 1, scale = 100 },
+    { column = "policy", header = "Policy", labels = { buy_and_hold = "Buy-and-hold", calendar_monthly = "Monthly", calendar_quarterly = "Quarterly", calendar_annual = "Annual", band_5_target = "Band 5", band_10_target = "Band 10", band_5_edge = "Band 5, edge" } },
+    { column = "after_tax_wealth", header = "Wealth (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "after_tax_return", header = "Return p.a. (%)", decimals = 2, scale = 100 },
+    { column = "volatility", header = "Vol. (%)", decimals = 2, scale = 100 },
+    { column = "max_drawdown", header = "Max DD (%)", decimals = 1, scale = 100 },
+    { column = "mean_abs_deviation", header = "Dev. (pts)", decimals = 1, scale = 100 },
     { column = "final_equity_weight", header = "Final equity (%)", decimals = 1, scale = 100 },
     { column = "trades", header = "Trades", decimals = 0 },
     { column = "costs", header = "Costs (EUR)", decimals = 0 },
-    { column = "taxes", header = "Taxes paid (k EUR)", decimals = 1, scale = 0.001 },
-    { column = "deferred_tax", header = "Tax at the end (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "taxes", header = "Taxes (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "deferred_tax", header = "Tax due (k EUR)", decimals = 1, scale = 0.001 },
 ]
 
 [tables.s4_simulated]
@@ -859,13 +859,13 @@ run = "rebalancing/60_40"
 table = "against_reference.csv"
 where = { scenario = "low" }
 columns = [
-    { column = "policy", header = "Policy" },
-    { column = "after_tax_wealth_median", header = "Wealth difference, median (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "policy", header = "Policy", labels = { buy_and_hold = "Buy-and-hold", calendar_monthly = "Monthly", calendar_quarterly = "Quarterly", calendar_annual = "Annual", band_5_target = "Band 5", band_10_target = "Band 10", band_5_edge = "Band 5, edge" } },
+    { column = "after_tax_wealth_median", header = "Wealth, median (k EUR)", decimals = 1, scale = 0.001 },
     { column = "after_tax_wealth_p05", header = "5 % (k EUR)", decimals = 1, scale = 0.001 },
     { column = "after_tax_wealth_p95", header = "95 % (k EUR)", decimals = 1, scale = 0.001 },
-    { column = "share_wealth_higher", header = "Paths ahead (%)", decimals = 1, scale = 100 },
-    { column = "mean_abs_deviation_median", header = "Equity deviation (points)", decimals = 1, scale = 100 },
-    { column = "costs_and_taxes_median", header = "Costs + taxes paid (k EUR)", decimals = 1, scale = 0.001 },
-    { column = "volatility_median", header = "Volatility (points)", decimals = 1, scale = 100 },
-    { column = "max_drawdown_median", header = "Max drawdown (points)", decimals = 1, scale = 100 },
+    { column = "share_wealth_higher", header = "Ahead (%)", decimals = 1, scale = 100 },
+    { column = "mean_abs_deviation_median", header = "Dev. (pts)", decimals = 1, scale = 100 },
+    { column = "costs_and_taxes_median", header = "Costs + tax (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "volatility_median", header = "Vol. (pts)", decimals = 1, scale = 100 },
+    { column = "max_drawdown_median", header = "Max DD (pts)", decimals = 1, scale = 100 },
 ]

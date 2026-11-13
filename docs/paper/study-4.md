@@ -56,10 +56,10 @@ deferral is valued correctly.
 
 | Policy | Rule |
 |---|---|
-| `buy_and_hold` | never rebalance |
-| `calendar_monthly`, `calendar_quarterly`, `calendar_annual` | rebalance to target every month, quarter or year; annual is the reference |
-| `band_5_target`, `band_10_target` | when a weight is more than 5 (10) points from target, trade back to target |
-| `band_5_edge` | 5-point band, but trade only back to the band's edge |
+| Buy-and-hold | never rebalance |
+| Monthly, Quarterly, Annual | rebalance to target every month, quarter or year; annual is the reference |
+| Band 5, Band 10 | when a weight is more than 5 (10) points from target, trade back to target |
+| Band 5, edge | 5-point band, but trade only back to the band's edge |
 
 The rules look at the drifted weights at each month end and trade at that month's close. They
 use only information known at that point.
@@ -103,7 +103,7 @@ that.
 
 The table gives the paired difference of each policy against annual rebalancing over 2,000
 paths of 20 years, 60/40 and low costs. The wealth difference is the median with its 5 % and
-95 % quantiles. "Paths ahead" is the share of paths in which the policy ends with more
+95 % quantiles. "Ahead" is the share of paths in which the policy ends with more
 after-tax wealth than annual rebalancing. The other columns are median paired differences.
 
 ```{include} _generated/s4_simulated.md

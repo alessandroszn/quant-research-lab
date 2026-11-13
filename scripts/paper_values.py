@@ -33,6 +33,9 @@ A value is a table such as::
         { column = "strategy", header = "Strategy" },
         { column = "sharpe", header = "Sharpe", decimals = 2 },
     ]
+
+A column may map recorded identifiers to readable labels:
+``{ column = "strategy", header = "Strategy", labels = { ew = "1/N" } }``.
 """
 
 from __future__ import annotations
@@ -132,6 +135,9 @@ def resolve_value(results: Path, name: str, spec: Mapping[str, Any]) -> str:
 
 
 def _cell(raw: Any, column: Mapping[str, Any]) -> str:
+    labels: Mapping[str, str] = column.get("labels", {})
+    if str(raw) in labels:
+        return labels[str(raw)]
     if "decimals" not in column or isinstance(raw, str):
         return str(raw)
     if isinstance(raw, float) and math.isnan(raw):
