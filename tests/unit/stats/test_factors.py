@@ -192,3 +192,20 @@ def test_rolling_window_validation(factor_data: tuple[pd.Series, pd.DataFrame]) 
                 cov_type=CovType.NONROBUST,
                 hac_lags=None,
             )
+
+
+def test_periods_per_year_must_match_the_dates(
+    factor_data: tuple[pd.Series, pd.DataFrame],
+) -> None:
+    """Design note 7.1: monthly excess returns annualised with 252 are refused."""
+    y, factors = factor_data
+    with pytest.raises(ValidationError, match="dates are monthly"):
+        factor_exposures(
+            y,
+            factors,
+            model=FactorSet.FF3_MOM,
+            periods_per_year=252,
+            cov_type=CovType.HAC,
+            hac_lags=6,
+            momentum_column="WML",
+        )

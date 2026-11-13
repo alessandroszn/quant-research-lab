@@ -61,7 +61,7 @@ class CapmEstimate:
 
 def tracking_error(portfolio: pd.Series, benchmark: pd.Series, *, periods_per_year: float) -> float:
     r"""Annualised tracking error, :math:`s_a \sqrt{P}` (``ddof=1``)."""
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, portfolio)
     active = _active(portfolio, benchmark, min_n=2)
     return float(np.std(active, ddof=1)) * math.sqrt(p)
 
@@ -70,7 +70,7 @@ def information_ratio(
     portfolio: pd.Series, benchmark: pd.Series, *, periods_per_year: float
 ) -> float:
     r"""Annualised information ratio, :math:`\bar a P / (s_a \sqrt{P})`."""
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, portfolio)
     active = _active(portfolio, benchmark, min_n=2)
     std = float(np.std(active, ddof=1))
     if std == 0.0:
@@ -87,7 +87,7 @@ def capm_regression(
     :func:`qrlab.core.returns.excess_returns`). Needs at least 3 observations, a benchmark with
     non-zero variance and a portfolio with non-zero variance (for :math:`R^2`).
     """
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, excess_portfolio)
     y = returns_array(excess_portfolio, name="excess_portfolio", min_n=3)
     x = returns_array(excess_benchmark, name="excess_benchmark", min_n=3)
     require_same_index(excess_portfolio, excess_benchmark)
@@ -159,7 +159,7 @@ def _active(portfolio: pd.Series, benchmark: pd.Series, *, min_n: int) -> np.nda
 def _capture(
     portfolio: pd.Series, benchmark: pd.Series, periods_per_year: float, *, up: bool
 ) -> float:
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, portfolio)
     rp = returns_array(portfolio, name="portfolio", min_n=1)
     rb = returns_array(benchmark, name="benchmark", min_n=1)
     require_same_index(portfolio, benchmark)

@@ -51,7 +51,7 @@ def calmar_ratio(returns: pd.Series, *, periods_per_year: float) -> float:
     Computed over the whole sample passed in; restrict the series to apply a window such as
     the conventional 36 months.
     """
-    check_periods_per_year(periods_per_year)
+    check_periods_per_year(periods_per_year, returns)
     worst = max_drawdown(returns)
     if worst == 0.0:
         raise UndefinedMetricError("calmar_ratio: no drawdown in the sample")

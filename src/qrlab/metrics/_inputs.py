@@ -7,6 +7,7 @@ import math
 import numpy as np
 import pandas as pd
 
+from qrlab.core.calendar import require_periods_per_year
 from qrlab.core.errors import ValidationError
 from qrlab.core.series import NanPolicy, validate_series
 from qrlab.metrics.errors import UndefinedMetricError
@@ -22,13 +23,12 @@ def returns_array(returns: pd.Series, *, name: str, min_n: int) -> np.ndarray:
     return values
 
 
-def check_periods_per_year(value: object) -> float:
-    """Return ``periods_per_year`` as a float after checking it is positive and finite."""
-    if isinstance(value, bool) or not isinstance(value, int | float):
-        raise ValidationError(f"periods_per_year must be a positive number, got {value!r}")
-    if not (math.isfinite(value) and value > 0):
-        raise ValidationError(f"periods_per_year must be positive and finite, got {value!r}")
-    return float(value)
+def check_periods_per_year(value: object, data: object) -> float:
+    """Return ``periods_per_year`` as a float: positive, finite and consistent with the dates.
+
+    See :func:`qrlab.core.require_periods_per_year` (design note 7.1).
+    """
+    return require_periods_per_year(value, getattr(data, "index", None))  # type: ignore[arg-type]
 
 
 def check_finite(value: object, name: str) -> float:

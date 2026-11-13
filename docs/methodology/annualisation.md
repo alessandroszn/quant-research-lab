@@ -36,6 +36,13 @@ annualised_geometric_return(r, periods_per_year=1)  # -0.1339745962
   annualises takes `periods_per_year` as a keyword-only argument with no default. Zero,
   negative, infinite, NaN, boolean and string values raise
   {py:class}`qrlab.core.ValidationError`.
+- **It must not contradict the dates** (since 7.1). {py:func}`qrlab.core.require_periods_per_year`
+  infers the frequency of a dated series from its median gap. It refuses a value outside that
+  frequency's accepted range: daily 250–366, weekly 50–53, monthly 12, quarterly 4, annual 1.
+  For example, 252 on monthly data raises with "use 12".
+  - **Where it applies:** every annualising metric, `factor_exposures`, the tracking error,
+    `summarize_backtest`, and the `risk_report` and `optimisation` kinds.
+  - **When it does not:** series whose dates have no recognisable frequency are not checked.
 - **Conventions are reference only.** `qrlab.core.CONVENTIONAL_PERIODS_PER_YEAR` (252, 52, 12,
   4, 1) is a read-only table that no function applies by default.
   {py:func}`qrlab.core.infer_frequency` is a diagnostic; metrics never use it to choose a
@@ -61,6 +68,9 @@ annualised_geometric_return(r, periods_per_year=1)  # -0.1339745962
 
 ## What guards it
 
+- `tests/unit/core/test_periods_per_year.py`: accepted and refused values for every frequency,
+  the error message, the cases left unchecked, and the integration in metrics and in a
+  `risk_report` run.
 - `tests/unit/metrics/test_metrics_public_api.py`:
   `test_conventions_are_keyword_only_without_defaults`.
 - `tests/unit/metrics/test_performance.py`: `test_returns_and_volatility_hand_example`,
@@ -82,10 +92,11 @@ annualised_geometric_return(r, periods_per_year=1)  # -0.1339745962
 
 ## Limits
 
-- **`periods_per_year` is not checked against the data.** Metrics, the backtest summary and
-  the experiment kinds accept any positive value. Passing 252 for monthly data gives the wrong
-  numbers in the table above without an error. Only the price CSV parser compares a declared
-  frequency with the dates, and that frequency is not passed on to the metrics.
+- **Irregular dates are not checked.** The check needs a recognisable frequency. A series
+  with irregular dates, or no dates, is accepted with any positive `periods_per_year`.
+- **Ranges, not exact values.** Daily data accepts anything from 250 to 366, because both
+  trading-day and calendar-day conventions are in use. The choice within the range stays with
+  the caller.
 - **√P assumes serially uncorrelated returns.** Smoothed or autocorrelated series (for
   example appraisal-based NAVs) get a misstated annual volatility and Sharpe ratio. There is no
   autocorrelation adjustment of the scaling. The HAC test
