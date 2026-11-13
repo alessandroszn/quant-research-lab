@@ -59,6 +59,9 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Form editor for experiment parameters | 6.1 app | A typed form per kind instead of the TOML editor; needs parameter schemas in the kinds. |
 | Cancelling runs and a run queue | 6.1 app | The runner has no cancellation hook; long studies cannot be stopped from the app. |
 | Interactive charts in the app | 6.1 app | Today the app shows the PNG figures the runner writes. |
+| Code signing of the Windows build | 6.2 build | Removes the SmartScreen warning; needs a paid certificate or Azure Trusted Signing. |
+| macOS build | 6.2 build | A PyInstaller `.app` and a disk image, built on a macOS runner with the same source-versus-frozen check. |
+| App icon | 6.2 build | The Windows build uses PyInstaller's default icon. |
 | Rebalancing with contributions | 5.3 study 4 | Monthly savings can rebalance without selling (cash-flow rebalancing), which avoids realising gains under Italian tax. |
 | Hedged equity and loss carry-forward in study 4 | 5.3 study 4 | EUR-hedged equity (needs USD and EUR short rates) and the four-year carry-forward of capital losses. |
 | Anomalies by category | 5.3 study 3 | Decay by data type (accounting, price, analyst) or by economic category, with the same panel regression. |

@@ -39,8 +39,10 @@ Planning**, **M4 — Construction & Backtest** and **M5 — Research** are imple
 
 Level 6 has started: the desktop app `qrlab_app` (phase 6.1: workspace, Portfolio, Risk, Scenarios,
 Projections, Optimiser, Backtests & studies, Data, History and Settings screens, in English and
-Italian) over `experiments.workspace` and the experiment kinds. Packaging and v1.0
-are planned (see `ROADMAP.md`); each new module is added together with its layering rule.
+Italian) over `experiments.workspace` and the experiment kinds, and the Windows build
+(phase 6.2: `packaging/`, a PyInstaller one-folder program with an Inno Setup installer, checked
+in CI against the source). v1.0 is planned (see `ROADMAP.md`); each new module is added
+together with its layering rule.
 
 | Layer | Module | Responsibility |
 |---|---|---|

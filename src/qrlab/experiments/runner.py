@@ -6,6 +6,10 @@ The record is written last, also when the run fails, so a folder without it is v
 incomplete. Each run appends a line to ``trials.jsonl`` in the parent folder; the number of
 configurations tried is the number of distinct config hashes recorded under the experiment's
 name.
+
+The record's ``code`` block says which code ran. From a source checkout the commit comes from
+``git``; in a frozen (PyInstaller) program it comes from the ``build-info.json`` shipped next to
+the executable, and ``git`` is never started.
 """
 
 from __future__ import annotations
@@ -13,8 +17,10 @@ from __future__ import annotations
 import importlib.metadata
 import json
 import platform
+import re
 import shutil
 import subprocess
+import sys
 import traceback
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -39,6 +45,7 @@ __all__ = [
 
 LEDGER = "trials.jsonl"
 RECORD = "record.json"
+BUILD_INFO = "build-info.json"
 _PACKAGES = ("numpy", "pandas", "scipy", "statsmodels", "matplotlib")
 
 
@@ -82,6 +89,7 @@ def run_experiment(
 ) -> RunResult:
     """Run one config; raise for config and input errors, record run failures."""
     config, kind, parameters = validate_experiment(config_path, kinds=kinds)
+    code = _code_version()  # before writing anything: a broken build is refused up front
     out = config.output_dir
     if out.exists():
         if not overwrite:
@@ -120,7 +128,7 @@ def run_experiment(
         "outputs": outputs,
         "scalars": scalars,
         "configurations_tried": tried,
-        "code": _code_version(),
+        "code": code,
         "started": started.isoformat(),
         "finished": finished.isoformat(),
         "status": status,
@@ -200,15 +208,49 @@ def _append_trial(ledger_dir: Path, config: ExperimentConfig, status: str, when:
 
 
 def _code_version() -> dict[str, object]:
-    source = Path(qrlab.__file__).resolve().parent
-    commit, dirty = _git(source, "rev-parse", "HEAD"), _git(source, "status", "--porcelain")
-    return {
+    versions: dict[str, object] = {
         "qrlab": importlib.metadata.version("quant-research-lab"),
-        "git_commit": commit,
-        "git_dirty": None if dirty is None else bool(dirty),
         "python": platform.python_version(),
         "packages": {name: importlib.metadata.version(name) for name in _PACKAGES},
     }
+    if getattr(sys, "frozen", False):
+        info = _build_info(Path(sys.executable).resolve().parent / BUILD_INFO)
+        return {
+            **versions,
+            "frozen": True,
+            "git_commit": info["commit"],
+            "git_dirty": False,
+            "built": info["built"],
+        }
+    source = Path(qrlab.__file__).resolve().parent
+    commit, dirty = _git(source, "rev-parse", "HEAD"), _git(source, "status", "--porcelain")
+    return {
+        **versions,
+        "frozen": False,
+        "git_commit": commit,
+        "git_dirty": None if dirty is None else bool(dirty),
+    }
+
+
+def _build_info(path: Path) -> dict[str, str]:
+    """Read the commit and build time of a frozen program; anything incomplete raises."""
+    if not path.is_file():
+        raise ValidationError(f"no {BUILD_INFO} next to the program ({path}): broken build")
+    try:
+        info = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValidationError(f"{path} is not valid JSON: {exc}") from exc
+    if not isinstance(info, dict):
+        raise ValidationError(f"{path} must hold a JSON object")
+    commit = info.get("commit")
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise ValidationError(f"{path}: commit must be a 40-character git hash, got {commit!r}")
+    if info.get("dirty") is not False:
+        raise ValidationError(f"{path}: the build must come from a clean tree (dirty is false)")
+    built = info.get("built")
+    if not isinstance(built, str) or not built:
+        raise ValidationError(f"{path}: built must be the build time")
+    return {"commit": commit, "built": built}
 
 
 def _git(cwd: Path, *args: str) -> str | None:

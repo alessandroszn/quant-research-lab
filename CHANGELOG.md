@@ -8,6 +8,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Windows build (phase 6.2), in `packaging/`, built by the new workflow
+  `.github/workflows/app-build.yml`:
+  - **Contents:** a PyInstaller one-folder build holding `QuantResearchLab.exe` (the app) and
+    `qrlab.exe` (the command line), with `build-info.json`, `THIRD_PARTY_NOTICES.txt` and the
+    LGPL/GPL texts.
+  - **Deliverables:** a per-user Inno Setup installer that needs no administrator rights and
+    never touches workspaces or settings, a portable zip, and `SHA256SUMS.txt`, uploaded as
+    workflow artifacts.
+  - **CI checks:** the six examples run from source and from the frozen `qrlab.exe` must give
+    byte-identical outputs. The frozen app's self-test must pass, both from the build folder
+    and after a silent install. Uninstalling must remove the program and keep the workspace.
+- `QuantResearchLab.exe --self-test WORKSPACE` (`qrlab_app.selftest`): runs every config of a
+  workspace through the real window, without showing it. It exits with 0 only if all runs
+  succeed; an empty workspace fails.
+- New dependency group `build` (`pyinstaller` 6.22). Reason: the roadmap's packaging tool. It
+  is GPL-2.0 with the bootloader exception, and it is not a runtime dependency.
+
 - The app in Italian and English (phase 6.1c):
   - every app string, error message, sample tag and run status is in both languages;
   - numbers and dates on screen follow the language (`0,0317`, `1.234.570`, `12/11/2026`);
@@ -52,6 +69,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- Run records gain `code.frozen`. In a frozen program the commit comes from the bundled
+  `build-info.json`, with the build time in `code.built`, and `git` is never started. A missing
+  or incomplete file refuses the run before anything is written.
 - CI installs the Qt system libraries on Linux for the off-screen app tests.
 - The app no longer loses unsaved edits: changing config, creating or duplicating one, opening
   another workspace, changing language or closing the window first asks *Save / Discard /

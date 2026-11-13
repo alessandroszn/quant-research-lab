@@ -1,0 +1,147 @@
+name: App build (Windows)
+
+# Design note 6.2: build the one-folder program and the installer from the locked environment,
+# prove that the frozen program gives the same results as the source, run the app's self-test
+# (also from an installed copy) and upload the files as workflow artifacts.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "packaging/**"
+      - ".github/workflows/app-build.yml"
+      - "pyproject.toml"
+      - "uv.lock"
+
+permissions:
+  contents: read
+
+env:
+  INNO_SETUP_VERSION: "6.7.1"
+  PROGRAM: "dist/Quant Research Lab"
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install (locked)
+        run: uv sync --locked --extra app --extra parquet --group build
+
+      - name: Version
+        id: version
+        run: |
+          $version = uv run python -c "import importlib.metadata as m; print(m.version('quant-research-lab'))"
+          if ($LASTEXITCODE) { exit 1 }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build info (refuses a dirty tree)
+        run: |
+          uv run python packaging/build_info.py "$env:RUNNER_TEMP/build-info.json"
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: PyInstaller (one folder, two programs)
+        run: |
+          uv run pyinstaller --noconfirm --clean packaging/qrlab.spec
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: Build info, notices and licence texts next to the programs
+        run: |
+          Copy-Item "$env:RUNNER_TEMP/build-info.json" "$env:PROGRAM/build-info.json"
+          uv run python packaging/notices.py "$env:PROGRAM/THIRD_PARTY_NOTICES.txt"
+          if ($LASTEXITCODE) { exit 1 }
+          New-Item -ItemType Directory "$env:PROGRAM/licences" | Out-Null
+          Copy-Item packaging/licences/*.txt "$env:PROGRAM/licences/"
+
+      - name: Same results as the source (CLI, six examples)
+        run: |
+          $tmp = $env:RUNNER_TEMP
+          foreach ($tree in "source", "frozen") {
+            $configs = uv run python packaging/examples_tree.py . "$tmp/$tree"
+            if ($LASTEXITCODE) { exit 1 }
+            foreach ($config in $configs) {
+              if ($tree -eq "source") { uv run qrlab run $config } else { & "$env:PROGRAM/qrlab.exe" run $config }
+              if ($LASTEXITCODE) { throw "$tree run failed: $config" }
+            }
+          }
+          uv run python packaging/compare_runs.py "$tmp/source/results" "$tmp/frozen/results"
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: App self-test (frozen program)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $tmp = $env:RUNNER_TEMP
+          uv run python packaging/examples_tree.py . "$tmp/gui" | Out-Null
+          $p = Start-Process "$env:PROGRAM/QuantResearchLab.exe" -ArgumentList "--self-test", "$tmp/gui/ws" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "self-test failed with exit code $($p.ExitCode)" }
+          uv run python packaging/compare_runs.py "$tmp/source/results" "$tmp/gui/results"
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: Portable zip
+        run: Compress-Archive -Path "$env:PROGRAM" -DestinationPath "dist/QuantResearchLab-${{ steps.version.outputs.version }}-win64.zip"
+
+      - name: Installer (Inno Setup, pinned)
+        run: |
+          choco install innosetup --version=$env:INNO_SETUP_VERSION -y --no-progress --allow-downgrade
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found" }
+          # ISCC.exe carries no version resource; Chocolatey's record of the package is the check.
+          $found = choco list innosetup --exact --limit-output
+          if ($found -ne "innosetup|$env:INNO_SETUP_VERSION") { throw "Inno Setup '$found', expected $env:INNO_SETUP_VERSION" }
+          & $iscc /Qp "/DAppVersion=${{ steps.version.outputs.version }}" packaging/installer.iss
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: Installer round trip (install, self-test, uninstall)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $tmp = $env:RUNNER_TEMP
+          $dir = "$tmp\installed"
+          $setup = "dist/QuantResearchLab-${{ steps.version.outputs.version }}-win64-setup.exe"
+          $p = Start-Process $setup -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=`"$dir`"", "/LOG=`"$tmp\install.log`"" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "install failed with exit code $($p.ExitCode)" }
+          if (-not (Test-Path "$dir\QuantResearchLab.exe")) { throw "the program was not installed" }
+          uv run python packaging/examples_tree.py . "$tmp/installed-test" | Out-Null
+          $p = Start-Process "$dir\QuantResearchLab.exe" -ArgumentList "--self-test", "$tmp\installed-test\ws" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "installed self-test failed with exit code $($p.ExitCode)" }
+          $p = Start-Process "$dir\unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "uninstall failed with exit code $($p.ExitCode)" }
+          $deadline = (Get-Date).AddSeconds(120)
+          while ((Test-Path $dir) -and ((Get-Date) -lt $deadline)) { Start-Sleep -Seconds 2 }
+          if (Test-Path $dir) { Get-ChildItem -Recurse $dir; throw "the program folder was not removed" }
+          if (-not (Test-Path "$tmp\installed-test\ws\configs")) { throw "the workspace was removed" }
+          if (-not (Test-Path "$tmp\installed-test\results")) { throw "the results were removed" }
+
+      - name: Checksums and sizes
+        run: |
+          $files = Get-Item "dist/*-win64.zip", "dist/*-win64-setup.exe"
+          $files | Get-FileHash -Algorithm SHA256 | ForEach-Object { "{0}  {1}" -f $_.Hash.ToLower(), (Split-Path $_.Path -Leaf) } | Set-Content -Encoding ascii dist/SHA256SUMS.txt
+          $folder = (Get-ChildItem -Recurse -File "$env:PROGRAM" | Measure-Object Length -Sum).Sum
+          "## Windows build ${{ steps.version.outputs.version }}" >> $env:GITHUB_STEP_SUMMARY
+          "| File | Size (MB) |" >> $env:GITHUB_STEP_SUMMARY
+          "|---|---|" >> $env:GITHUB_STEP_SUMMARY
+          "| program folder | {0:N0} |" -f ($folder / 1MB) >> $env:GITHUB_STEP_SUMMARY
+          foreach ($f in $files) { "| {0} | {1:N0} |" -f $f.Name, ($f.Length / 1MB) >> $env:GITHUB_STEP_SUMMARY }
+          Get-Content dist/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuantResearchLab-${{ steps.version.outputs.version }}-win64
+          path: |
+            dist/*-win64.zip
+            dist/*-win64-setup.exe
+            dist/SHA256SUMS.txt
+          retention-days: 30
+          if-no-files-found: error
