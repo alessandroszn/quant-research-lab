@@ -29,6 +29,7 @@ __all__ = [
     "main",
     "notices",
     "python_licence_path",
+    "shipped_texts",
 ]
 
 ROOT = "quant-research-lab"
@@ -162,6 +163,14 @@ def notices(
     return "\n".join(parts).rstrip() + "\n"
 
 
+def shipped_texts() -> dict[str, list[tuple[str, str]]]:
+    """Read the texts of :data:`ADDED_TEXTS` from ``packaging/licences``."""
+    return {
+        dist: [(f, (LICENCES / f).read_text(encoding="utf-8")) for f in files]
+        for dist, files in ADDED_TEXTS.items()
+    }
+
+
 def python_licence_path() -> Path | None:
     """Python's own LICENSE.txt: at the top of a Windows install, under ``lib/`` elsewhere."""
     base = Path(sys.base_prefix)
@@ -182,14 +191,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if python_licence is None:
             raise ValueError(f"Python's licence is not under {sys.base_prefix}")
-        added = {
-            dist: [(f, (LICENCES / f).read_text(encoding="utf-8")) for f in files]
-            for dist, files in ADDED_TEXTS.items()
-        }
         text = notices(
             bundled_distributions(also=ALSO_SHIPPED),
             python_licence=python_licence.read_text(encoding="utf-8"),
-            added=added,
+            added=shipped_texts(),
         )
     except ValueError as exc:
         print(f"notices: {exc}", file=sys.stderr)

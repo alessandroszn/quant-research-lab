@@ -164,7 +164,8 @@ def test_the_real_environment_has_every_licence() -> None:
     names = {canonicalize_name(d.metadata["Name"]) for d in found}
     assert {"numpy", "pandas", "pyside6-essentials", "pyarrow"} <= names
     assert "quant-research-lab" not in names
-    assert "Qt" in notices.notices(found, python_licence="PSF")
+    text = notices.notices(found, python_licence="PSF", added=notices.shipped_texts())
+    assert "GNU LESSER GENERAL PUBLIC LICENSE" in text
 
 
 def test_notices_command(
