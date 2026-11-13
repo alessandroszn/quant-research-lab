@@ -72,19 +72,25 @@ run with 10,000 paths (seed 42) estimates the probability of reaching 200,000 as
 - `tests/unit/experiments/test_runner.py`: `test_tables_must_be_tables_and_seed_rules` (a kind
   that needs a seed refuses a config without one).
 - `tests/unit/experiments/test_kinds.py`: `test_projection_kind` (same seed, same numbers),
-  `test_projection_config_errors`.
+  `test_projection_config_errors`, `test_kinds_write_their_notice` (`NOTICE.txt` and the
+  record), `test_projection_says_when_sensitivity_was_off`.
+- `tests/unit/reporting/test_tables_and_figures.py`:
+  `test_figure_note_is_drawn_without_changing_the_size`.
 - `tests/integration/test_examples.py`: `test_projection_example_runs_deterministically`.
 
 ## Limits
 
 - The sensitivity table is optional. The `projection` kind accepts `sensitivity = false`, and
   the report accepts a projection without sensitivity rows.
-- The disclaimer is not attached to every output. The `projection` kind writes CSV tables, a
-  PNG fan chart and the run record, none of which carries a "not a forecast" note. The
-  `portfolio_report` kind never includes a projection, so its projection section always reads
-  "No projection was computed for this report." The section with the note is reached only by
-  calling {py:func}`qrlab.reporting.build_portfolio_report` from Python. The desktop app shows a
-  general "not investment advice" notice on its Home and Settings screens.
+- The "not a forecast" notice (phase 7.2) is in `NOTICE.txt`, in the record's `"notice"` field,
+  in a footer of the PNG fan chart, in the `qrlab run` output and in the app's results panel.
+  When `sensitivity = false`, it adds "No sensitivity analysis was run for this projection."
+  The CSV tables carry no note of their own: copied on their own, they lose it.
+- The `portfolio_report` kind never includes a projection, so its projection section always
+  reads "No projection was computed for this report." The report section with a projection is
+  reached only by calling {py:func}`qrlab.reporting.build_portfolio_report` from Python. The
+  desktop app also shows a general "not investment advice" notice on its Home and Settings
+  screens.
 - The `projection` kind offers only the normal and Student-t engines. The block bootstrap is
   available from the library only.
 - The normal and Student-t engines draw independent returns with fixed parameters: no

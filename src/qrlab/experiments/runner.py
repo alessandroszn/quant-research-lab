@@ -47,6 +47,7 @@ __all__ = [
 LEDGER = "trials.jsonl"
 RECORD = "record.json"
 BUILD_INFO = "build-info.json"
+NOTICE = "NOTICE.txt"
 RECORD_FORMAT = 1
 """Version of the ``record.json`` layout; it changes only with a major release (design 6.3a)."""
 _PACKAGES = ("numpy", "pandas", "scipy", "statsmodels", "matplotlib")
@@ -103,6 +104,7 @@ def run_experiment(
     started = datetime.now(UTC)
     status, error = "success", None
     outputs: dict[str, object] = {}
+    notice: str | None = None
     scalars: dict[str, object] = {}
     try:
         result = kind.run(RunContext(config, parameters, dict(config.inputs), config.seed))
@@ -110,6 +112,7 @@ def run_experiment(
         if after != hashes:
             raise ValidationError("an input file changed during the run")
         outputs, scalars = _write_outputs(out, result)
+        notice = result.notice
     except Exception as exc:
         status = "failure"
         error = "".join(traceback.format_exception_only(type(exc), exc)).strip()
@@ -130,6 +133,7 @@ def run_experiment(
         },
         "seed": config.seed,
         "outputs": outputs,
+        "notice": notice,
         "scalars": scalars,
         "configurations_tried": tried,
         "code": code,
@@ -189,6 +193,12 @@ def _write_outputs(
     if result.report_html is not None:
         path = out / "report.html"
         path.write_text(result.report_html, encoding="utf-8", newline="\n")
+        written[path.name] = {"tag": "descriptive", "sha256": file_sha256(path)}
+    if result.notice is not None:
+        if not result.notice.strip():
+            raise ValidationError("a notice must be non-empty text")
+        path = out / NOTICE
+        path.write_text(result.notice + "\n", encoding="utf-8", newline="\n")
         written[path.name] = {"tag": "descriptive", "sha256": file_sha256(path)}
     scalars: dict[str, object] = {}
     for name, item in sorted(result.scalars.items()):

@@ -38,7 +38,12 @@ from qrlab.instruments.identifiers import Isin
 from qrlab.scenarios.definitions import HistoricalScenario, load_scenarios
 from qrlab.scenarios.engine import MarketData, PositionSeries, StressPortfolio, run_scenario
 
-__all__ = ["KIND"]
+__all__ = ["KIND", "NOTICE"]
+
+NOTICE = (
+    "What-if stress tests on today's weights. Not forecasts or probabilities of loss. "
+    "Research analytics, not investment advice."
+)
 
 _PARAMETERS = ("as_of", "value", "currency", "csv_format", "position_returns_currency")
 _OPTIONAL_INPUTS = ("position_returns", "factors", "betas", "fx")
@@ -180,6 +185,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             "positions": Tagged(pd.DataFrame(rows), "descriptive"),
         },
         scalars={"scenarios_run": Tagged(float(len(summary)), "descriptive")},
+        notice=NOTICE,
     )
 
 

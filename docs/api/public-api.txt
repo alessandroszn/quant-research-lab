@@ -168,7 +168,7 @@ qrlab.data.parse_yield_curve  function(content: 'bytes', provenance: 'Provenance
 qrlab.experiments.ExperimentConfig  class(path: 'Path', name: 'str', kind: 'str', hypothesis: 'str', seed: 'int | None', inputs: 'Mapping[str, Path]', given_inputs: 'Mapping[str, str]', parameters: 'Mapping[str, object]', output_dir: 'Path', raw: 'Mapping[str, object]', hash: 'str') -> None
 qrlab.experiments.ExperimentKind  class(name: 'str', description: 'str', inputs: 'tuple[str, ...]', needs_seed: 'bool', parameters: 'tuple[str, ...]', parse: 'Callable[[Mapping[str, object]], object]', run: 'Callable[[RunContext], ExperimentOutput]', optional_inputs: 'tuple[str, ...]' = ()) -> None
 qrlab.experiments.ExperimentKind.optional_inputs  attribute tuple = []
-qrlab.experiments.ExperimentOutput  class(tables: 'Mapping[str, Tagged]' = <factory>, scalars: 'Mapping[str, Tagged]' = <factory>, figures: 'Mapping[str, bytes]' = <factory>, report_html: 'str | None' = None) -> None
+qrlab.experiments.ExperimentOutput  class(tables: 'Mapping[str, Tagged]' = <factory>, scalars: 'Mapping[str, Tagged]' = <factory>, figures: 'Mapping[str, bytes]' = <factory>, report_html: 'str | None' = None, notice: 'str | None' = None) -> None
 qrlab.experiments.RECORD_FORMAT  constant int = 1
 qrlab.experiments.RunContext  class(config: 'ExperimentConfig', parameters: 'object', inputs: 'Mapping[str, Path]', seed: 'int | None') -> None
 qrlab.experiments.RunResult  class(output_dir: 'Path', record: 'Mapping[str, Any]') -> None
@@ -420,7 +420,7 @@ qrlab.reporting.format_number  function(value: 'SupportsFloat', decimals: 'int',
 qrlab.reporting.format_percent  function(value: 'SupportsFloat', decimals: 'int', *, style: 'NumberStyle') -> 'str'
 qrlab.reporting.format_significant  function(value: 'SupportsFloat', digits: 'int', *, style: 'NumberStyle') -> 'str'
 qrlab.reporting.label  function(key: 'str', language: 'Language', **values: 'str') -> 'str'
-qrlab.reporting.line_figure  function(lines: 'Sequence[tuple[str, pd.Series]]', *, title: 'str', y_label: 'str', axis: 'AxisFormat', style: 'NumberStyle', markers: 'Sequence[date]' = (), marker_label: 'str' = '') -> 'bytes'
+qrlab.reporting.line_figure  function(lines: 'Sequence[tuple[str, pd.Series]]', *, title: 'str', y_label: 'str', axis: 'AxisFormat', style: 'NumberStyle', markers: 'Sequence[date]' = (), marker_label: 'str' = '', note: 'str' = '') -> 'bytes'
 qrlab.reporting.render_html  function(report: 'Report') -> 'str'
 qrlab.reporting.style_for  function(language: 'Language') -> 'NumberStyle'
 qrlab.reporting.write_report  function(report: 'Report', path: 'Path', *, overwrite: 'bool') -> 'Path'

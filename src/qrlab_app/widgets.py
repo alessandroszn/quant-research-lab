@@ -114,6 +114,8 @@ class ResultsPanel(QWidget):
         self._open_path = open_path
         self._view: ResultView | None = None
         self.title = QLabel("")
+        self.notice = QLabel("")
+        self.notice.setWordWrap(True)
         self.tabs = QTabWidget()
         self.report_button = QPushButton(tr("screen.open_report", language))
         self.folder_button = QPushButton(tr("screen.open_folder", language))
@@ -124,6 +126,7 @@ class ResultsPanel(QWidget):
         buttons.addWidget(self.folder_button)
         layout = QVBoxLayout(self)
         layout.addWidget(self.title)
+        layout.addWidget(self.notice)
         layout.addWidget(self.tabs)
         layout.addLayout(buttons)
         self.show_result(None)
@@ -134,6 +137,7 @@ class ResultsPanel(QWidget):
         self.tabs.clear()
         self.report_button.setEnabled(view is not None and view.report is not None)
         self.folder_button.setEnabled(view is not None)
+        self.notice.setText("" if view is None or not view.notice else view.notice)
         if view is None:
             self.title.setText("")
             return

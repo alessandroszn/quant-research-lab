@@ -94,7 +94,7 @@ earlier versions promised more than the code does.
 | Overfitting / multiple testing | Trial ledger and `configurations_tried` in every record; Holm/BH/BY; deflated Sharpe in studies 1 and 2; sample tags | The count covers only runs through the runner; tags are checked for validity, not truth |
 | Unrealistic costs and taxes | Cost and tax models have no defaults; gross and net side by side in backtests | Linear costs only; one flat capital-gains rate without loss offsets; zero costs are accepted |
 | Benchmark mismatch | Tracking difference and error check currency, hedging and price type | Relative metrics and attribution check dates only; currency and return type are left to the caller |
-| Projection overconfidence | Distributions only, with Monte Carlo standard errors; optional parameter sensitivity | Sensitivity can be switched off; the `projection` kind's files carry no disclaimer |
+| Projection overconfidence | Distributions only, with Monte Carlo standard errors; optional parameter sensitivity; a "not a forecast" notice in `NOTICE.txt`, the record and the fan chart (7.2) | Sensitivity can be switched off (the notice then says so); the CSV tables themselves carry no note |
 | Numerical / silent pandas errors | Warnings are errors in tests; explicit NaN policy; cross-checks against statsmodels, SciPy and scikit-learn | Warnings are errors only under pytest; cross-checks cover selected functions |
 | Personal-data exposure | Real portfolios only in git-ignored `data/`; synthetic data in examples and tests | Protected by `.gitignore` and convention; no automated check yet (the 6.3c audit adds one before publication) |
 

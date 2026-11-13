@@ -43,6 +43,8 @@ class ExperimentOutput:
     scalars: Mapping[str, Tagged] = field(default_factory=dict)
     figures: Mapping[str, bytes] = field(default_factory=dict)
     report_html: str | None = None
+    notice: str | None = None
+    """Short plain text that travels with the outputs (``NOTICE.txt``, the record, the CLI)."""
 
 
 @dataclass(frozen=True)

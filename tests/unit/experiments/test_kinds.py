@@ -380,3 +380,49 @@ def test_projection_tables_must_be_tables(key: str, match: str) -> None:
     parameters[key] = 1
     with pytest.raises(ValidationError, match=match):
         KINDS["projection"].parse(parameters)
+
+
+# ------------------------------------------------------------------- notices (design 7.2)
+@pytest.mark.parametrize(
+    ("name", "start"),
+    [
+        ("example_projection.toml", "Scenarios from the stated assumptions, not a forecast."),
+        ("example_optimisation.toml", "In-sample weights"),
+        ("example_scenarios.toml", "What-if stress tests"),
+        ("example_backtest.toml", "One historical path"),
+    ],
+)
+def test_kinds_write_their_notice(tmp_path: Path, name: str, start: str) -> None:
+    result = run_experiment(_localise(name, tmp_path), kinds=KINDS, overwrite=False)
+    notice = result.record["notice"]
+    assert isinstance(notice, str)
+    assert notice.startswith(start)
+    assert notice.endswith("Research analytics, not investment advice.")
+    assert (result.output_dir / "NOTICE.txt").read_text(encoding="utf-8") == notice + "\n"
+
+
+def test_projection_says_when_sensitivity_was_off(tmp_path: Path) -> None:
+    on = run_experiment(
+        _localise("example_projection.toml", tmp_path / "on"), kinds=KINDS, overwrite=False
+    )
+    assert "No sensitivity analysis" not in on.record["notice"]
+    off = run_experiment(
+        _localise(
+            "example_projection.toml",
+            tmp_path / "off",
+            **{"sensitivity = true": "sensitivity = false"},
+        ),
+        kinds=KINDS,
+        overwrite=False,
+    )
+    assert off.record["notice"].endswith(
+        "No sensitivity analysis was run for this projection. "
+        "Research analytics, not investment advice."
+    )
+
+
+def test_kinds_without_a_notice(tmp_path: Path) -> None:
+    result = run_experiment(
+        _localise("example_risk_report.toml", tmp_path), kinds=KINDS, overwrite=False
+    )
+    assert result.record["notice"] is None

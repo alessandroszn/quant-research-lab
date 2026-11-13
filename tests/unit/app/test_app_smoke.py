@@ -293,6 +293,11 @@ def test_frame_model_and_results_panel(qapp: QApplication, tmp_path: Path) -> No
     )
     panel.show_result(view)
     assert panel.tabs.tabText(0) == "t [in-sample]"
+    assert panel.notice.text() == ""
+    from dataclasses import replace
+
+    panel.show_result(replace(view, notice="Not a forecast."))
+    assert panel.notice.text() == "Not a forecast."
     panel.report_button.click()
     assert opened == [report]
     panel.show_result(None)

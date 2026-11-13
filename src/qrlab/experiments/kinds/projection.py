@@ -32,6 +32,13 @@ from qrlab.simulation.engines import (
 from qrlab.simulation.outcomes import sensitivity, shifted_moments, summarize
 from qrlab.simulation.plan import Flow, Plan, TaxModel, project
 
+SCENARIOS = (
+    "Scenarios from the stated assumptions, not a forecast. Outcomes are a distribution; no "
+    "single path is expected."
+)
+NO_SENSITIVITY = "No sensitivity analysis was run for this projection."
+ADVICE = "Research analytics, not investment advice."
+
 __all__ = ["KIND"]
 
 _PARAMETERS = (
@@ -219,12 +226,15 @@ def _run(context: RunContext) -> ExperimentOutput:
             ),
             "descriptive",
         )
+    caveats = [SCENARIOS] if p.sensitivity else [SCENARIOS, NO_SENSITIVITY]
+    notice = " ".join([*caveats, ADVICE])
     figure = line_figure(
         [(c, fan[c]) for c in fan.columns],
         title="Projected real wealth",
         y_label=p.plan.currency.code,
         axis=AxisFormat.NUMBER,
         style=style_for(Language.EN),
+        note="Scenarios from stated assumptions, not a forecast.",
     )
     return ExperimentOutput(
         tables=tables,
@@ -235,6 +245,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             "terminal_mean_real": Tagged(summary.terminal_mean_real, "descriptive"),
         },
         figures={"fan_real": figure},
+        notice=notice,
     )
 
 

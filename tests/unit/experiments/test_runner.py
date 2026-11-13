@@ -322,3 +322,48 @@ def test_records_carry_their_format(tmp_path: Path) -> None:
     assert result.record["format"] == 1
     written = json.loads((result.output_dir / "record.json").read_text(encoding="utf-8"))
     assert written["format"] == 1
+
+
+# ------------------------------------------------------------------- notices (design 7.2)
+def _run_with_notice(context: RunContext) -> ExperimentOutput:
+    plain = _run(context)
+    return ExperimentOutput(tables=plain.tables, scalars=plain.scalars, notice="Read me first.")
+
+
+NOTED = {
+    "scale": ExperimentKind(
+        "scale", "Scale with a notice", ("data",), False, ("scale",), _parse, _run_with_notice
+    )
+}
+
+
+def test_a_notice_is_written_and_recorded(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    result = run_experiment(_write(tmp_path), kinds=NOTED, overwrite=False)
+    assert result.succeeded
+    notice = result.output_dir / "NOTICE.txt"
+    assert notice.read_text(encoding="utf-8") == "Read me first.\n"
+    assert result.record["outputs"]["NOTICE.txt"]["tag"] == "descriptive"
+    assert result.record["notice"] == "Read me first."
+    assert main(["run", str(_write(tmp_path)), "--overwrite"], kinds=NOTED) == 0
+    assert "notice: Read me first." in capsys.readouterr().out
+
+
+def test_no_notice_no_file(tmp_path: Path) -> None:
+    result = run_experiment(_write(tmp_path), kinds=KINDS, overwrite=False)
+    assert result.record["notice"] is None
+    assert not (result.output_dir / "NOTICE.txt").exists()
+
+
+def test_a_notice_must_be_text(tmp_path: Path) -> None:
+    def bad(context: RunContext) -> ExperimentOutput:
+        return ExperimentOutput(notice="  ")
+
+    kinds = {
+        "scale": ExperimentKind("scale", "Bad notice", ("data",), False, ("scale",), _parse, bad)
+    }
+    result = run_experiment(_write(tmp_path), kinds=kinds, overwrite=False)
+    assert not result.succeeded
+    assert "notice" in result.record["error"]
+    assert result.record["notice"] is None
