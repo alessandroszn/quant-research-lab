@@ -64,7 +64,6 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Price type in returns CSVs | 6.3b methodology | The backtest, risk, optimisation and scenario kinds cannot tell total-return from price-return inputs. |
 | Multi-currency and look-through in the `portfolio_report` kind | 6.3b methodology | The library supports both, but the kind used by the CLI and the app is single-currency and passes no look-through. |
 | Disclaimer in the `projection` kind's outputs | 6.3b methodology | Its CSV and PNG files carry no "not a forecast" note; only the HTML portfolio report does. |
-| Clean re-run of the four studies | 6.3d paper | The study records show uncommitted changes at run time; re-running every config from the merged code on the same data files would confirm the published tables exactly. |
 | Code signing of the Windows build | 6.2 build | Removes the SmartScreen warning; needs a paid certificate or Azure Trusted Signing. |
 | macOS build | 6.2 build | A PyInstaller `.app` and a disk image, built on a macOS runner with the same source-versus-frozen check. |
 | App icon | 6.2 build | The Windows build uses PyInstaller's default icon. |

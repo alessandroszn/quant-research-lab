@@ -5,6 +5,9 @@ any result was seen: [`docs/design/5.3-study-2-one-over-n.md`](../design/5.3-stu
 
 *Research analytics, not investment advice. Past portfolio returns are not a forecast.*
 
+*Re-run on 2026-11-13 from a clean checkout of commit 63f808a, with the same data: every
+output was byte-identical.*
+
 ## 1. Question and hypotheses
 
 DeMiguel, Garlappi and Uppal (2009) find that none of 14 sample-based optimised portfolios

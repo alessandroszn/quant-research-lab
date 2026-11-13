@@ -27,8 +27,8 @@ that factor.
 Library: Mkt-RF, SMB and HML from the three-factor files, RMW and CMA from the five-factor
 (2×3) files, and Mom from the momentum files. Monthly returns come from the monthly files.
 Realised variances come from the daily files. Mkt-RF is an excess return; the other five are
-zero-cost long-short returns. The study was run on {{ s1_run_date }} with the files downloaded
-that day. They are stored unchanged with their hashes (Appendix A) and are not redistributed.
+zero-cost long-short returns. The files are stored unchanged with their hashes (Appendix A)
+and are not redistributed.
 
 In the main run, the managed series cover {{ s1_mkt_start }} to {{ s1_end }} for Mkt-RF, SMB
 and HML ({{ s1_mkt_n }} months). They start in {{ s1_rmw_start }} for RMW and CMA
