@@ -1,0 +1,108 @@
+name: Release
+
+# Design note 6.3c. On a version tag:
+#   1. check that the tag matches the version in pyproject.toml;
+#   2. build the sdist and wheel, and the Windows program and installer (with all their checks);
+#   3. create a DRAFT GitHub Release with every file, which the owner reviews and publishes;
+#   4. publish to TestPyPI (tags like v1.0.0rc1) or PyPI (final tags) by trusted publishing:
+#      no token is stored. The job waits in a protected environment for the owner's approval.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches pyproject.toml
+        run: |
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          echo "pyproject: $version, tag: $GITHUB_REF_NAME"
+          test "v$version" = "$GITHUB_REF_NAME"
+
+  dist:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Check the metadata
+        run: uvx twine check --strict dist/*
+      - name: The wheel installs and runs in a clean environment
+        run: |
+          uv venv /tmp/clean
+          uv pip install --python /tmp/clean dist/*.whl
+          /tmp/clean/bin/qrlab kinds
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+          if-no-files-found: error
+
+  windows:
+    needs: version
+    uses: ./.github/workflows/app-build.yml
+
+  github-release:
+    needs: [dist, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Draft release with every file
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          case "$GITHUB_REF_NAME" in *rc[0-9]*|*a[0-9]*|*b[0-9]*) prerelease="--prerelease";; esac
+          gh release create "$GITHUB_REF_NAME" release/* \
+            --repo "$GITHUB_REPOSITORY" --draft $prerelease \
+            --title "Quant Research Lab ${GITHUB_REF_NAME#v}" \
+            --notes "See CHANGELOG.md for the changes. Check the files against SHA256SUMS.txt. Research analytics, not investment advice."
+
+  testpypi:
+    if: contains(github.ref_name, 'rc')
+    needs: [dist, windows]
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/quant-research-lab/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  pypi:
+    if: ${{ !contains(github.ref_name, 'rc') }}
+    needs: [dist, windows]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/quant-research-lab/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,0 +1,48 @@
+name: Docs (GitHub Pages)
+
+# Design note 6.3c: publish the documentation for final release tags, or by hand. It needs the
+# repository to be public (or a plan with private Pages) and Pages set to "GitHub Actions".
+# This build may use the network: it adds links to the Python, NumPy, pandas and SciPy docs.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - name: Install (locked, docs group)
+        run: uv sync --locked --group docs
+      - name: HTML with links to other projects' docs
+        env:
+          QRLAB_DOCS_INTERSPHINX: "1"
+        run: uv run sphinx-build -W --keep-going -b html docs docs/_build/html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

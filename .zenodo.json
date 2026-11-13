@@ -1,0 +1,14 @@
+{
+  "title": "Quant Research Lab",
+  "upload_type": "software",
+  "creators": [{"name": "Zanichelli, Alessandro"}],
+  "description": "A Python framework for quantitative financial research, portfolio analytics and backtesting, with four reproducible empirical studies and a desktop app. Every analysis is a config run by one experiment runner that records its inputs, code version and the number of configurations tried. Research analytics, not investment advice.",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "quantitative finance",
+    "portfolio analytics",
+    "backtesting",
+    "asset pricing",
+    "reproducible research"
+  ]
+}

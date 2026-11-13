@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software or its studies, please cite it as below."
+type: software
+title: "Quant Research Lab"
+abstract: >-
+  A Python framework for quantitative financial research, portfolio analytics and
+  backtesting, with four reproducible empirical studies and a desktop app. Every analysis is
+  a config run by one experiment runner that records its inputs, code version and the number
+  of configurations tried.
+authors:
+  - family-names: Zanichelli
+    given-names: Alessandro
+version: 0.4.0
+license: BSD-3-Clause
+repository-code: "https://github.com/alessandroszn/quant-research-lab"
+url: "https://alessandroszn.github.io/quant-research-lab/"
+keywords:
+  - quantitative finance
+  - portfolio analytics
+  - backtesting
+  - asset pricing
+  - reproducible research
