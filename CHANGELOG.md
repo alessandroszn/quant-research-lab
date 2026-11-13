@@ -8,6 +8,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Documentation site (phase 6.3b), built with Sphinx, MyST-Parser and pydata-sphinx-theme:
+  - getting started, and guides to experiments, the experiment kinds, the desktop app,
+    reproducing the studies and the data sources;
+  - one methodology page per risk in the risk register, each with its limits; the register in
+    `ARCHITECTURE.md` is corrected where it promised more than the code does;
+  - the four studies;
+  - the API reference generated from the docstrings;
+  - the changelog, the architecture, the roadmap and the design notes.
+
+  A new `docs` job in CI builds it with warnings as errors and runs the guides' examples as
+  doctests, without network access.
+- `qrlab.data` now exports the Open Source Asset Pricing functions used by study 3:
+  `download_osap`, `parse_long_short_returns`, `parse_signal_doc`, `OSAP_FILES` and
+  `OSAP_REVISION`.
+- New dependency group `docs` (Sphinx, myst-parser, pydata-sphinx-theme). Reason: the
+  documentation tool chosen in design note 6.3 (D3); not a runtime dependency.
+
 - The public API is frozen for 1.0 (phase 6.3a):
   - `docs/api/public-api.txt` lists every public name with its signature, and
     `tests/unit/test_public_api.py` fails on any change that is not reflected there;

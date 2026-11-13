@@ -75,23 +75,28 @@ files); `data` never imports `instruments`.
 
 ## Quantitative risk register
 
-| Risk | How the architecture prevents it |
-|---|---|
-| Look-ahead bias | Mandatory execution lag ≥ 1 in the backtest; availability dates in data; leak tests |
-| Data leakage in validation | Only time-ordered splits; purging/embargo; estimation inside training folds only |
-| Survivorship bias | Point-in-time universes; closed/delisted instruments retained |
-| Return misalignment | Single return-convention module; validated indices; explicit alignment |
-| Wrong annualisation | Periods per year always explicit; geometric vs. arithmetic distinguished |
-| Currency errors | Currency-aware amounts; dated FX conversions; currency contribution reported separately |
-| Wrong performance measure | TWR and MWR both computed and labelled; never mixed |
-| Dividends / distributions | Total- vs. price-return flag required; accumulating vs. distributing tracked |
-| Stale look-through data | Holdings carry as-of dates; checks flag staleness |
-| Overfitting / multiple testing | Records log configurations tried; Holm/BH, deflated Sharpe; out-of-sample separate |
-| Unrealistic costs and taxes | Cost and tax models are required inputs; gross vs. net side by side |
-| Benchmark mismatch | Matching frequency, currency and return type enforced |
-| Projection overconfidence | Distributions only; assumptions and parameter sensitivity shown; disclaimer |
-| Numerical / silent pandas errors | Warnings are errors in tests; explicit NaN policy; independent cross-checks |
-| Personal-data exposure | Real portfolios only in git-ignored `data/`; synthetic data everywhere else |
+What qrlab actually does about each risk, and the main gap that remains. Each methodology page
+in the documentation (`docs/methodology/`) gives the example, the mechanisms, the tests that
+guard them and every known limit. This table was corrected for 1.0 (design note 6.3b), where
+earlier versions promised more than the code does.
+
+| Risk | What qrlab does | Main gap |
+|---|---|---|
+| Look-ahead bias | Execution lag required (≥ 1, no default) in the backtest; walk-forward decisions use only past returns | Availability dates exist only for some ECB series and are not used downstream; a strategy can still leak data it captures itself |
+| Data leakage in validation | Time-ordered splits only, with purging and embargo, checked on every split (`qrlab.validation`) | The backtest and studies use their own trailing windows, not `qrlab.validation`; estimation inside folds is left to the caller |
+| Survivorship bias | Missing returns are never filled; uncovered stress-test positions are excluded, not zeroed; fund age and size checks | No point-in-time universes and no delisting handling; the backtest needs a fixed, complete panel |
+| Return misalignment | Validated, sorted, unique indices; explicit alignment (`require_same_index`) | The return kind is not carried by a series; metrics assume simple returns by contract |
+| Wrong annualisation | `periods_per_year` always explicit; geometric and arithmetic returns are separate functions | `periods_per_year` is not checked against the data's frequency; √P scaling assumes no autocorrelation |
+| Currency errors | Currency-aware amounts; dated ECB FX conversions; cash FX shown separately in the P&L breakdown | The `portfolio_report` kind is single-currency; FX effects of positions stay inside their P&L |
+| Wrong performance measure | TWR and MWR computed separately, labelled, never mixed in one number | The MWR is always annual while a short-period TWR is not; the record stores only the TWR |
+| Dividends / distributions | Price type required for user price files and tracking series; valuation refuses total-return prices | Returns CSVs of the backtest, risk, optimisation and scenario kinds carry no price-type flag; no ex-dates |
+| Stale look-through data | Holdings carry as-of dates; future-dated holdings are refused; stale ones are flagged by checks | Stale holdings are flagged, not refused; the `portfolio_report` kind does not run look-through |
+| Overfitting / multiple testing | Trial ledger and `configurations_tried` in every record; Holm/BH/BY; deflated Sharpe in studies 1 and 2; sample tags | The count covers only runs through the runner; tags are checked for validity, not truth |
+| Unrealistic costs and taxes | Cost and tax models have no defaults; gross and net side by side in backtests | Linear costs only; one flat capital-gains rate without loss offsets; zero costs are accepted |
+| Benchmark mismatch | Tracking difference and error check currency, hedging and price type | Relative metrics and attribution check dates only; currency and return type are left to the caller |
+| Projection overconfidence | Distributions only, with Monte Carlo standard errors; optional parameter sensitivity | Sensitivity can be switched off; the `projection` kind's files carry no disclaimer |
+| Numerical / silent pandas errors | Warnings are errors in tests; explicit NaN policy; cross-checks against statsmodels, SciPy and scikit-learn | Warnings are errors only under pytest; cross-checks cover selected functions |
+| Personal-data exposure | Real portfolios only in git-ignored `data/`; synthetic data in examples and tests | Protected by `.gitignore` and convention; no automated check yet (the 6.3c audit adds one before publication) |
 
 ## Testing strategy
 

@@ -53,6 +53,11 @@ dev = [
     "pyarrow>=18",
     "pyside6-essentials>=6.8",
 ]
+docs = [
+    "myst-parser>=4.0",
+    "pydata-sphinx-theme>=0.16",
+    "sphinx>=8.1",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/qrlab", "src/qrlab_app"]
