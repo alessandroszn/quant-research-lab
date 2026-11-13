@@ -9,8 +9,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+import pandas as pd
+
 from qrlab.checks.context import CheckContext
 from qrlab.checks.framework import Direction, Measurement, MeasureUnit, NotApplicable, spec
+from qrlab.core.calendar import CONVENTIONAL_PERIODS_PER_YEAR, infer_frequency
 from qrlab.core.errors import ValidationError
 from qrlab.metrics.drawdown import max_drawdown as _max_drawdown
 from qrlab.metrics.errors import UndefinedMetricError
@@ -75,8 +78,15 @@ def beta(ctx: CheckContext, params: Mapping[str, object]) -> list[Measurement] |
         return _NO_SERIES
     if ctx.benchmark_returns is None:
         return NotApplicable("no benchmark given")
+    # periods_per_year only scales alpha, which this check does not use. Pass the conventional
+    # value for the dates' frequency so it never contradicts them (design note 7.1); with
+    # dates of no recognisable frequency no check applies and 1 is as good as any value.
+    frequency = infer_frequency(pd.DatetimeIndex(ctx.portfolio_returns.index))
+    periods = 1 if frequency is None else CONVENTIONAL_PERIODS_PER_YEAR[frequency]
     try:
-        fit = capm_regression(ctx.portfolio_returns, ctx.benchmark_returns, periods_per_year=1)
+        fit = capm_regression(
+            ctx.portfolio_returns, ctx.benchmark_returns, periods_per_year=periods
+        )
     except UndefinedMetricError as exc:
         return NotApplicable(str(exc))
     return [Measurement("portfolio", fit.beta, {"r_squared": f"{fit.r_squared:.4f}"})]

@@ -18,6 +18,7 @@ from qrlab.core.calendar import (
     Frequency,
     easter_sunday,
     infer_frequency,
+    require_periods_per_year,
     target2_calendar,
     weekday_calendar,
 )
@@ -68,6 +69,7 @@ __all__ = [
     "infer_frequency",
     "log_to_simple",
     "prices_to_returns",
+    "require_periods_per_year",
     "require_same_index",
     "simple_to_log",
     "target2_calendar",

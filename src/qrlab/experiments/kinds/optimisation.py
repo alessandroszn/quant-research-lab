@@ -22,6 +22,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from qrlab.core.calendar import require_periods_per_year
 from qrlab.core.errors import ValidationError
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._frames import (
@@ -128,6 +129,7 @@ def _optimise(
 def _run(context: RunContext) -> ExperimentOutput:
     p: _Parameters = context.parameters  # type: ignore[assignment]
     returns = read_returns(context.inputs["returns"].read_bytes(), p.returns_format)
+    require_periods_per_year(p.periods_per_year, returns.index)
     assets = [str(c) for c in returns.columns]
     cov = estimate_covariance(returns, p.covariance)
     result = _optimise(p, returns, cov, assets)

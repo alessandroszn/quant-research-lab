@@ -24,6 +24,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from qrlab.core.calendar import require_periods_per_year
 from qrlab.core.errors import ValidationError
 from qrlab.core.returns import ReturnKind
 from qrlab.core.series import NanPolicy
@@ -110,6 +111,7 @@ def _var_model(name: str, confidence: float) -> Callable[[pd.Series], float]:
 def _run(context: RunContext) -> ExperimentOutput:
     p: _Parameters = context.parameters  # type: ignore[assignment]
     returns = read_returns(context.inputs["returns"].read_bytes(), p.returns_format)
+    require_periods_per_year(p.periods_per_year, returns.index)
     assets = [str(c) for c in returns.columns]
     w = weights(p.weights, assets)
     portfolio = (returns * w).sum(axis=1).rename("portfolio")

@@ -12,12 +12,12 @@ alpha "significant": testing many models or funds needs multiple-testing correct
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from enum import Enum
 
 import pandas as pd
 
+from qrlab.core.calendar import require_periods_per_year
 from qrlab.core.errors import ValidationError
 from qrlab.stats.regression import INTERCEPT, CovType, OlsResult, ols
 
@@ -108,8 +108,7 @@ def factor_exposures(
     """
     if not isinstance(model, FactorSet):
         raise ValidationError(f"model must be a FactorSet, got {model!r}")
-    if not _positive_number(periods_per_year):
-        raise ValidationError(f"periods_per_year must be positive, got {periods_per_year!r}")
+    require_periods_per_year(periods_per_year, getattr(excess_returns, "index", None))
     if model.uses_momentum != (momentum_column is not None):
         raise ValidationError(
             "momentum_column is required for models with momentum and must be None otherwise"
@@ -134,13 +133,4 @@ def factor_exposures(
         r_squared=fit.r_squared,
         nobs=fit.nobs,
         regression=fit,
-    )
-
-
-def _positive_number(value: object) -> bool:
-    return (
-        not isinstance(value, bool)
-        and isinstance(value, int | float)
-        and math.isfinite(value)
-        and value > 0
     )

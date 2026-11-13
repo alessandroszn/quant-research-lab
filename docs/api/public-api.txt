@@ -105,6 +105,7 @@ qrlab.core.excess_returns  function(returns: '_T', risk_free: 'pd.Series', *, ki
 qrlab.core.infer_frequency  function(index: 'pd.DatetimeIndex') -> 'Frequency | None'
 qrlab.core.log_to_simple  function(returns: '_T') -> '_T'
 qrlab.core.prices_to_returns  function(prices: '_T', *, kind: 'ReturnKind') -> '_T'
+qrlab.core.require_periods_per_year  function(periods_per_year: 'float', index: 'object') -> 'float'
 qrlab.core.require_same_index  function(*objs: 'pd.Series | pd.DataFrame') -> 'None'
 qrlab.core.simple_to_log  function(returns: '_T') -> '_T'
 qrlab.core.target2_calendar  function(years: 'range') -> 'BusinessCalendar'

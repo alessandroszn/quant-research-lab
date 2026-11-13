@@ -8,6 +8,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- `qrlab.core.require_periods_per_year` (phase 7.1): a `periods_per_year` that contradicts the
+  dates' frequency now raises, with the value to use. For example, 252 on monthly data raises
+  with "use 12".
+  - **Where it applies:** every annualising metric, `factor_exposures`, the tracking error,
+    `summarize_backtest`, and the `risk_report` and `optimisation` kinds.
+  - **When it does not:** series whose dates have no recognisable frequency are not checked.
+
+### Fixed
+
+- The beta health check passed `periods_per_year=1` whatever the frequency of the returns. Its
+  result was unaffected, because only the unused alpha is scaled; it now passes the value that
+  matches the dates (regression test).
+
+### Added
+
 - The working paper (phase 6.3d), *What survives? Four reproducible studies of portfolio rules
   under real-time implementation, costs and multiple testing*, in `docs/paper/` and on the
   documentation site.

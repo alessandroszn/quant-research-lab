@@ -10,6 +10,7 @@ range raise instead of silently treating missing holidays as business days.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -27,6 +28,7 @@ __all__ = [
     "Frequency",
     "easter_sunday",
     "infer_frequency",
+    "require_periods_per_year",
     "target2_calendar",
     "weekday_calendar",
 ]
@@ -93,6 +95,65 @@ def infer_frequency(index: pd.DatetimeIndex) -> Frequency | None:
         if low <= median_gap <= high:
             return frequency
     return None
+
+
+_ACCEPTED_PERIODS: Mapping[Frequency, tuple[float, float]] = MappingProxyType(
+    {
+        Frequency.DAILY: (250.0, 366.0),  # trading-day and calendar-day conventions
+        Frequency.WEEKLY: (50.0, 53.0),
+        Frequency.MONTHLY: (12.0, 12.0),
+        Frequency.QUARTERLY: (4.0, 4.0),
+        Frequency.ANNUAL: (1.0, 1.0),
+    }
+)
+
+
+def require_periods_per_year(periods_per_year: float, index: object) -> float:
+    """Return ``periods_per_year`` after checking it does not contradict the dates.
+
+    The value is never chosen here: it is only refused when the dates show another frequency.
+
+    Parameters
+    ----------
+    periods_per_year
+        The number of periods per year the caller uses to annualise; a positive finite number.
+    index
+        The dates of the series being annualised. The check applies only to a
+        ``DatetimeIndex`` with at least two dates whose frequency :func:`infer_frequency`
+        recognises; otherwise (irregular dates, no dates, one observation) nothing is checked.
+
+    Returns
+    -------
+    float
+        ``periods_per_year`` as a float.
+
+    Raises
+    ------
+    ValidationError
+        If the value is not a positive finite number, or lies outside the accepted range of
+        the inferred frequency: daily 250-366, weekly 50-53, monthly 12, quarterly 4,
+        annual 1.
+    """
+    value: object = periods_per_year
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise ValidationError(f"periods_per_year must be a positive number, got {value!r}")
+    if not (math.isfinite(value) and value > 0):
+        raise ValidationError(f"periods_per_year must be positive and finite, got {value!r}")
+    number = float(value)
+    if not isinstance(index, pd.DatetimeIndex) or len(index) < 2:
+        return number
+    dates = index.sort_values()
+    frequency = infer_frequency(dates)
+    if frequency is None:
+        return number
+    low, high = _ACCEPTED_PERIODS[frequency]
+    if not low <= number <= high:
+        gap = float(np.median(np.diff(dates.to_numpy()) / np.timedelta64(1, "D")))
+        raise ValidationError(
+            f"periods_per_year is {number:g}, but the dates are {frequency.name.lower()} "
+            f"(median gap {gap:.0f} days): use {CONVENTIONAL_PERIODS_PER_YEAR[frequency]}"
+        )
+    return number
 
 
 def easter_sunday(year: int) -> date:

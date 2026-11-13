@@ -13,6 +13,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from qrlab.backtest.engine import BacktestResult
+from qrlab.core.calendar import require_periods_per_year
 from qrlab.core.errors import ValidationError
 from qrlab.metrics.drawdown import max_drawdown
 from qrlab.metrics.errors import UndefinedMetricError
@@ -51,6 +52,7 @@ def summarize_backtest(result: BacktestResult, *, periods_per_year: int) -> Back
     """Summarise ``result`` with an explicit number of periods per year."""
     if type(periods_per_year) is not int or periods_per_year < 1:
         raise ValidationError("periods_per_year must be a positive int")
+    require_periods_per_year(periods_per_year, result.net_returns.index)
     periods = len(result.net_returns)
     years = periods / periods_per_year
     turnover = sum(e.turnover for e in result.executions)

@@ -74,3 +74,10 @@ def test_single_period_has_no_volatility_and_bad_frequency_raises() -> None:
     assert summary.net.annualised_volatility is None
     with pytest.raises(ValidationError, match="periods_per_year"):
         summarize_backtest(result, periods_per_year=0)
+
+
+def test_periods_per_year_must_match_the_dates() -> None:
+    """Design note 7.1: monthly results annualised with 252 are refused."""
+    result = _result(TOY, CalendarPolicy(1), CostModel(0.0, 0.0))
+    with pytest.raises(ValidationError, match="dates are monthly"):
+        summarize_backtest(result, periods_per_year=252)

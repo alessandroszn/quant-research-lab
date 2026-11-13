@@ -67,7 +67,7 @@ class SharpeEstimate:
 
 def annualised_arithmetic_return(returns: pd.Series, *, periods_per_year: float) -> float:
     r"""Mean return times periods per year, :math:`\bar r P` (not a compound growth rate)."""
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, returns)
     return float(np.mean(returns_array(returns, name="returns", min_n=1))) * p
 
 
@@ -79,7 +79,7 @@ def annualised_geometric_return(returns: pd.Series, *, periods_per_year: float) 
     UndefinedMetricError
         If final wealth is zero or negative (a total loss has no growth rate).
     """
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, returns)
     values = returns_array(returns, name="returns", min_n=1)
     wealth = float(np.prod(1.0 + values))
     if wealth <= 0:
@@ -89,7 +89,7 @@ def annualised_geometric_return(returns: pd.Series, *, periods_per_year: float) 
 
 def annualised_volatility(returns: pd.Series, *, periods_per_year: float) -> float:
     r"""Sample standard deviation (``ddof=1``) times :math:`\sqrt{P}`. Needs 2 observations."""
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, returns)
     values = returns_array(returns, name="returns", min_n=2)
     return float(np.std(values, ddof=1)) * math.sqrt(p)
 
@@ -112,7 +112,7 @@ def sharpe_ratio(
     """
     if not isinstance(se_method, SharpeSE):
         raise ValidationError(f"se_method must be a SharpeSE, got {se_method!r}")
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, excess_returns)
     min_n = 4 if se_method is SharpeSE.IID_NON_NORMAL else 2
     values = returns_array(excess_returns, name="excess_returns", min_n=min_n)
     n = len(values)
@@ -134,7 +134,7 @@ def downside_deviation(returns: pd.Series, *, target: float, periods_per_year: f
     :math:`\sqrt{\tfrac{1}{n}\sum_t \min(r_t - \tau, 0)^2}\,\sqrt{P}`, averaging over *all*
     periods (denominator :math:`n`).
     """
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, returns)
     tau = check_finite(target, "target")
     values = returns_array(returns, name="returns", min_n=1)
     return _downside(values, tau) * math.sqrt(p)
@@ -146,7 +146,7 @@ def sortino_ratio(excess_returns: pd.Series, *, target: float, periods_per_year:
     ``target`` :math:`\tau` is the per-period minimum acceptable return; :math:`DD` is the
     per-period downside deviation below it (see :func:`downside_deviation`).
     """
-    p = check_periods_per_year(periods_per_year)
+    p = check_periods_per_year(periods_per_year, excess_returns)
     tau = check_finite(target, "target")
     values = returns_array(excess_returns, name="excess_returns", min_n=1)
     dd = _downside(values, tau)

@@ -171,6 +171,19 @@ def test_beta_against_benchmark() -> None:
     assert risk.beta(no_bench, NO_PARAMS) == NotApplicable("no benchmark given")
 
 
+def test_beta_works_at_any_frequency() -> None:
+    """Regression (7.1): beta passed periods_per_year=1 whatever the dates' frequency."""
+    for freq in ("B", "W-FRI", "ME"):
+        index = pd.date_range("2024-01-05", periods=6, freq=freq)
+        bench = pd.Series([0.01, -0.02, 0.03, 0.00, -0.01, 0.02], index=index)
+        ctx = weighted_context({A: "1"}, portfolio_returns=2 * bench, benchmark_returns=bench)
+        assert _one(risk.beta(ctx, NO_PARAMS)).observed == pytest.approx(2.0)
+    irregular = pd.DatetimeIndex(["2024-01-01", "2024-01-11", "2024-01-21", "2024-01-31"])
+    bench = pd.Series([0.01, -0.02, 0.03, 0.01], index=irregular)
+    ctx = weighted_context({A: "1"}, portfolio_returns=2 * bench, benchmark_returns=bench)
+    assert _one(risk.beta(ctx, NO_PARAMS)).observed == pytest.approx(2.0)
+
+
 def test_risk_checks_not_applicable() -> None:
     no_series = weighted_context({A: "1"})
     params: dict[str, Mapping[str, object]] = {
