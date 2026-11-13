@@ -28,7 +28,7 @@ This is a research platform, not a trading bot or a collection of notebooks.
 - GitHub repo is private until the first milestone with a complete, verified deliverable
   (proposed: M2), then public.
 - Every analysis is a config run through `qrlab.experiments`; CLI and app use the same runner.
-- Any new dependency needs a documented reason in the PR description.
+- Any new dependency needs a documented reason in the commit message and the CHANGELOG.
 
 ## Engineering rules
 
@@ -78,7 +78,8 @@ Never claim a strategy works because of in-sample results. An honest null result
 1. Inspect the relevant code and tests first.
 2. Before each phase step, write a short design note (inputs, outputs, edge cases, risks) and
    **wait for approval** before writing code.
-3. Implement in small steps on a feature branch; run the quality gate.
+3. Implement in small steps on a feature branch; run the quality gate locally on Python
+   3.13 and 3.11.
 4. Review the diff, update `CHANGELOG.md`, summarise files changed, decisions, test results and
    limitations.
 5. Do not expand scope. New ideas go in `docs/IDEAS.md`.
@@ -86,5 +87,15 @@ Never claim a strategy works because of in-sample results. An honest null result
 ## Git safety
 
 Never commit, push, merge, tag, delete files or change GitHub settings without explicit
-approval in the current conversation. Never overwrite uncommitted user changes. One branch and
-one PR per step; Conventional Commit messages.
+approval in the current conversation. Never overwrite uncommitted user changes. Conventional
+Commit messages.
+
+Local-first workflow (since 2026-11-13). Work happens locally; GitHub is for backup, the Linux
+check and publication.
+
+- One branch per step. After the user's OK, merge it into `main` **locally**.
+- A feature branch may be pushed as a backup without opening a PR: that runs no CI.
+- About once a week, with the user's OK, push `main`. CI then runs once for the whole batch,
+  and it is the only place Linux is tested. Fix what it finds before publishing.
+- Releases and publication (tags, PyPI, GitHub Releases, Pages) follow
+  `docs/project/releasing.md` and happen only when the user decides.
