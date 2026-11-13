@@ -48,7 +48,7 @@ These commands run in PowerShell from the repository root, on a **clean** checko
 3. Optional: build the installer. This needs Inno Setup 6.7.1.
 
    ```bash
-   & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DAppVersion=0.4.0 packaging\installer.iss
+   & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DAppVersion=<version> packaging\installer.iss
    ```
 
 ## What CI checks

@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.0.0rc1] - 2026-11-13
+
+Release candidate of version 1.0 (milestone M6, phases 6.1 to 6.3c). It brings:
+
+- the desktop app;
+- the Windows program and installer;
+- a frozen public API with a compatibility policy;
+- the documentation site;
+- the release automation.
+
+It is published to TestPyPI to check the release process; 1.0.0 follows with the same code if
+nothing is found.
+
 ### Added
 
 - Release preparation (phase 6.3c):
@@ -473,7 +486,8 @@ Milestones M1 (Analytics core) and M2 (Portfolio X-ray): phases 1.1 to 2.5.
 - GitHub Actions CI on Linux and Windows for Python 3.11 and 3.13.
 - Project documentation: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
 
-[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0rc1...HEAD
+[1.0.0rc1]: https://github.com/alessandroszn/quant-research-lab/compare/v0.4.0...v1.0.0rc1
 [0.4.0]: https://github.com/alessandroszn/quant-research-lab/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/alessandroszn/quant-research-lab/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/alessandroszn/quant-research-lab/compare/v0.1.0...v0.2.0
