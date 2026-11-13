@@ -4,16 +4,19 @@ name: App build (Windows)
 # prove that the frozen program gives the same results as the source, run the app's self-test
 # (also from an installed copy) and upload the files as workflow artifacts.
 
+# The build takes 6-7 minutes on Windows runners, so it does not run on every push to main.
+# It runs:
+#   - for every release, through release.yml;
+#   - on PRs that change the packaging, this workflow or the locked dependencies;
+#   - by hand (workflow_dispatch).
+
 on:
   workflow_dispatch:
   workflow_call:  # the release workflow builds the Windows files through this one
-  push:
-    branches: [main]
   pull_request:
     paths:
       - "packaging/**"
       - ".github/workflows/app-build.yml"
-      - "pyproject.toml"
       - "uv.lock"
 
 permissions:

@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- The Windows build no longer runs on every push to `main`, nor on PRs that change only
+  `pyproject.toml`. It still runs for every release, on PRs that change the packaging, its
+  workflow or `uv.lock`, and by hand. This saves Actions minutes: a run takes 6-7 minutes on
+  Windows runners.
+
 ## [1.0.0rc1] - 2026-11-13
 
 Release candidate of version 1.0 (milestone M6, phases 6.1 to 6.3c). It brings:
