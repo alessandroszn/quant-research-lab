@@ -13,6 +13,7 @@ The build never needs the network. Links to the NumPy, pandas and SciPy document
 from __future__ import annotations
 
 import importlib.metadata
+import json
 import os
 import sys
 from pathlib import Path
@@ -46,9 +47,14 @@ if os.environ.get("QRLAB_DOCS_INTERSPHINX") == "1":  # pragma: no cover - releas
 
 source_suffix = {".md": "markdown", ".rst": "restructuredtext"}
 root_doc = "index"
-exclude_patterns = ["_build", "api/public-api.txt"]
+exclude_patterns = ["_build", "api/public-api.txt", "paper/_generated"]
 
-myst_enable_extensions = ["colon_fence", "dollarmath", "deflist"]
+myst_enable_extensions = ["colon_fence", "dollarmath", "deflist", "substitution"]
+# Every number of the working paper comes from the study records (design note 6.3d).
+_PAPER_VALUES = ROOT / "docs" / "paper" / "_generated" / "values.json"
+myst_substitutions = (
+    json.loads(_PAPER_VALUES.read_text(encoding="utf-8")) if _PAPER_VALUES.is_file() else {}
+)
 myst_heading_anchors = 3
 
 # The docstrings are NumPy style; type hints are shown in the signature, not repeated.
@@ -74,3 +80,17 @@ html_theme_options = {
     "footer_end": ["sphinx-version"],
 }
 html_static_path: list[str] = []
+
+# The working paper as a PDF (built locally with LaTeX; not in CI). Design note 6.3d.
+latex_engine = "pdflatex"
+latex_documents = [
+    (
+        "paper/index",
+        "qrlab-working-paper.tex",
+        "What survives? Four reproducible studies of portfolio rules under real-time "
+        "implementation, costs and multiple testing",
+        "Alessandro Zanichelli",
+        "howto",
+    )
+]
+latex_elements = {"papersize": "a4paper", "pointsize": "11pt", "printindex": ""}

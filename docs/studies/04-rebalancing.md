@@ -138,12 +138,12 @@ The share is the fraction of the 2,000 paths in which the stated direction holds
 | | Condition | 60/40 | 80/20 | Verdict |
 |---|---|---:|---:|---|
 | **H1** | Band 5 deviates no more than quarterly | 0 % (0 %) | 0 % (0 %) | **not supported** |
-| | Band 5 pays less cost + tax than quarterly | 98.6 % (99.4 %) | 99.8 % (99.9 %) | |
-| **H2** | Monthly ends with less wealth than annual | 99.9 % (100 %) | 99.8 % (100 %) | **supported** |
-| **H3** | Buy-and-hold ends with more wealth | 84.0 % (84.8 %) | 82.7 % (84.0 %) | **supported** |
+| | Band 5 pays less cost + tax than quarterly | 98.6 % (99.4 %) | 99.9 % (99.9 %) | |
+| **H2** | Monthly ends with less wealth than annual | 99.9 % (100 %) | 99.9 % (100 %) | **supported** |
+| **H3** | Buy-and-hold ends with more wealth | 84.1 % (84.9 %) | 82.7 % (84.0 %) | **supported** |
 | | … with a higher final equity weight | 96.6 % | 96.6 % | |
 | | … with higher volatility | 94.2 % | 93.4 % | |
-| | … with a deeper maximum drawdown | 85.2 % | 85.8 % | |
+| | … with a deeper maximum drawdown | 85.2 % | 85.9 % | |
 
 ## 5. Conclusions
 

@@ -151,7 +151,7 @@ lower returns with lower power; the decay regression below separates the two.
 | Post-publication | 624 | 62.1 | 0.676 % | 5.97 |
 
 - **Clear + likely, post-publication:** 0.531 % per month, t = 5.48.
-- **Predictors with a positive post-publication mean:** 86 % (clear) and 83 % (broad).
+- **Predictors with a positive post-publication mean:** 87 % (clear) and 83 % (broad).
 - **Median monthly mean, clear predictors:** 0.65 % in sample against 0.26 % after publication.
 
 The composites mix different predictors in each phase (different years, different numbers of
@@ -179,7 +179,7 @@ comparison is the decay regression.
     borderline for the broad set (p = 0.056).
 - **H3 is supported:**
   - After publication, the average predictor still earns a positive gross long-short return:
-    the composite earns 0.68 % per month (t = 6.0), and 86 % of predictors are positive.
+    the composite earns 0.68 % per month (t = 6.0), and 87 % of predictors are positive.
   - Publication roughly halves the anomalies, but does not remove them, *before costs*.
 
 ## 6. Limitations

@@ -1,0 +1,118 @@
+# Values of the reproducibility appendix (design note 6.3d). Every study's runs share
+# the same code, inputs and date, so the main run of each study stands for all of them.
+
+[values.a_s1_commit]
+run = "volatility-managed/paper"
+record = "code.git_commit"
+truncate = 12
+
+[values.a_s1_version]
+run = "volatility-managed/paper"
+record = "code.qrlab"
+
+[values.a_s1_dirty]
+run = "volatility-managed/paper"
+record = "code.git_dirty"
+
+[values.a_s1_date]
+run = "volatility-managed/paper"
+record = "started"
+truncate = 10
+
+[values.a_s1_tried]
+run = "volatility-managed/paper"
+record = "configurations_tried"
+
+[values.a_s1_seed]
+run = "volatility-managed/paper"
+record = "seed"
+
+[tables.a_s1_inputs]
+inputs_of = "volatility-managed/paper"
+
+[values.a_s2_commit]
+run = "one-over-n/paper"
+record = "code.git_commit"
+truncate = 12
+
+[values.a_s2_version]
+run = "one-over-n/paper"
+record = "code.qrlab"
+
+[values.a_s2_dirty]
+run = "one-over-n/paper"
+record = "code.git_dirty"
+
+[values.a_s2_date]
+run = "one-over-n/paper"
+record = "started"
+truncate = 10
+
+[values.a_s2_tried]
+run = "one-over-n/paper"
+record = "configurations_tried"
+
+[values.a_s2_seed]
+run = "one-over-n/paper"
+record = "seed"
+
+[tables.a_s2_inputs]
+inputs_of = "one-over-n/paper"
+
+[values.a_s3_commit]
+run = "factor-zoo/clear"
+record = "code.git_commit"
+truncate = 12
+
+[values.a_s3_version]
+run = "factor-zoo/clear"
+record = "code.qrlab"
+
+[values.a_s3_dirty]
+run = "factor-zoo/clear"
+record = "code.git_dirty"
+
+[values.a_s3_date]
+run = "factor-zoo/clear"
+record = "started"
+truncate = 10
+
+[values.a_s3_tried]
+run = "factor-zoo/clear"
+record = "configurations_tried"
+
+[values.a_s3_seed]
+run = "factor-zoo/clear"
+record = "seed"
+
+[tables.a_s3_inputs]
+inputs_of = "factor-zoo/clear"
+
+[values.a_s4_commit]
+run = "rebalancing/60_40"
+record = "code.git_commit"
+truncate = 12
+
+[values.a_s4_version]
+run = "rebalancing/60_40"
+record = "code.qrlab"
+
+[values.a_s4_dirty]
+run = "rebalancing/60_40"
+record = "code.git_dirty"
+
+[values.a_s4_date]
+run = "rebalancing/60_40"
+record = "started"
+truncate = 10
+
+[values.a_s4_tried]
+run = "rebalancing/60_40"
+record = "configurations_tried"
+
+[values.a_s4_seed]
+run = "rebalancing/60_40"
+record = "seed"
+
+[tables.a_s4_inputs]
+inputs_of = "rebalancing/60_40"

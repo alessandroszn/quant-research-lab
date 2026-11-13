@@ -1,0 +1,723 @@
+# Values of the section 'Study 1: volatility-managed factors' (design note 6.3d).
+# Runs: volatility-managed/full (main, data to 2026-09), /paper (data to 2015-12),
+# /demeaned (demeaned daily returns in the realised variance).
+
+# Run metadata
+
+[values.s1_run_date]
+run = "volatility-managed/full"
+record = "started"
+truncate = 10
+
+[values.s1_tried]
+run = "volatility-managed/full"
+record = "configurations_tried"
+
+[values.s1_dsr_trials]
+run = "volatility-managed/full"
+scalar = "dsr_trials"
+decimals = 0
+
+# Samples
+
+[values.s1_mkt_start]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "start"
+truncate = 7
+
+[values.s1_end]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "end"
+truncate = 7
+
+[values.s1_mkt_n]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "n"
+decimals = 0
+
+[values.s1_rmw_start]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "RMW" }
+column = "start"
+truncate = 7
+
+[values.s1_rmw_n]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "RMW" }
+column = "n"
+decimals = 0
+
+[values.s1_mom_start]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mom" }
+column = "start"
+truncate = 7
+
+[values.s1_mom_n]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mom" }
+column = "n"
+decimals = 0
+
+[values.s1_paper_end]
+run = "volatility-managed/paper"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "end"
+truncate = 7
+
+[values.s1_paper_mkt_n]
+run = "volatility-managed/paper"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "n"
+decimals = 0
+
+[values.s1_mkt_oos_start]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mkt-RF", cap = 5.0, cost_per_unit = 0.0 }
+column = "start"
+truncate = 7
+
+[values.s1_mkt_oos_n]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mkt-RF", cap = 5.0, cost_per_unit = 0.0 }
+column = "n"
+decimals = 0
+
+[values.s1_rmw_oos_start]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0 }
+column = "start"
+truncate = 7
+
+[values.s1_rmw_oos_n]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0 }
+column = "n"
+decimals = 0
+
+[values.s1_mom_oos_start]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "start"
+truncate = 7
+
+[values.s1_mom_oos_n]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "n"
+decimals = 0
+
+# In sample (full-sample scaling constant), main run
+
+[values.s1_mkt_alpha]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_mkt_alpha_t]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "alpha_t"
+decimals = 2
+
+[values.s1_mkt_alpha_holm]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "alpha_holm"
+decimals = 3
+
+[values.s1_rmw_alpha]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "RMW" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_rmw_alpha_t]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "RMW" }
+column = "alpha_t"
+decimals = 2
+
+[values.s1_rmw_alpha_holm]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "RMW" }
+column = "alpha_holm"
+decimals = 3
+
+[values.s1_mom_alpha]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mom" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_mom_alpha_t]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mom" }
+column = "alpha_t"
+decimals = 2
+
+[values.s1_mom_appraisal]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "Mom" }
+column = "appraisal_ratio"
+decimals = 2
+
+[values.s1_hml_alpha]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "HML" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_hml_alpha_holm]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "HML" }
+column = "alpha_holm"
+decimals = 3
+
+[values.s1_smb_alpha]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "SMB" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_cma_alpha]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+where = { factor = "CMA" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_is_rejections]
+run = "volatility-managed/full"
+scalar = "in_sample_alpha_rejections_holm"
+decimals = 0
+
+# In sample, paper sample and demeaned variance
+
+[values.s1_paper_mkt_alpha]
+run = "volatility-managed/paper"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_paper_mkt_alpha_t]
+run = "volatility-managed/paper"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "alpha_t"
+decimals = 2
+
+[values.s1_paper_rmw_alpha]
+run = "volatility-managed/paper"
+table = "in_sample.csv"
+where = { factor = "RMW" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_paper_rmw_alpha_t]
+run = "volatility-managed/paper"
+table = "in_sample.csv"
+where = { factor = "RMW" }
+column = "alpha_t"
+decimals = 2
+
+[values.s1_paper_mom_alpha]
+run = "volatility-managed/paper"
+table = "in_sample.csv"
+where = { factor = "Mom" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_paper_mom_alpha_t]
+run = "volatility-managed/paper"
+table = "in_sample.csv"
+where = { factor = "Mom" }
+column = "alpha_t"
+decimals = 2
+
+[values.s1_paper_is_rejections]
+run = "volatility-managed/paper"
+scalar = "in_sample_alpha_rejections_holm"
+decimals = 0
+
+[values.s1_dm_mkt_alpha]
+run = "volatility-managed/demeaned"
+table = "in_sample.csv"
+where = { factor = "Mkt-RF" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_dm_rmw_alpha]
+run = "volatility-managed/demeaned"
+table = "in_sample.csv"
+where = { factor = "RMW" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_dm_mom_alpha]
+run = "volatility-managed/demeaned"
+table = "in_sample.csv"
+where = { factor = "Mom" }
+column = "alpha_annual"
+decimals = 2
+scale = 100.0
+unit = " %"
+
+[values.s1_dm_is_rejections]
+run = "volatility-managed/demeaned"
+scalar = "in_sample_alpha_rejections_holm"
+decimals = 0
+
+# Real time (estimated scaling constant, net of costs), main run
+
+[values.s1_mkt_sr]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mkt-RF", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_factor"
+decimals = 2
+
+[values.s1_mkt5_sr0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mkt-RF", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_rmw_sr]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_factor"
+decimals = 2
+
+[values.s1_rmw5_sr0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_rmw5_z0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0 }
+column = "z_hac"
+decimals = 2
+
+[values.s1_rmw5_holm0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0 }
+column = "holm"
+decimals = 3
+
+[values.s1_rmw5_boot_low]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0 }
+column = "bootstrap_low"
+decimals = 3
+
+[values.s1_rmw5_boot_high]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0 }
+column = "bootstrap_high"
+decimals = 3
+
+[values.s1_rmw5_sr25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "RMW", cap = 5.0, cost_per_unit = 0.0025 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_smb_sr]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "SMB", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_factor"
+decimals = 2
+
+[values.s1_smb5_sr25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "SMB", cap = 5.0, cost_per_unit = 0.0025 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_smb5_holm25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "SMB", cap = 5.0, cost_per_unit = 0.0025 }
+column = "holm"
+decimals = 3
+
+[values.s1_cma_sr]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "CMA", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_factor"
+decimals = 2
+
+[values.s1_cma5_sr25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "CMA", cap = 5.0, cost_per_unit = 0.0025 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_cma5_holm25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "CMA", cap = 5.0, cost_per_unit = 0.0025 }
+column = "holm"
+decimals = 3
+
+[values.s1_cmainf_holm25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "CMA", cap = inf, cost_per_unit = 0.0025 }
+column = "holm"
+decimals = 3
+
+[values.s1_mom_sr]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_factor"
+decimals = 2
+
+[values.s1_mom5_sr0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mom5_holm0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "holm"
+decimals = 3
+
+[values.s1_mom5_sr10]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.001 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mom5_holm10]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.001 }
+column = "holm"
+decimals = 3
+
+[values.s1_mom5_sr25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0025 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mom5_holm25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0025 }
+column = "holm"
+decimals = 3
+
+[values.s1_mom2_sr0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.0 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mom2_holm0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.0 }
+column = "holm"
+decimals = 3
+
+[values.s1_mom2_sr10]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.001 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mom2_holm10]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.001 }
+column = "holm"
+decimals = 3
+
+[values.s1_mom2_sr25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.0025 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mom2_holm25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.0025 }
+column = "holm"
+decimals = 3
+
+[values.s1_mominf_sr0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = inf, cost_per_unit = 0.0 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mominf_sr10]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = inf, cost_per_unit = 0.001 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mominf_sr25]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = inf, cost_per_unit = 0.0025 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_mominf_holm0]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = inf, cost_per_unit = 0.0 }
+column = "holm"
+decimals = 3
+
+[values.s1_mominf_maxw]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = inf, cost_per_unit = 0.0 }
+column = "max_weight"
+decimals = 1
+
+[values.s1_mom5_boot_low]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "bootstrap_low"
+decimals = 3
+
+[values.s1_mom5_boot_high]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "bootstrap_high"
+decimals = 3
+
+[values.s1_mom5_weight]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "mean_weight"
+decimals = 2
+
+[values.s1_mom2_weight]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.0 }
+column = "mean_weight"
+decimals = 2
+
+[values.s1_mom5_turnover]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "annual_turnover"
+decimals = 1
+
+[values.s1_mom2_turnover]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.0 }
+column = "annual_turnover"
+decimals = 1
+
+[values.s1_oos_rejections]
+run = "volatility-managed/full"
+scalar = "out_of_sample_rejections_holm"
+decimals = 0
+
+[values.s1_dsr]
+run = "volatility-managed/full"
+scalar = "dsr_probability"
+decimals = 2
+
+# Real time, paper sample and demeaned variance
+
+[values.s1_paper_mom_sr]
+run = "volatility-managed/paper"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_factor"
+decimals = 2
+
+[values.s1_paper_mom5_sr0]
+run = "volatility-managed/paper"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "sharpe_managed_net"
+decimals = 2
+
+[values.s1_paper_mom5_holm0]
+run = "volatility-managed/paper"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "holm"
+decimals = 3
+
+[values.s1_paper_mom2_holm0]
+run = "volatility-managed/paper"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.0 }
+column = "holm"
+decimals = 3
+
+[values.s1_paper_mom2_holm10]
+run = "volatility-managed/paper"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.001 }
+column = "holm"
+decimals = 3
+
+[values.s1_paper_oos_rejections]
+run = "volatility-managed/paper"
+scalar = "out_of_sample_rejections_holm"
+decimals = 0
+
+[values.s1_paper_dsr]
+run = "volatility-managed/paper"
+scalar = "dsr_probability"
+decimals = 2
+
+[values.s1_dm_mom5_holm0]
+run = "volatility-managed/demeaned"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 5.0, cost_per_unit = 0.0 }
+column = "holm"
+decimals = 3
+
+[values.s1_dm_mom2_holm0]
+run = "volatility-managed/demeaned"
+table = "out_of_sample.csv"
+where = { factor = "Mom", cap = 2.0, cost_per_unit = 0.0 }
+column = "holm"
+decimals = 3
+
+[values.s1_dm_cmainf_holm25]
+run = "volatility-managed/demeaned"
+table = "out_of_sample.csv"
+where = { factor = "CMA", cap = inf, cost_per_unit = 0.0025 }
+column = "holm"
+decimals = 3
+
+[values.s1_dm_oos_rejections]
+run = "volatility-managed/demeaned"
+scalar = "out_of_sample_rejections_holm"
+decimals = 0
+
+[values.s1_dm_dsr]
+run = "volatility-managed/demeaned"
+scalar = "dsr_probability"
+decimals = 2
+# Tables
+
+[tables.s1_in_sample]
+run = "volatility-managed/full"
+table = "in_sample.csv"
+columns = [
+    { column = "factor", header = "Factor" },
+    { column = "n", header = "Months", decimals = 0 },
+    { column = "alpha_annual", header = "α p.a.", decimals = 2, scale = 100.0, unit = " %" },
+    { column = "alpha_t", header = "t (HAC)", decimals = 2 },
+    { column = "alpha_holm", header = "p Holm", decimals = 3 },
+    { column = "beta", header = "β", decimals = 2 },
+    { column = "appraisal_ratio", header = "Appraisal p.a.", decimals = 2 },
+    { column = "r_squared", header = "R²", decimals = 2 },
+]
+
+[tables.s1_real_time]
+run = "volatility-managed/full"
+table = "out_of_sample.csv"
+where = { cap = 5.0 }
+columns = [
+    { column = "factor", header = "Factor" },
+    { column = "cost_per_unit", header = "Cost (bp)", decimals = 0, scale = 10000.0 },
+    { column = "sharpe_factor", header = "SR factor", decimals = 2 },
+    { column = "sharpe_managed_net", header = "SR managed, net", decimals = 2 },
+    { column = "z_hac", header = "z (HAC)", decimals = 2 },
+    { column = "holm", header = "p Holm", decimals = 3 },
+    { column = "mean_weight", header = "Mean weight", decimals = 2 },
+    { column = "annual_turnover", header = "Turnover p.a.", decimals = 1 },
+]

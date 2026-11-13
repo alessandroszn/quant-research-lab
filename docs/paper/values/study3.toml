@@ -1,0 +1,534 @@
+# Values of study 3, the factor zoo (design note 6.3d). Main run: "clear" predictors;
+# robustness run: "clear" and "likely" predictors ("broad").
+
+# --- Data and specification -------------------------------------------------------------
+
+[values.s3_n_clear]
+run = "factor-zoo/clear"
+scalar = "predictors"
+decimals = 0
+
+[values.s3_n_broad]
+run = "factor-zoo/broad"
+scalar = "predictors"
+decimals = 0
+
+[values.s3_excl_clear]
+run = "factor-zoo/clear"
+scalar = "excluded_for_gaps"
+decimals = 0
+
+[values.s3_excl_broad]
+run = "factor-zoo/broad"
+scalar = "excluded_for_gaps"
+decimals = 0
+
+[values.s3_tried]
+run = "factor-zoo/clear"
+record = "configurations_tried"
+
+[values.s3_end]
+run = "factor-zoo/clear"
+record = "config.content.parameters.end"
+truncate = 7
+
+[values.s3_is_start]
+run = "factor-zoo/clear"
+table = "composite_in_sample.csv"
+where = { phase = "in_sample" }
+column = "start"
+truncate = 7
+
+[values.s3_is_end]
+run = "factor-zoo/clear"
+table = "composite_in_sample.csv"
+where = { phase = "in_sample" }
+column = "end"
+truncate = 7
+
+[values.s3_pp_start]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_publication" }
+column = "start"
+truncate = 7
+
+[values.s3_pp_end]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_publication" }
+column = "end"
+truncate = 7
+
+# --- In-sample tests (H1), clear ----------------------------------------------------------
+
+[values.s3_is_tested]
+run = "factor-zoo/clear"
+table = "in_sample_counts.csv"
+where = { rule = "single test, p <= 0.05" }
+column = "tested"
+decimals = 0
+
+[values.s3_is_single_share]
+run = "factor-zoo/clear"
+table = "in_sample_counts.csv"
+where = { rule = "single test, p <= 0.05" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_is_t3_share]
+run = "factor-zoo/clear"
+table = "in_sample_counts.csv"
+where = { rule = "t > 3 (HLZ)" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_is_holm_share]
+run = "factor-zoo/clear"
+table = "in_sample_counts.csv"
+where = { rule = "Holm" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_is_bh_share]
+run = "factor-zoo/clear"
+table = "in_sample_counts.csv"
+where = { rule = "Benjamini-Hochberg" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_is_by_share]
+run = "factor-zoo/clear"
+table = "in_sample_counts.csv"
+where = { rule = "Benjamini-Yekutieli" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+# --- In-sample tests (H1), clear and likely -------------------------------------------------
+
+[values.s3_b_is_tested]
+run = "factor-zoo/broad"
+table = "in_sample_counts.csv"
+where = { rule = "single test, p <= 0.05" }
+column = "tested"
+decimals = 0
+
+[values.s3_b_is_single_share]
+run = "factor-zoo/broad"
+table = "in_sample_counts.csv"
+where = { rule = "single test, p <= 0.05" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_b_is_t3_share]
+run = "factor-zoo/broad"
+table = "in_sample_counts.csv"
+where = { rule = "t > 3 (HLZ)" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_b_is_holm_share]
+run = "factor-zoo/broad"
+table = "in_sample_counts.csv"
+where = { rule = "Holm" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_b_is_bh_share]
+run = "factor-zoo/broad"
+table = "in_sample_counts.csv"
+where = { rule = "Benjamini-Hochberg" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_b_is_by_share]
+run = "factor-zoo/broad"
+table = "in_sample_counts.csv"
+where = { rule = "Benjamini-Yekutieli" }
+column = "share"
+decimals = 1
+scale = 100
+unit = " %"
+
+# --- Post-publication tests, clear ----------------------------------------------------------
+
+[values.s3_pp_tested]
+run = "factor-zoo/clear"
+table = "post_publication_counts.csv"
+where = { rule = "single test, p <= 0.05" }
+column = "tested"
+decimals = 0
+
+[values.s3_pp_single_n]
+run = "factor-zoo/clear"
+table = "post_publication_counts.csv"
+where = { rule = "single test, p <= 0.05" }
+column = "significant"
+decimals = 0
+
+[values.s3_pp_by_n]
+run = "factor-zoo/clear"
+table = "post_publication_counts.csv"
+where = { rule = "Benjamini-Yekutieli" }
+column = "significant"
+decimals = 0
+
+# --- Decay regression (H2), clear -----------------------------------------------------------
+
+[values.s3_in_mean]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "in_sample_mean"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_beta_ps]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "beta_post_sample"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_se_ps]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "se_post_sample"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_p_ps]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "p_post_sample"
+decimals = 4
+
+[values.s3_decay_ps]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "decay_post_sample"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_decay_ps_round]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "decay_post_sample"
+decimals = 0
+scale = 100
+unit = " %"
+absolute = true
+
+[values.s3_beta_pp]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "beta_post_publication"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_se_pp]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "se_post_publication"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_p_pp]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "p_post_publication"
+decimals = 4
+below = 0.0001
+
+[values.s3_decay_pp]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "decay_post_publication"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_decay_pp_round]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "decay_post_publication"
+decimals = 0
+scale = 100
+unit = " %"
+absolute = true
+
+[values.s3_diff]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "difference"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_p_diff]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "p_difference"
+decimals = 3
+
+[values.s3_nobs]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "nobs"
+decimals = 0
+
+[values.s3_months]
+run = "factor-zoo/clear"
+table = "decay.csv"
+column = "n_months"
+decimals = 0
+
+# --- Decay regression (H2), clear and likely ------------------------------------------------
+
+[values.s3_b_in_mean]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "in_sample_mean"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_b_beta_ps]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "beta_post_sample"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_b_se_ps]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "se_post_sample"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_b_p_ps]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "p_post_sample"
+decimals = 4
+
+[values.s3_b_decay_ps]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "decay_post_sample"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_b_beta_pp]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "beta_post_publication"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_b_se_pp]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "se_post_publication"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_b_p_pp]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "p_post_publication"
+decimals = 4
+below = 0.0001
+
+[values.s3_b_decay_pp]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "decay_post_publication"
+decimals = 1
+scale = 100
+unit = " %"
+
+[values.s3_b_diff]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "difference"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_b_p_diff]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "p_difference"
+decimals = 3
+
+[values.s3_b_nobs]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "nobs"
+decimals = 0
+
+[values.s3_b_months]
+run = "factor-zoo/broad"
+table = "decay.csv"
+column = "n_months"
+decimals = 0
+
+# --- Composites (H3) ------------------------------------------------------------------------
+
+[values.s3_comp_is_mean]
+run = "factor-zoo/clear"
+table = "composite_in_sample.csv"
+where = { phase = "in_sample" }
+column = "mean"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_comp_is_t]
+run = "factor-zoo/clear"
+table = "composite_in_sample.csv"
+where = { phase = "in_sample" }
+column = "t"
+decimals = 2
+
+[values.s3_comp_is_months]
+run = "factor-zoo/clear"
+table = "composite_in_sample.csv"
+where = { phase = "in_sample" }
+column = "months"
+decimals = 0
+
+[values.s3_comp_is_preds]
+run = "factor-zoo/clear"
+table = "composite_in_sample.csv"
+where = { phase = "in_sample" }
+column = "average_predictors"
+decimals = 1
+
+[values.s3_comp_ps_mean]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_sample" }
+column = "mean"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_comp_ps_t]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_sample" }
+column = "t"
+decimals = 2
+
+[values.s3_comp_ps_months]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_sample" }
+column = "months"
+decimals = 0
+
+[values.s3_comp_ps_preds]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_sample" }
+column = "average_predictors"
+decimals = 1
+
+[values.s3_comp_pp_mean]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_publication" }
+column = "mean"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_comp_pp_t]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_publication" }
+column = "t"
+decimals = 2
+
+[values.s3_comp_pp_months]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_publication" }
+column = "months"
+decimals = 0
+
+[values.s3_comp_pp_preds]
+run = "factor-zoo/clear"
+table = "composites_later.csv"
+where = { phase = "post_publication" }
+column = "average_predictors"
+decimals = 1
+
+[values.s3_b_comp_pp_mean]
+run = "factor-zoo/broad"
+table = "composites_later.csv"
+where = { phase = "post_publication" }
+column = "mean"
+decimals = 3
+scale = 100
+unit = " %"
+
+[values.s3_b_comp_pp_t]
+run = "factor-zoo/broad"
+table = "composites_later.csv"
+where = { phase = "post_publication" }
+column = "t"
+decimals = 2
+
+# --- Tables ---------------------------------------------------------------------------------
+
+[tables.s3_in_sample]
+run = "factor-zoo/clear"
+table = "in_sample_counts.csv"
+columns = [
+    { column = "rule", header = "Rule" },
+    { column = "significant", header = "Significant", decimals = 0 },
+    { column = "tested", header = "Tested", decimals = 0 },
+    { column = "share", header = "Share", decimals = 1, scale = 100, unit = " %" },
+]
+
+[tables.s3_post_publication]
+run = "factor-zoo/clear"
+table = "post_publication_counts.csv"
+columns = [
+    { column = "rule", header = "Rule" },
+    { column = "significant", header = "Significant", decimals = 0 },
+    { column = "tested", header = "Tested", decimals = 0 },
+    { column = "share", header = "Share", decimals = 1, scale = 100, unit = " %" },
+]

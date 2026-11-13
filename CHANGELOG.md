@@ -6,6 +6,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- The working paper (phase 6.3d), *What survives? Four reproducible studies of portfolio rules
+  under real-time implementation, costs and multiple testing*, in `docs/paper/` and on the
+  documentation site.
+  - **Numbers come from the records.** `scripts/paper_values.py` generates every number and
+    table from the study records, as declared in `docs/paper/values/*.toml`; the text uses MyST
+    substitutions only.
+  - **Checks.** `--check` regenerates from the records and fails on any difference, and a test
+    requires every generated value to be used and every substitution to be defined.
+  - **Reproducibility appendix.** Run dates, versions, commits, seeds, configurations tried and
+    the exact data files with their hashes.
+
+### Fixed
+
+- Last-digit figures in the study reports, found while generating the paper from the records:
+  - **Study 1:** RMW z 1.46, Holm 0.71, mean weight 0.77; CMA z −0.66; momentum at 2× and
+    25 bp 0.78.
+  - **Study 2:** the HRP CEQ gap is 0.6–0.9 % a year. Sample maximum Sharpe on D1 is below 1/N
+    everywhere, but BL maximum Sharpe is as low, so it is not "the lowest".
+  - **Study 3:** 87 % of clear predictors are positive after publication, not 86 %.
+  - **Study 4:** five shares that end in exactly 5 are now rounded half-up, as everywhere else.
+
 ### Changed
 
 - The Windows build no longer runs on every push to `main`, nor on PRs that change only

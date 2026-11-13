@@ -191,7 +191,7 @@ The configs point at this vintage of the raw files.
   - without correction, only value weights on D2 are significantly *below* 1/N (z ≈ −2.0).
 - **CEQ:** the 95 % bootstrap intervals of the CEQ difference against 1/N contain zero in 82 of
   84 comparisons (main run). The exceptions are HRP on D2 at 50 bp, with both windows, where
-  1/N is better by 0.7–0.9 % a year. In the paper period they contain zero in 76 of 84. The
+  1/N is better by 0.6–0.9 % a year. In the paper period they contain zero in 76 of 84. The
   exceptions are value weights on D2 (1/N better by about 3.1 % a year) and HRP on D2 at
   50 bp. These intervals are not corrected for multiple comparisons.
 - **Robust pairs (H2):**
@@ -216,8 +216,9 @@ The configs point at this vintage of the raw files.
   correction either: the honest conclusion is that out-of-sample differences are too noisy to
   rank these strategies.
 - **The estimation-error pattern is visible.**
-  - **Sample maximum Sharpe on D1:** it has the lowest Sharpe ratio (0.40–0.50 against 0.55)
-    and 6–11 times the turnover of 1/N.
+  - **Sample maximum Sharpe on D1:** its Sharpe ratio is below 1/N's in every cell (0.40–0.50
+    against 0.55), only BL maximum Sharpe is as low, and it has 6–11 times the turnover of
+    1/N.
   - **Sample maximum Sharpe on D2:** it has the highest point estimates (0.66–0.69). These fall
     to 0.55–0.62 at 50 bp and are not significant.
   - **Minimum variance:** it lowers volatility (12.5 % against 15.1 % on D1) without raising the

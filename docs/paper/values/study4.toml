@@ -1,0 +1,871 @@
+# Values of section 4 of the working paper (design note 6.3d): rebalancing for a EUR ETF
+# investor. Main run 60/40, robustness run 80/20; 'low' and 'high' are the cost scenarios.
+
+[values.s4_start]
+run = "rebalancing/60_40"
+truncate = 7
+table = "asset_returns.csv"
+where = { index = "2004-10-31" }
+column = "index"
+
+[values.s4_end]
+run = "rebalancing/60_40"
+truncate = 7
+table = "asset_returns.csv"
+where = { index = "2026-09-30" }
+column = "index"
+
+[values.s4_months]
+run = "rebalancing/60_40"
+scalar = "months"
+decimals = 0
+
+[values.s4_tried]
+run = "rebalancing/60_40"
+scalar = "configurations_tried"
+decimals = 0
+
+[values.s4_h_bh_wealth]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_monthly_wealth]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_quarterly_wealth]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_quarterly" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_annual_wealth]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_band5_wealth]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_band10_wealth]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "band_10_target" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_edge_wealth]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "band_5_edge" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_bh_final_eq]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "final_equity_weight"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h_bh_dev]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "mean_abs_deviation"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_h_annual_dev]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "mean_abs_deviation"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_h_bh_vol]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "volatility"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h_annual_vol]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "volatility"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h_monthly_vol]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "volatility"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h_bh_deferred]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "deferred_tax"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_annual_deferred]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "deferred_tax"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_monthly_trades]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "trades"
+decimals = 0
+
+[values.s4_h_annual_trades]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "trades"
+decimals = 0
+
+[values.s4_h_monthly_costs]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "costs"
+decimals = 0
+unit = " EUR"
+
+[values.s4_h_monthly_taxes]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "taxes"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_h_annual_taxes]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "taxes"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_annual_wealth]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_annual_p05]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "after_tax_wealth_p05"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_annual_p95]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "after_tax_wealth_p95"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_annual_trades]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "trades"
+decimals = 0
+
+[values.s4_s_annual_taxes]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "taxes"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_annual_deferred]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "deferred_tax"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_annual_dev]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "mean_abs_deviation"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_s_quarterly_dev]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_quarterly" }
+column = "mean_abs_deviation"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_s_band5_dev]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "mean_abs_deviation"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_s_quarterly_trades]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_quarterly" }
+column = "trades"
+decimals = 0
+
+[values.s4_s_band5_trades]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "trades"
+decimals = 0
+
+[values.s4_s_monthly_trades]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "trades"
+decimals = 0
+
+[values.s4_s_bh_final_eq]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "final_equity_weight"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_s_bh_deferred]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "deferred_tax"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_band10_final_eq]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "band_10_target" }
+column = "final_equity_weight"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_s_edge_final_eq]
+run = "rebalancing/60_40"
+table = "simulated_summary.csv"
+where = { scenario = "low", policy = "band_5_edge" }
+column = "final_equity_weight"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_s_bh_diff]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_bh_p05]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "after_tax_wealth_p05"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_s_bh_p95]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "after_tax_wealth_p95"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_bh_dev]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "mean_abs_deviation_median"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_s_bh_vol]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "volatility_median"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_s_bh_dd]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "max_drawdown_median"
+scale = 100
+decimals = 1
+unit = " points"
+absolute = true
+
+[values.s4_s_monthly_diff]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_s_monthly_p05]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "after_tax_wealth_p05"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_s_monthly_p95]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "after_tax_wealth_p95"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_s_monthly_share]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "share_wealth_higher"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_s_monthly_vol]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "volatility_median"
+scale = 100
+decimals = 1
+unit = " points"
+absolute = true
+
+[values.s4_s_monthly_ct]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "costs_and_taxes_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_quarterly_diff]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_quarterly" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_s_quarterly_share]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_quarterly" }
+column = "share_wealth_higher"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_s_quarterly_ct]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_quarterly" }
+column = "costs_and_taxes_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_band5_diff]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_band5_p05]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "after_tax_wealth_p05"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_s_band5_p95]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "after_tax_wealth_p95"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_band5_share]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "share_wealth_higher"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_s_band5_ct]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "costs_and_taxes_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_s_band10_diff]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_10_target" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_band10_share]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_10_target" }
+column = "share_wealth_higher"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_s_band10_dev]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_10_target" }
+column = "mean_abs_deviation_median"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_s_edge_diff]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_edge" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_s_edge_share]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_edge" }
+column = "share_wealth_higher"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_s_edge_dev]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_edge" }
+column = "mean_abs_deviation_median"
+scale = 100
+decimals = 1
+unit = " points"
+
+[values.s4_s_monthly_diff_high]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "high", policy = "calendar_monthly" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_s_quarterly_diff_high]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "high", policy = "calendar_quarterly" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_h1_dev]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H1", condition = "deviation not larger" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h1_dev_high]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "high", hypothesis = "H1", condition = "deviation not larger" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h1_cost]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H1", condition = "costs and taxes lower" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h1_cost_high]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "high", hypothesis = "H1", condition = "costs and taxes lower" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h2]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H2", condition = "monthly ends with less after-tax wealth" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h2_high]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "high", hypothesis = "H2", condition = "monthly ends with less after-tax wealth" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h3_wealth]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H3", condition = "buy-and-hold ends with more after-tax wealth" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h3_wealth_high]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "high", hypothesis = "H3", condition = "buy-and-hold ends with more after-tax wealth" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h3_eq]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H3", condition = "higher final equity weight" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h3_vol]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H3", condition = "higher volatility" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_h3_dd]
+run = "rebalancing/60_40"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H3", condition = "deeper maximum drawdown" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_h1_dev]
+run = "rebalancing/80_20"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H1", condition = "deviation not larger" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_h1_cost]
+run = "rebalancing/80_20"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H1", condition = "costs and taxes lower" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_h2]
+run = "rebalancing/80_20"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H2", condition = "monthly ends with less after-tax wealth" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_h3_wealth]
+run = "rebalancing/80_20"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H3", condition = "buy-and-hold ends with more after-tax wealth" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_h3_eq]
+run = "rebalancing/80_20"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H3", condition = "higher final equity weight" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_h3_vol]
+run = "rebalancing/80_20"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H3", condition = "higher volatility" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_h3_dd]
+run = "rebalancing/80_20"
+table = "hypotheses.csv"
+where = { scenario = "low", hypothesis = "H3", condition = "deeper maximum drawdown" }
+column = "share"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_bh_diff]
+run = "rebalancing/80_20"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_r_monthly_diff]
+run = "rebalancing/80_20"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "after_tax_wealth_median"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+absolute = true
+
+[values.s4_r_band5_share]
+run = "rebalancing/80_20"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_target" }
+column = "share_wealth_higher"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_band10_share]
+run = "rebalancing/80_20"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_10_target" }
+column = "share_wealth_higher"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_edge_share]
+run = "rebalancing/80_20"
+table = "against_reference.csv"
+where = { scenario = "low", policy = "band_5_edge" }
+column = "share_wealth_higher"
+scale = 100
+decimals = 1
+unit = " %"
+
+[values.s4_r_h_annual_wealth]
+run = "rebalancing/80_20"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_annual" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_r_h_monthly_wealth]
+run = "rebalancing/80_20"
+table = "historical.csv"
+where = { scenario = "low", policy = "calendar_monthly" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+[values.s4_r_h_bh_wealth]
+run = "rebalancing/80_20"
+table = "historical.csv"
+where = { scenario = "low", policy = "buy_and_hold" }
+column = "after_tax_wealth"
+scale = 0.001
+decimals = 1
+unit = "k EUR"
+
+# Tables: the historical path and the simulated differences, 60/40, low costs
+
+[tables.s4_historical]
+run = "rebalancing/60_40"
+table = "historical.csv"
+where = { scenario = "low" }
+columns = [
+    { column = "policy", header = "Policy" },
+    { column = "after_tax_wealth", header = "After-tax wealth (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "after_tax_return", header = "After-tax return p.a. (%)", decimals = 2, scale = 100 },
+    { column = "volatility", header = "Volatility (%)", decimals = 2, scale = 100 },
+    { column = "max_drawdown", header = "Max drawdown (%)", decimals = 1, scale = 100 },
+    { column = "mean_abs_deviation", header = "Mean abs. equity deviation (points)", decimals = 1, scale = 100 },
+    { column = "final_equity_weight", header = "Final equity (%)", decimals = 1, scale = 100 },
+    { column = "trades", header = "Trades", decimals = 0 },
+    { column = "costs", header = "Costs (EUR)", decimals = 0 },
+    { column = "taxes", header = "Taxes paid (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "deferred_tax", header = "Tax at the end (k EUR)", decimals = 1, scale = 0.001 },
+]
+
+[tables.s4_simulated]
+run = "rebalancing/60_40"
+table = "against_reference.csv"
+where = { scenario = "low" }
+columns = [
+    { column = "policy", header = "Policy" },
+    { column = "after_tax_wealth_median", header = "Wealth difference, median (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "after_tax_wealth_p05", header = "5 % (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "after_tax_wealth_p95", header = "95 % (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "share_wealth_higher", header = "Paths ahead (%)", decimals = 1, scale = 100 },
+    { column = "mean_abs_deviation_median", header = "Equity deviation (points)", decimals = 1, scale = 100 },
+    { column = "costs_and_taxes_median", header = "Costs + taxes paid (k EUR)", decimals = 1, scale = 0.001 },
+    { column = "volatility_median", header = "Volatility (points)", decimals = 1, scale = 100 },
+    { column = "max_drawdown_median", header = "Max drawdown (points)", decimals = 1, scale = 100 },
+]
