@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from qrlab.core.errors import ValidationError
-from qrlab.stats.factors import FactorModel, factor_exposures
+from qrlab.stats.factors import FactorSet, factor_exposures
 from qrlab.stats.regression import CovType, newey_west_lags, ols
 from qrlab.stats.rolling import rolling_ols
 
@@ -45,7 +45,7 @@ def test_known_answer_recovery(factor_data: tuple[pd.Series, pd.DataFrame]) -> N
     result = factor_exposures(
         y,
         factors,
-        model=FactorModel.FF3_MOM,
+        model=FactorSet.FF3_MOM,
         periods_per_year=P,
         cov_type=CovType.HAC,
         hac_lags=newey_west_lags(len(y)),
@@ -58,13 +58,13 @@ def test_known_answer_recovery(factor_data: tuple[pd.Series, pd.DataFrame]) -> N
     assert result.alpha_se_annualised == pytest.approx(result.regression.std_errors["const"] * P)
     assert result.r_squared > 0.95
     assert result.nobs == 360
-    assert result.model is FactorModel.FF3_MOM
+    assert result.model is FactorSet.FF3_MOM
 
 
 def test_equals_plain_ols_on_the_same_columns(factor_data: tuple[pd.Series, pd.DataFrame]) -> None:
     y, factors = factor_data
     result = factor_exposures(
-        y, factors, model=FactorModel.FF5, periods_per_year=P, cov_type=CovType.HC1, hac_lags=None,
+        y, factors, model=FactorSet.FF5, periods_per_year=P, cov_type=CovType.HC1, hac_lags=None,
         momentum_column=None,
     )  # fmt: skip
     reference = ols(
@@ -80,7 +80,7 @@ def test_equals_plain_ols_on_the_same_columns(factor_data: tuple[pd.Series, pd.D
 def test_capm_uses_only_the_market(factor_data: tuple[pd.Series, pd.DataFrame]) -> None:
     y, factors = factor_data
     result = factor_exposures(
-        y, factors, model=FactorModel.CAPM, periods_per_year=P, cov_type=CovType.NONROBUST,
+        y, factors, model=FactorSet.CAPM, periods_per_year=P, cov_type=CovType.NONROBUST,
         hac_lags=None, momentum_column=None,
     )  # fmt: skip
     assert list(result.betas.index) == ["Mkt-RF"]
@@ -90,7 +90,7 @@ def test_us_momentum_column_name(factor_data: tuple[pd.Series, pd.DataFrame]) ->
     y, factors = factor_data
     us = factors.rename(columns={"WML": "Mom"})
     result = factor_exposures(
-        y, us, model=FactorModel.FF5_MOM, periods_per_year=P, cov_type=CovType.NONROBUST,
+        y, us, model=FactorSet.FF5_MOM, periods_per_year=P, cov_type=CovType.NONROBUST,
         hac_lags=None, momentum_column="Mom",
     )  # fmt: skip
     assert list(result.betas.index)[-1] == "MOM"
@@ -99,14 +99,14 @@ def test_us_momentum_column_name(factor_data: tuple[pd.Series, pd.DataFrame]) ->
 @pytest.mark.parametrize(
     ("model", "momentum_column", "match"),
     [
-        (FactorModel.FF3_MOM, None, "momentum_column"),
-        (FactorModel.FF3, "WML", "momentum_column"),
-        (FactorModel.FF3_MOM, "UMD", "UMD"),
+        (FactorSet.FF3_MOM, None, "momentum_column"),
+        (FactorSet.FF3, "WML", "momentum_column"),
+        (FactorSet.FF3_MOM, "UMD", "UMD"),
     ],
 )
 def test_momentum_column_rules(
     factor_data: tuple[pd.Series, pd.DataFrame],
-    model: FactorModel,
+    model: FactorSet,
     momentum_column: str | None,
     match: str,
 ) -> None:
@@ -122,21 +122,21 @@ def test_missing_factor_column_raises(factor_data: tuple[pd.Series, pd.DataFrame
     y, factors = factor_data
     with pytest.raises(ValidationError, match="RMW"):
         factor_exposures(
-            y, factors.drop(columns="RMW"), model=FactorModel.FF5, periods_per_year=P,
+            y, factors.drop(columns="RMW"), model=FactorSet.FF5, periods_per_year=P,
             cov_type=CovType.NONROBUST, hac_lags=None, momentum_column=None,
         )  # fmt: skip
 
 
 def test_validation_of_model_and_periods(factor_data: tuple[pd.Series, pd.DataFrame]) -> None:
     y, factors = factor_data
-    with pytest.raises(ValidationError, match="FactorModel"):
+    with pytest.raises(ValidationError, match="FactorSet"):
         factor_exposures(
             y, factors, model="FF3", periods_per_year=P, cov_type=CovType.NONROBUST,  # type: ignore[arg-type]
             hac_lags=None, momentum_column=None,
         )  # fmt: skip
     with pytest.raises(ValidationError, match="periods_per_year"):
         factor_exposures(
-            y, factors, model=FactorModel.FF3, periods_per_year=0, cov_type=CovType.NONROBUST,
+            y, factors, model=FactorSet.FF3, periods_per_year=0, cov_type=CovType.NONROBUST,
             hac_lags=None, momentum_column=None,
         )  # fmt: skip
 

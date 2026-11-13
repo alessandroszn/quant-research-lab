@@ -21,12 +21,12 @@ import pandas as pd
 from qrlab.core.errors import ValidationError
 from qrlab.stats.regression import INTERCEPT, CovType, OlsResult, ols
 
-__all__ = ["FactorModel", "FactorResult", "factor_exposures"]
+__all__ = ["FactorResult", "FactorSet", "factor_exposures"]
 
 MOMENTUM = "MOM"
 
 
-class FactorModel(Enum):
+class FactorSet(Enum):
     """Factor sets.
 
     ``MOM`` stands for the momentum column (``Mom`` in US files, ``WML`` in Developed and
@@ -65,7 +65,7 @@ class FactorResult:
         The underlying :class:`~qrlab.stats.regression.OlsResult`.
     """
 
-    model: FactorModel
+    model: FactorSet
     alpha: float
     alpha_annualised: float
     alpha_se_annualised: float
@@ -82,7 +82,7 @@ def factor_exposures(
     excess_returns: pd.Series,
     factors: pd.DataFrame,
     *,
-    model: FactorModel,
+    model: FactorSet,
     periods_per_year: float,
     cov_type: CovType,
     hac_lags: int | None,
@@ -106,8 +106,8 @@ def factor_exposures(
         Name of the momentum column (``"Mom"`` or ``"WML"``); required when the model uses
         momentum and ``None`` otherwise.
     """
-    if not isinstance(model, FactorModel):
-        raise ValidationError(f"model must be a FactorModel, got {model!r}")
+    if not isinstance(model, FactorSet):
+        raise ValidationError(f"model must be a FactorSet, got {model!r}")
     if not _positive_number(periods_per_year):
         raise ValidationError(f"periods_per_year must be positive, got {periods_per_year!r}")
     if model.uses_momentum != (momentum_column is not None):

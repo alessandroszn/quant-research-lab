@@ -21,7 +21,7 @@ from qrlab.stats.bootstrap import (
     stationary_bootstrap,
     stationary_bootstrap_indices,
 )
-from qrlab.stats.factors import FactorModel, FactorResult, factor_exposures
+from qrlab.stats.factors import FactorResult, FactorSet, factor_exposures
 from qrlab.stats.multiple_testing import Correction, CorrectionResult, adjust_pvalues
 from qrlab.stats.panel import LinearContrast, PanelResult, contrast, fixed_effects_ols
 from qrlab.stats.regression import CovType, OlsResult, newey_west_lags, ols
@@ -32,8 +32,8 @@ __all__ = [
     "Correction",
     "CorrectionResult",
     "CovType",
-    "FactorModel",
     "FactorResult",
+    "FactorSet",
     "LinearContrast",
     "OlsResult",
     "PanelResult",
