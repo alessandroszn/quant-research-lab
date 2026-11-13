@@ -8,6 +8,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Release preparation (phase 6.3c):
+  - **Licence:** the BSD-3-Clause `LICENSE`; documentation and study reports under CC BY 4.0.
+  - **Citation:** `CITATION.cff` and `.zenodo.json`.
+  - **Community files:** `CONTRIBUTING.md` and `SECURITY.md`.
+  - **Release workflow:** on a version tag, `release.yml` checks the tag against the version,
+    builds and tests the sdist, the wheel and the Windows program, drafts a GitHub Release, and
+    publishes to TestPyPI (release candidates) or PyPI by trusted publishing, after the owner's
+    approval.
+  - **Docs deployment:** `docs-pages.yml` publishes the documentation to GitHub Pages on final
+    tags.
+  - **Release guide:** `docs/project/releasing.md`.
+- `scripts/audit_history.py`: scans every file version in the git history for private data
+  files, spreadsheets, secrets, IBANs, e-mail addresses and the ISINs of the real portfolio
+  (read locally from a git-ignored folder). It reports paths and counts only.
+- `scripts/readme_figures.py`: the README figures, drawn from the study records.
+
 - Documentation site (phase 6.3b), built with Sphinx, MyST-Parser and pydata-sphinx-theme:
   - getting started, and guides to experiments, the experiment kinds, the desktop app,
     reproducing the studies and the data sources;
@@ -93,6 +109,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- The README is rewritten for the public release: status, features, the four studies with two
+  figures, install, quality, data and privacy, citation and licence. Its links are absolute,
+  so they also work on PyPI.
+- `pyproject.toml` declares the licence (PEP 639), keywords, classifiers and project URLs, and
+  no longer blocks uploads.
+- The Windows build is reusable (`workflow_call`): release tags now build it through
+  `release.yml`.
 - **Breaking:** `qrlab.stats.FactorModel` is renamed to `qrlab.stats.FactorSet`, so it is no
   longer confused with the factor risk model `qrlab.risk.FactorModel`. It is the only rename
   from the review of the 341 public names before the API freeze.

@@ -6,9 +6,9 @@ name: App build (Windows)
 
 on:
   workflow_dispatch:
+  workflow_call:  # the release workflow builds the Windows files through this one
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
     paths:
       - "packaging/**"

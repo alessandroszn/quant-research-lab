@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.25"]
+requires = ["hatchling>=1.27"]  # 1.27: PEP 639 licence expressions and licence files
 build-backend = "hatchling.build"
 
 [project]
@@ -7,16 +7,30 @@ name = "quant-research-lab"
 version = "0.4.0"
 description = "A rigorous Python framework for quantitative financial research, portfolio analytics and backtesting."
 readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "Alessandro Zanichelli" }]
+keywords = [
+    "quantitative finance",
+    "portfolio analytics",
+    "backtesting",
+    "asset pricing",
+    "risk",
+    "reproducible research",
+]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Mathematics",
     "Typing :: Typed",
-    "Private :: Do Not Upload",
 ]
 dependencies = [
     "numpy>=2.1",
@@ -25,6 +39,13 @@ dependencies = [
     "statsmodels>=0.14",
     "matplotlib>=3.9",
 ]
+
+[project.urls]
+Homepage = "https://github.com/alessandroszn/quant-research-lab"
+Documentation = "https://alessandroszn.github.io/quant-research-lab/"
+Source = "https://github.com/alessandroszn/quant-research-lab"
+Changelog = "https://github.com/alessandroszn/quant-research-lab/blob/main/CHANGELOG.md"
+Issues = "https://github.com/alessandroszn/quant-research-lab/issues"
 
 [project.scripts]
 qrlab = "qrlab.cli:main_entry"
@@ -63,7 +84,7 @@ docs = [
 packages = ["src/qrlab", "src/qrlab_app"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/qrlab", "src/qrlab_app", "tests", "README.md", "CHANGELOG.md"]
+include = ["src/qrlab", "src/qrlab_app", "tests", "README.md", "CHANGELOG.md", "LICENSE"]
 
 # --------------------------------------------------------------------------- ruff
 [tool.ruff]
@@ -99,9 +120,9 @@ convention = "numpy"
 [tool.mypy]
 python_version = "3.11"
 strict = true
-files = ["src", "tests", "examples", "packaging"]
+files = ["src", "tests", "examples", "packaging", "scripts"]
 explicit_package_bases = true
-mypy_path = "src,tests,packaging"
+mypy_path = "src,tests,packaging,scripts"
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
@@ -114,7 +135,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 minversion = "8.3"
 testpaths = ["tests"]
-pythonpath = ["tests", "packaging"]
+pythonpath = ["tests", "packaging", "scripts"]
 addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
 xfail_strict = true
 filterwarnings = ["error"]
@@ -124,7 +145,7 @@ markers = [
 
 # --------------------------------------------------------------------------- coverage
 [tool.coverage.run]
-source = ["qrlab", "qrlab_app", "./packaging"]
+source = ["qrlab", "qrlab_app", "./packaging", "./scripts"]
 omit = [
     "*/qrlab_app/__main__.py",  # two lines that start the event loop
     "*/packaging/launch_*.py",  # PyInstaller entry points, exercised by the Windows build

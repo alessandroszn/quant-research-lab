@@ -65,6 +65,7 @@ compatibility
 :caption: Project
 
 project/changelog
+project/releasing
 ARCHITECTURE
 ROADMAP
 IDEAS
