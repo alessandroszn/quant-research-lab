@@ -38,6 +38,13 @@ EUR 1,000 into "2,000" of nothing in particular.
   forward is listed in {py:attr}`qrlab.portfolio.EcbConverter.stale_uses`. The portfolio report
   lists each one as a warning, and the `data_quality.stale_fx` health check counts those used
   on the check date.
+- **The `portfolio_report` kind converts only with a stated source** (phase 7.4a). Without an
+  `fx` input, every amount and price must be in the base currency and a foreign one raises.
+  With the ECB `eurofxref-hist` file as `fx` and an explicit `fx_max_age_days`, the kind uses
+  `EcbConverter` for the ledger, the valuation, the checks and the report. The report then
+  names the FX source and its age limit and lists every rate carried forward. There is one
+  extra price file per currency (`[inputs.extra_prices]`), and an ISIN in two price files
+  raises.
 - **The ledger keeps local and base currency apart.** {py:func}`qrlab.portfolio.replay` keeps
   cash per (account, currency), converts to the base currency only through the caller's
   converter, and raises if the converter returns another currency. An instrument bought in
@@ -59,6 +66,11 @@ EUR 1,000 into "2,000" of nothing in particular.
 
 ## What guards it
 
+- `tests/unit/experiments/test_portfolio_report_currencies.py`:
+  `test_usd_position_and_cash_by_hand` (2,000 EUR by hand),
+  `test_gbp_base_uses_the_cross_rate` (1,600 GBP), `test_a_stale_rate_is_refused_or_listed`,
+  `test_without_fx_a_foreign_amount_still_raises`, `test_an_isin_in_two_price_files`,
+  `test_an_fx_sidecar_must_match_the_file`, `test_the_full_example_by_hand` (15,482 EUR).
 - `tests/unit/core/test_money.py`: `test_mixing_currencies_raises`,
   `test_float_amounts_are_refused`, `test_arithmetic_never_rounds_implicitly`,
   `test_fx_rate_convention_and_conversion`, `test_convert_with_unrelated_rate_raises`,
@@ -86,10 +98,8 @@ EUR 1,000 into "2,000" of nothing in particular.
 
 ## Limits
 
-- **The runner is single-currency for portfolios.** The `portfolio_report` experiment kind,
-  which the CLI and the app use, refuses any amount or price not in the base currency
-  (`tests/unit/experiments/test_kinds.py::test_portfolio_report_variants_and_errors`).
-  Multi-currency valuation exists in the library but is not yet reachable from a config.
+- **FX from a local file only.** The `portfolio_report` kind reads the ECB file it is given;
+  it does not download one.
 - **The currency contribution of positions is not a separate report line.** The report shows
   the currency effect on cash (`cash_fx`). The currency part of a foreign position's gain stays
   inside realised and unrealised P&L. {py:func}`qrlab.portfolio.currency_effect` and

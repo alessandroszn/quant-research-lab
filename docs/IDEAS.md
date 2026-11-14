@@ -60,7 +60,7 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Cancelling runs and a run queue | 6.1 app | The runner has no cancellation hook; long studies cannot be stopped from the app. |
 | Interactive charts in the app | 6.1 app | Today the app shows the PNG figures the runner writes. |
 | Return kind carried by the data | 6.3b methodology | Metrics assume simple returns by contract; a series that carries its `ReturnKind` would catch log returns passed by mistake. |
-| Multi-currency and look-through in the `portfolio_report` kind | 6.3b methodology | The library supports both, but the kind used by the CLI and the app is single-currency and passes no look-through. |
+| Look-through in the `portfolio_report` kind | 6.3b methodology | Phase 7.4b. The library supports it, but the kind used by the CLI and the app passes no look-through (several currencies were added in 7.4a). |
 | Code signing of the Windows build | 6.2 build | Removes the SmartScreen warning; needs a paid certificate or Azure Trusted Signing. |
 | macOS build | 6.2 build | A PyInstaller `.app` and a disk image, built on a macOS runner with the same source-versus-frozen check. |
 | App icon | 6.2 build | The Windows build uses PyInstaller's default icon. |

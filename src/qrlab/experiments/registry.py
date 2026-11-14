@@ -56,6 +56,11 @@ class RunContext:
     inputs: Mapping[str, Path]
     seed: int | None
 
+    def group(self, name: str) -> dict[str, Path]:
+        """Return the files of the input group ``name`` by key (empty if the group is absent)."""
+        prefix = f"{name}."
+        return {k[len(prefix) :]: v for k, v in self.inputs.items() if k.startswith(prefix)}
+
 
 @dataclass(frozen=True)
 class ExperimentKind:
@@ -69,3 +74,8 @@ class ExperimentKind:
     parse: Callable[[Mapping[str, object]], object]
     run: Callable[[RunContext], ExperimentOutput]
     optional_inputs: tuple[str, ...] = ()  # files a config may give; absent ones are not in inputs
+    input_groups: tuple[str, ...] = ()  # optional tables of files, one per free key
+    optional_parameters: tuple[str, ...] = ()  # keys a config may give in [parameters]
+    check_inputs: Callable[[object, frozenset[str]], None] | None = None
+    """Called at validation with the parsed parameters and the names of the given inputs, for
+    rules that tie the two together (e.g. a parameter required only with an optional input)."""

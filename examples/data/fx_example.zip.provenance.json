@@ -1,0 +1,9 @@
+{
+  "source": "ecb",
+  "dataset": "eurofxref-hist",
+  "url": "file:fx_example.zip",
+  "retrieved_at": "2026-04-01T00:00:00+00:00",
+  "sha256": "3ccbf09d639a3ec1293a1b2ceb28066e3940079296ac765f2b38ece6112091b6",
+  "size_bytes": 252,
+  "terms": "synthetic rates in the ECB file format, made up for the example"
+}

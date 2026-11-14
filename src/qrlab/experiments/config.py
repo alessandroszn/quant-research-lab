@@ -4,6 +4,11 @@ Tables: ``[experiment]`` (``name``, ``kind``, ``hypothesis``, and ``seed`` when 
 one), ``[inputs]`` (local files, relative to the config file), ``[parameters]`` (kind-specific)
 and ``[output]`` (``directory``). Unknown keys raise, so a typo is never ignored.
 
+An input may be a **group**: a table of files with free keys, e.g. ``[inputs.holdings]`` with one
+file per fund ISIN. Each file is flattened to the name ``<group>.<key>`` and is then checked,
+hashed and recorded like any other input. Whether a name may be a group is the kind's decision
+(:attr:`qrlab.experiments.ExperimentKind.input_groups`).
+
 The **config hash** is the SHA-256 of the canonical JSON of every table except ``[output]``:
 moving the results elsewhere is not a new configuration.
 """
@@ -39,6 +44,8 @@ class ExperimentConfig:
     output_dir: Path
     raw: Mapping[str, object]
     hash: str
+    input_groups: frozenset[str] = frozenset()
+    """Names given as a table of files (their files are in ``inputs`` as ``<group>.<key>``)."""
 
 
 def load_config(path: Path) -> ExperimentConfig:
@@ -66,11 +73,9 @@ def load_config(path: Path) -> ExperimentConfig:
     if seed is not None and (type(seed) is not int or seed < 0):
         raise ValidationError("[experiment] seed must be an int >= 0")
     base = path.parent
-    inputs: dict[str, Path] = {}
-    for name, value in raw["inputs"].items():
-        if not isinstance(value, str) or not value.strip():
-            raise ValidationError(f"[inputs] {name} must be a file path")
-        inputs[name] = (base / value).resolve()
+    given = _flatten_inputs(raw["inputs"])
+    inputs = {name: (base / value).resolve() for name, value in given.items()}
+    groups = frozenset(name for name, value in raw["inputs"].items() if isinstance(value, dict))
     require_keys(raw["output"], required={"directory"}, optional=set(), where="[output]")
     directory = raw["output"]["directory"]
     if not isinstance(directory, str) or not directory.strip():
@@ -82,12 +87,37 @@ def load_config(path: Path) -> ExperimentConfig:
         hypothesis=experiment["hypothesis"],
         seed=seed,
         inputs=inputs,
-        given_inputs={name: str(value) for name, value in raw["inputs"].items()},
+        given_inputs=given,
         parameters=raw["parameters"],
         output_dir=(base / directory).resolve(),
         raw=raw,
         hash=config_hash(raw),
+        input_groups=groups,
     )
+
+
+def _flatten_inputs(table: Mapping[str, object]) -> dict[str, str]:
+    """Map every input name (``<group>.<key>`` inside a group) to its path as written."""
+    given: dict[str, str] = {}
+    for name, value in table.items():
+        if isinstance(value, dict):
+            if not value:
+                raise ValidationError(f"[inputs] {name} has no files")
+            for key, path in value.items():
+                if not key.strip() or "." in key:
+                    raise ValidationError(
+                        f"[inputs] {name}: key {key!r} must be non-empty and contain no dot"
+                    )
+                given[f"{name}.{key}"] = _path(f"{name}.{key}", path)
+        else:
+            given[name] = _path(name, value)
+    return given
+
+
+def _path(name: str, value: object) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValidationError(f"[inputs] {name} must be a file path")
+    return value
 
 
 def config_hash(raw: Mapping[str, object]) -> str:

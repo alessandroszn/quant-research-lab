@@ -8,6 +8,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Several currencies in the `portfolio_report` kind (phase 7.4a). All of it is optional:
+  existing configs run unchanged, with byte-identical outputs.
+  - **`fx` input:** the ECB `eurofxref-hist` zip. Its provenance comes from the raw store's
+    sidecar, checked against the file's SHA-256. With it, amounts and prices are converted with
+    the reference rate of their date, through EUR for a non-EUR base. The report lists every
+    rate carried forward.
+  - **`fx_max_age_days`:** required with `fx` and refused without it.
+  - **`[inputs.extra_prices]` and `[inputs.extra_prices_mapping]`:** one more price file per
+    currency, under the same key. An ISIN in two price files raises.
+  - **New example:** `configs/experiments/example_portfolio_report_full.toml`, with a USD fund,
+    USD cash and synthetic rates in the ECB format. A test checks it against a hand calculation
+    (15,482 EUR).
+- Groups of input files in experiment configs (phase 7.4a). An input may be a table of files
+  with free keys, e.g. `[inputs.extra_prices]`. Each file is flattened to `<group>.<key>` and
+  hashed and recorded like any other input.
+  - **New `ExperimentKind` fields:** `input_groups`, `optional_parameters`, and
+    `check_inputs`, a validation hook for rules that tie parameters to the inputs given.
+  - **New method:** `RunContext.group`.
+  - **Where they show:** `qrlab kinds` and the config templates list the groups and the
+    optional parameters.
 - Notices that travel with the outputs (phase 7.2). The `projection`, `optimisation`,
   `scenario_analysis` and `backtest` kinds now state what their outputs are not: a forecast, a
   recommendation or a probability of loss. Each notice ends with "Research analytics, not

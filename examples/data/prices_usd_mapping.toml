@@ -1,0 +1,13 @@
+# Synthetic USD price file mapping: one file and one mapping per currency.
+date_column = "Data"
+date_format = "%d/%m/%Y"
+delimiter = ";"
+decimal_separator = ","
+thousands_separator = "."
+encoding = "utf-8"
+currency = "USD"
+frequency = "monthly"
+
+[columns."US0000000119"]
+instrument = "US0000000119"
+price_type = "price"

@@ -1,0 +1,39 @@
+# Example experiment: the HTML portfolio report of a synthetic EUR portfolio that also
+# holds a USD fund and USD cash, converted with ECB-format reference rates (made up).
+# Run with: uv run qrlab run configs/experiments/example_portfolio_report_full.toml
+# For your real portfolio, copy this file and point [inputs] at files under data/ (git-ignored).
+
+[experiment]
+name = "example-portfolio-report-full"
+kind = "portfolio_report"
+hypothesis = "descriptive"
+
+[inputs]
+transactions = "../../examples/data/broker_export_full.csv"
+transactions_mapping = "../csv_mappings/example_broker.toml"
+prices = "../../examples/data/prices.csv"
+prices_mapping = "../../examples/data/prices_mapping.toml"
+instruments = "../../examples/data/instruments_full.toml"
+checks = "../checks/example.toml"
+fx = "../../examples/data/fx_example.zip"
+
+# One more price file and mapping per currency, under the same key.
+[inputs.extra_prices]
+usd = "../../examples/data/prices_usd.csv"
+
+[inputs.extra_prices_mapping]
+usd = "../../examples/data/prices_usd_mapping.toml"
+
+[parameters]
+title = "Synthetic example, two currencies"
+base_currency = "EUR"
+language = "it"
+flow_timing = "start"
+max_price_age_days = 0
+fx_max_age_days = 0
+return_frequency = "none"
+generated_at = 2026-04-01T09:00:00Z
+target_weights = { IE0000000012 = 0.5, US0000000119 = 0.1, cash = 0.4 }
+
+[output]
+directory = "../../results/example-portfolio-report-full"

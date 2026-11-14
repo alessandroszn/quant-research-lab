@@ -74,8 +74,13 @@ def validate_experiment(
     if config.kind not in kinds:
         raise ValidationError(f"unknown experiment kind {config.kind!r}; known: {sorted(kinds)}")
     kind = kinds[config.kind]
-    missing = sorted(set(kind.inputs) - set(config.inputs))
-    unknown = sorted(set(config.inputs) - set(kind.inputs) - set(kind.optional_inputs))
+    if not_groups := sorted(config.input_groups - set(kind.input_groups)):
+        raise ValidationError(f"[inputs] for {kind.name}: {not_groups[0]} is not a group of files")
+    plain = {name for name in config.inputs if name.split(".", 1)[0] not in config.input_groups}
+    if not_tables := sorted(set(kind.input_groups) & plain):
+        raise ValidationError(f"[inputs] for {kind.name}: {not_tables[0]} must be a table of files")
+    missing = sorted(set(kind.inputs) - plain)
+    unknown = sorted(plain - set(kind.inputs) - set(kind.optional_inputs))
     if missing or unknown:
         raise ValidationError(f"[inputs] for {kind.name}: missing {missing}, unknown {unknown}")
     for name, path in config.inputs.items():
@@ -85,7 +90,10 @@ def validate_experiment(
         raise ValidationError(f"{kind.name} uses random numbers: [experiment] seed is required")
     if not kind.needs_seed and config.seed is not None:
         raise ValidationError(f"{kind.name} uses no random numbers: remove [experiment] seed")
-    return config, kind, kind.parse(config.parameters)
+    parameters = kind.parse(config.parameters)
+    if kind.check_inputs is not None:
+        kind.check_inputs(parameters, frozenset(config.inputs))
+    return config, kind, parameters
 
 
 def run_experiment(
