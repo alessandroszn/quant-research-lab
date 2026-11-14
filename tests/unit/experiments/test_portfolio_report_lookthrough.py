@@ -322,7 +322,7 @@ def test_a_tracking_file_needs_the_fund_column(tmp_path: Path) -> None:
 def test_the_kind_lists_the_lookthrough_inputs() -> None:
     kind = KINDS["portfolio_report"]
     assert kind.input_groups[2:] == ("holdings", "holdings_mapping", "tracking", "tracking_mapping")
-    assert kind.optional_parameters[1:] == ("lookthrough_treatment", "holdings", "tracking")
+    assert kind.optional_parameters[1:4] == ("lookthrough_treatment", "holdings", "tracking")
 
 
 def test_an_issuer_map_in_the_kind_by_hand(tmp_path: Path) -> None:

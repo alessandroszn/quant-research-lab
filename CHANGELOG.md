@@ -8,6 +8,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Risk and stress tests in the `portfolio_report` kind (phase 8.3), with an optional
+  `[parameters.risk]`: `frequency` (`weekly`/`monthly`), `window`, `confidence`, `covariance`.
+  There is also an optional `scenarios` input. Without them, outputs are byte-identical.
+  - **Returns:**
+    - built from the report's own price files, including dates before the first purchase;
+    - the last price per period, converted with the ECB rates of `fx`;
+    - foreign cash returns its currency's return;
+    - nothing is filled, and a position that lacks the window fails the run and is named.
+  - **Weights:** today's, applied to past returns: what this portfolio would have done, not
+    the TWR.
+  - **What is computed:** volatility contributions, VaR and ES (historical, normal,
+    Cornish-Fisher) and stress tests, in the report's risk section.
+  - **Undefined methods:** a method that is undefined, such as historical VaR on too few
+    returns, is listed with its reason instead of being forced.
+  - **New outputs:** `risk_returns.csv`, `risk_contributions.csv`, `var_es.csv` and
+    `scenarios.csv`, plus the scalars `volatility_period`, `volatility_annual` and the
+    historical VaR and ES.
+  - **Notice:** when the prices are price-only, it says that return levels exclude dividends.
+  - **Hand-checked:** a 0.70711 % monthly volatility with contributions of 0.58926 % and
+    0.11785 %; a USD fund at +25 % in EUR (+10 % in USD); USD cash at +13.64 %; a −30 % shock
+    on a fund at 50 % giving −15 %.
 - Issuer holdings files as published (phase 8.2a: the reading layer; the iShares and Vanguard
   mapping files follow in 8.2b, from the real downloads).
   - **Country names.** `qrlab.instruments.countries` maps one ISO 3166-1 short name per code,

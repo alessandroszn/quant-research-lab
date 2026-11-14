@@ -14,9 +14,9 @@ implement them are not.
 
 *HTML portfolio report with health checks from a broker export (descriptive).*
 
-- Inputs: `transactions`, `transactions_mapping`, `prices`, `prices_mapping`, `instruments`, `checks`; optional: `fx`
+- Inputs: `transactions`, `transactions_mapping`, `prices`, `prices_mapping`, `instruments`, `checks`; optional: `fx`, `issuers`, `scenarios`
 - Optional input groups: `extra_prices`, `extra_prices_mapping`, `holdings`, `holdings_mapping`, `tracking`, `tracking_mapping`
-- Parameters: `title`, `base_currency`, `language`, `flow_timing`, `max_price_age_days`, `return_frequency`, `generated_at`, `target_weights`; optional: `fx_max_age_days`, `lookthrough_treatment`, `holdings`, `tracking`
+- Parameters: `title`, `base_currency`, `language`, `flow_timing`, `max_price_age_days`, `return_frequency`, `generated_at`, `target_weights`; optional: `fx_max_age_days`, `lookthrough_treatment`, `holdings`, `tracking`, `risk`
 - Seed: not used
 
 ```{eval-rst}

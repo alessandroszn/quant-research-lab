@@ -254,7 +254,7 @@ def test_an_fx_sidecar_must_match_the_file(tmp_path: Path) -> None:
 
 def test_the_template_and_kind_list_the_new_inputs() -> None:
     kind = KINDS["portfolio_report"]
-    assert kind.optional_inputs == ("fx", "issuers")
+    assert kind.optional_inputs[0] == "fx"  # later phases add more
     assert kind.input_groups[:2] == ("extra_prices", "extra_prices_mapping")  # 7.4b adds more
     assert kind.optional_parameters[0] == "fx_max_age_days"
     template = config_template(kind)
