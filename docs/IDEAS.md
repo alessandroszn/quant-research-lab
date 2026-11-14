@@ -22,7 +22,7 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | PDF export of reports | 2.3 `reporting` | Roadmap mentions HTML/PDF; HTML only in v1. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |
 | Total-return series for distributing funds | 8.7 | A total-return file per fund, used by the diversification checks and the report's risk, so that a distributing fund's returns include its distributions. |
-| Loss carry-forward in TaxModel (8.6b) | 8.6 | Projections and backtests with the Italian split: ETF gains cannot use losses; other income can, for four years. |
+| Loss rules in configs | 8.6b | `[parameters]` keys for `qrlab.simulation.LossRules` in the backtest, projection and report kinds; today the rules are a library option only. |
 | Italian taxes on income and wealth | 8.6 | Recompute dividend and coupon taxes (with foreign withholding and treaties); stamp duty and IVAFE; foreign currency as redditi diversi. |
 | Benchmark series in the portfolio report | 8.5 | The relative checks (beta, tracking error against a benchmark) need a benchmark input; with it, beta on excess returns of the €STR. |
 | Currency model in projections | 8.4 | Foreign assets and cash are projected in the base currency; their stated return and volatility must include the currency risk. |
@@ -62,5 +62,5 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | macOS build | 6.2 build | A PyInstaller `.app` and a disk image, built on a macOS runner with the same source-versus-frozen check. |
 | App icon | 6.2 build | The Windows build uses PyInstaller's default icon. |
 | Rebalancing with contributions | 5.3 study 4 | Monthly savings can rebalance without selling (cash-flow rebalancing), which avoids realising gains under Italian tax. |
-| Hedged equity and loss carry-forward in study 4 | 5.3 study 4 | EUR-hedged equity (needs USD and EUR short rates) and the four-year carry-forward of capital losses. |
+| Hedged equity and loss carry-forward in study 4 | 5.3 study 4 | EUR-hedged equity (needs USD and EUR short rates) and the four-year carry-forward of capital losses (the engine has it since 8.6b, as `LossRules`). |
 | Anomalies by category | 5.3 study 3 | Decay by data type (accounting, price, analyst) or by economic category, with the same panel regression. |

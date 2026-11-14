@@ -15,8 +15,11 @@ Within each period :math:`t` (0-based):
 spend: holdings are sold in proportion to their value, and the capital-gains tax on the gains
 realised is paid from wealth on top. Selling :math:`S` out of wealth :math:`W` realises
 :math:`\sum_i (S/W)\max(H_i-B_i, 0)`, so :math:`S = N/(1-\tau G/W)` with :math:`G=\sum_i
-\max(H_i-B_i,0)`. Gains and losses of different assets are not netted and losses are not
-carried forward, which overstates taxes slightly. Indexed flows grow with inflation as
+\max(H_i-B_i,0)`. Without :class:`~qrlab.simulation.losses.LossRules`, gains and losses of
+different assets are not netted and losses are not carried forward, which overstates taxes
+slightly. With them (phase 8.6b), fund gains are taxed in full and other gains use the losses,
+the Italian way; a withdrawal then solves the same equation with the offset, which stays in
+closed form (see :func:`_gross_withdrawal`). Indexed flows grow with inflation as
 :math:`(1+\pi)^{t/P}`.
 
 **Depletion.** A path is depleted in the first period whose withdrawal (plus tax) needs more
@@ -39,6 +42,7 @@ import pandas as pd
 from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency
 from qrlab.simulation.engines import SimulatedReturns
+from qrlab.simulation.losses import LossBalance, LossRules, fund_mask, realised_tax
 
 __all__ = ["Flow", "Plan", "Projection", "TaxModel", "project"]
 
@@ -81,10 +85,15 @@ class Flow:
 
 @dataclass(frozen=True)
 class TaxModel:
-    """Capital-gains tax on realised gains and an annual tax on value (both fractions)."""
+    """Capital-gains tax on realised gains and an annual tax on value (both fractions).
+
+    ``losses`` (phase 8.6b): ``None`` ignores realised losses, as before; a
+    :class:`~qrlab.simulation.losses.LossRules` carries them the Italian way.
+    """
 
     capital_gains_rate: float
     wealth_tax_rate: float
+    losses: LossRules | None = None
 
     def __post_init__(self) -> None:
         """Validate the rates."""
@@ -92,6 +101,8 @@ class TaxModel:
             value = getattr(self, name)
             if type(value) not in (int, float) or not 0.0 <= value < 1.0:
                 raise ValidationError(f"{name} must be in [0, 1)")
+        if self.losses is not None and not isinstance(self.losses, LossRules):
+            raise ValidationError(f"losses must be LossRules or None, got {self.losses!r}")
 
 
 @dataclass(frozen=True)
@@ -179,6 +190,17 @@ def project(plan: Plan, returns: SimulatedReturns) -> Projection:
             raise ValidationError(f"a flow ends in period {flow.last}, after the horizon {periods}")
     target = plan.weights.to_numpy(dtype=np.float64)
     rate = plan.taxes.capital_gains_rate
+    rules = plan.taxes.losses
+    losses = None
+    if rules is not None:
+        losses = _Losses(
+            funds=fund_mask(rules, [str(a) for a in plan.weights.index]),
+            balance=LossBalance(
+                paths=paths,
+                years=periods // plan.periods_per_year + 1,
+                carry_years=rules.carry_years,
+            ),
+        )
     state = _State(
         holdings=np.outer(np.full(paths, float(plan.initial_wealth)), target),
         basis=np.outer(np.full(paths, float(plan.initial_wealth)), target),
@@ -186,6 +208,7 @@ def project(plan: Plan, returns: SimulatedReturns) -> Projection:
         depleted=np.full(paths, -1),
         shortfall=np.zeros(paths),
         taxes=np.zeros(paths),
+        losses=losses,
     )
     nominal = np.empty((paths, periods + 1))
     nominal[:, 0] = state.holdings.sum(axis=1)
@@ -193,6 +216,7 @@ def project(plan: Plan, returns: SimulatedReturns) -> Projection:
     wealth_tax = plan.taxes.wealth_tax_rate / plan.periods_per_year
     for t in range(periods):
         index = (1.0 + plan.inflation) ** (t / plan.periods_per_year)
+        state.year = t // plan.periods_per_year
         if plan.flow_timing == "start":
             _apply_flows(state, plan, t, index, target, rate)
         state.holdings *= 1.0 + returns.returns[:, t, :]
@@ -208,17 +232,32 @@ def project(plan: Plan, returns: SimulatedReturns) -> Projection:
         state.holdings[~state.alive] = 0.0
         nominal[:, t + 1] = state.holdings.sum(axis=1)
     deflator = (1.0 + plan.inflation) ** (np.arange(periods + 1) / plan.periods_per_year)
-    gains = np.clip(state.holdings - state.basis, 0.0, None).sum(axis=1)
+    if state.losses is None:
+        liquidation_tax = rate * np.clip(state.holdings - state.basis, 0.0, None).sum(axis=1)
+    else:
+        liquidation_tax = realised_tax(
+            state.holdings - state.basis,
+            rate,
+            state.losses.funds,
+            state.losses.balance,
+            periods // plan.periods_per_year,
+        )
     return Projection(
         nominal=nominal,
         real=nominal / deflator,
         depleted_period=state.depleted,
         shortfall=state.shortfall,
         taxes_paid=state.taxes,
-        liquidation_value=nominal[:, -1] - rate * gains,
+        liquidation_value=nominal[:, -1] - liquidation_tax,
         plan=plan,
         engine=returns.engine,
     )
+
+
+@dataclass
+class _Losses:
+    funds: np.ndarray  # which assets are funds
+    balance: LossBalance
 
 
 @dataclass
@@ -229,6 +268,8 @@ class _State:
     depleted: np.ndarray
     shortfall: np.ndarray
     taxes: np.ndarray
+    losses: _Losses | None = None
+    year: int = 0
 
 
 def _apply_flows(
@@ -252,20 +293,34 @@ def _apply_flows(
 
 def _withdraw(state: _State, t: int, net: float, rate: float) -> None:
     wealth = state.holdings.sum(axis=1)
-    gains = np.clip(state.holdings - state.basis, 0.0, None).sum(axis=1)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        gain_share = np.where(wealth > 0, gains / wealth, 0.0)
-    gross = net / (1.0 - rate * gain_share)
+    if state.losses is None:
+        gains = np.clip(state.holdings - state.basis, 0.0, None).sum(axis=1)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            gain_share = np.where(wealth > 0, gains / wealth, 0.0)
+        gross = net / (1.0 - rate * gain_share)
+    else:
+        gross = _gross_withdrawal(state, net, rate, wealth)
     enough = state.alive & (gross <= wealth)
     running_out = state.alive & ~enough
     with np.errstate(divide="ignore", invalid="ignore"):
         sold = np.where(enough, gross / wealth, 0.0)
+    if state.losses is None:
+        full_tax = rate * gains
+    else:
+        share = np.where(running_out, 1.0, sold)
+        full_tax = realised_tax(
+            share[:, None] * (state.holdings - state.basis),
+            rate,
+            state.losses.funds,
+            state.losses.balance,
+            state.year,
+        )
     state.taxes += np.where(enough, gross - net, 0.0)
     state.holdings *= (1.0 - sold)[:, None]
     state.basis *= (1.0 - sold)[:, None]
     if running_out.any():
-        paid_out = wealth - rate * gains
-        state.taxes += np.where(running_out, rate * gains, 0.0)
+        paid_out = wealth - full_tax
+        state.taxes += np.where(running_out, full_tax, 0.0)
         state.shortfall += np.where(running_out, net - paid_out, 0.0)
         state.depleted = np.where(running_out, t, state.depleted)
         state.alive &= ~running_out
@@ -273,13 +328,45 @@ def _withdraw(state: _State, t: int, net: float, rate: float) -> None:
         state.basis[running_out] = 0.0
 
 
+def _gross_withdrawal(state: _State, net: float, rate: float, wealth: np.ndarray) -> np.ndarray:
+    r"""Return the gross sale :math:`S` that pays ``net`` after tax, with carried losses.
+
+    Selling a share :math:`s = S/W` realises :math:`sF` on funds and :math:`sD` net on the
+    other assets (:math:`D` = their gains minus every loss), with :math:`C` losses usable. The
+    tax is :math:`\tau sF` while :math:`sD \le C` (or :math:`D \le 0`), so
+    :math:`S = N/(1-\tau F/W)` as without losses; otherwise it is
+    :math:`\tau(sF + sD - C)`, so :math:`S = W(N - \tau C)/(W - \tau(F + D))`.
+    """
+    assert state.losses is not None  # only called with rules
+    diff = state.holdings - state.basis
+    funds = state.losses.funds
+    fund_gain = np.clip(diff[:, funds], 0.0, None).sum(axis=1)
+    other = np.clip(diff[:, ~funds], 0.0, None).sum(axis=1) - np.clip(-diff, 0.0, None).sum(axis=1)
+    carried = state.losses.balance.available(state.year)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        gain_share = np.where(wealth > 0, fund_gain / wealth, 0.0)
+        gross = net / (1.0 - rate * gain_share)
+        beyond = (other > 0) & (gross / wealth * other > carried)
+        offset = wealth * (net - rate * carried) / (wealth - rate * (fund_gain + other))
+    return np.where(beyond, offset, gross)
+
+
 def _rebalance(state: _State, target: np.ndarray, rate: float) -> None:
     wealth = state.holdings.sum(axis=1, keepdims=True)
     goal = wealth * target
     with np.errstate(divide="ignore", invalid="ignore"):
         sold_share = np.where(state.holdings > goal, (state.holdings - goal) / state.holdings, 0.0)
-    realised = sold_share * np.clip(state.holdings - state.basis, 0.0, None)
-    tax = rate * realised.sum(axis=1)
+    if state.losses is None:
+        realised = sold_share * np.clip(state.holdings - state.basis, 0.0, None)
+        tax = rate * realised.sum(axis=1)
+    else:
+        tax = realised_tax(
+            sold_share * (state.holdings - state.basis),
+            rate,
+            state.losses.funds,
+            state.losses.balance,
+            state.year,
+        )
     state.taxes += np.where(state.alive, tax, 0.0)
     bought = np.clip(goal - state.holdings, 0.0, None)
     state.basis = state.basis * (1.0 - sold_share) + bought

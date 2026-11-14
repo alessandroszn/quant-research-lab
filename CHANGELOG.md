@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Italian losses in projections and backtests (phase 8.6b). `TaxModel` has an optional
+  `losses`, a new `qrlab.simulation.LossRules` (`carry_years`, `fund_assets`):
+  - gains on funds are taxed in full and use no losses;
+  - every realised loss joins a balance by year;
+  - other gains use the losses of the same sale, then the balance, oldest first, for
+    `carry_years`.
+
+  Projections keep a balance per path, backtests one by calendar year. Withdrawals still
+  pay the stated net amount, solved in closed form. The default, `None`, keeps the old
+  behaviour, and for funds only the rules change no number: the examples and the four
+  studies are byte-identical. The rules are a library option; the configs do not set them
+  yet.
 - A report entirely in Italian (phase 8.7). `qrlab.reporting.messages` gives the Italian
   form of every library message a report can show:
   - import notes;
