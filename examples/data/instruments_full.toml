@@ -16,7 +16,7 @@ inception = "unknown"
 fund_size = "unknown"
 source = "synthetic example"
 
-[US0000000119]
+[US0000001000]
 name = "Example US Equity ETF"
 instrument_type = "etf"
 asset_class = "equity"

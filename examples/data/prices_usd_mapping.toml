@@ -8,6 +8,6 @@ encoding = "utf-8"
 currency = "USD"
 frequency = "monthly"
 
-[columns."US0000000119"]
-instrument = "US0000000119"
+[columns."US0000001000"]
+instrument = "US0000001000"
 price_type = "price"

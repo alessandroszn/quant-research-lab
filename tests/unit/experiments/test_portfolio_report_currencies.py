@@ -255,8 +255,8 @@ def test_an_fx_sidecar_must_match_the_file(tmp_path: Path) -> None:
 def test_the_template_and_kind_list_the_new_inputs() -> None:
     kind = KINDS["portfolio_report"]
     assert kind.optional_inputs == ("fx",)
-    assert kind.input_groups == ("extra_prices", "extra_prices_mapping")
-    assert kind.optional_parameters == ("fx_max_age_days",)
+    assert kind.input_groups[:2] == ("extra_prices", "extra_prices_mapping")  # 7.4b adds more
+    assert kind.optional_parameters[0] == "fx_max_age_days"
     template = config_template(kind)
     assert '# fx = "../data/FILL-IN"  # optional' in template
     assert "# [inputs.extra_prices]  # optional group: one file per key" in template
@@ -287,3 +287,9 @@ def test_the_full_example_by_hand(tmp_path: Path) -> None:
     assert record["scalars"]["end_value"]["value"] == 15482.0  # type: ignore[index]
     assert "ECB reference rates, max age 0 days" in html
     assert "synthetic rates in the ECB file format" in html  # terms from the sidecar
+    # Look-through (7.4b): the world fund is 50 x 54 = 2,700 EUR, and its holdings leave 1 %
+    # unexplained, i.e. 27 / 15,482 of the portfolio.
+    assert record["scalars"]["lookthrough_funds"]["value"] == 1.0  # type: ignore[index]
+    assert record["scalars"]["unexplained_weight"]["value"] == pytest.approx(  # type: ignore[index]
+        27 / 15482, abs=1e-15
+    )

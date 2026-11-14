@@ -1,5 +1,6 @@
 # Example experiment: the HTML portfolio report of a synthetic EUR portfolio that also
-# holds a USD fund and USD cash, converted with ECB-format reference rates (made up).
+# holds a USD fund and USD cash, converted with ECB-format reference rates (made up), with
+# look-through of the world fund's holdings and its tracking against its index.
 # Run with: uv run qrlab run configs/experiments/example_portfolio_report_full.toml
 # For your real portfolio, copy this file and point [inputs] at files under data/ (git-ignored).
 
@@ -24,8 +25,22 @@ usd = "../../examples/data/prices_usd.csv"
 [inputs.extra_prices_mapping]
 usd = "../../examples/data/prices_usd_mapping.toml"
 
+# Look-through: one holdings file and mapping per fund ISIN.
+[inputs.holdings]
+IE0000000012 = "../../examples/data/holdings_world.csv"
+
+[inputs.holdings_mapping]
+IE0000000012 = "../csv_mappings/example_holdings.toml"
+
+# Tracking: the fund's NAV and its index's total-return level, per fund ISIN.
+[inputs.tracking]
+IE0000000012 = "../../examples/data/tracking_world.csv"
+
+[inputs.tracking_mapping]
+IE0000000012 = "../../examples/data/tracking_world_mapping.toml"
+
 [parameters]
-title = "Synthetic example, two currencies"
+title = "Synthetic example, two currencies and look-through"
 base_currency = "EUR"
 language = "it"
 flow_timing = "start"
@@ -33,7 +48,16 @@ max_price_age_days = 0
 fx_max_age_days = 0
 return_frequency = "none"
 generated_at = 2026-04-01T09:00:00Z
-target_weights = { IE0000000012 = 0.5, US0000000119 = 0.1, cash = 0.4 }
+target_weights = { IE0000000012 = 0.5, US0000001000 = 0.1, cash = 0.4 }
+lookthrough_treatment = "as_reported"
+
+[parameters.holdings.IE0000000012]
+as_of = 2026-03-31                  # the date of the holdings, never after the report date
+weight_basis = "market value, % of NAV"
+sector_taxonomy = "Synthetic sectors"
+
+[parameters.tracking.IE0000000012]
+index_hedged_to = "none"
 
 [output]
 directory = "../../results/example-portfolio-report-full"

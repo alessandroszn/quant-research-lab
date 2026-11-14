@@ -47,6 +47,10 @@ is six months old. The opposite error is to analyse 30 September with a holdings
 - **Dates must agree.** {py:class}`qrlab.lookthrough.LookThroughInputs` raises unless its
   snapshots are exactly the ones the exposures were built from. The health checks and the
   report raise if the look-through is dated differently from them.
+- **The experiment kind declares every date.** In the `portfolio_report` kind, each holdings
+  file needs `[parameters.holdings.<ISIN>] as_of`; nothing is read from the file name or
+  guessed. Holdings dated after the last valuation date make the run fail, and so does a
+  holdings file for a fund the portfolio does not hold on that date.
 - **Missing holdings are visible.** A fund without a snapshot goes to a "not looked through"
   bucket instead of being dropped or redistributed.
 
@@ -62,6 +66,10 @@ is six months old. The opposite error is to analyse 30 September with a holdings
 - `tests/unit/checks/test_checks_concentration_costs_data.py`: `test_missing_and_stale_master_data`.
 - `tests/unit/checks/test_engine.py`: `test_example_config_covers_every_check`,
   `test_config_validation`, `test_disabled_checks_do_not_run`.
+- `tests/unit/experiments/test_portfolio_report_lookthrough.py`:
+  `test_exposures_as_reported_by_hand` (24.0 / 15.0 / 12.0 / 8.4 % and 0.6 % unexplained),
+  `test_exposures_normalised_by_hand`, `test_the_kind_matches_the_library`,
+  `test_run_errors` (a fund not held; holdings dated after the report).
 - `tests/unit/reporting/test_report_lookthrough.py`:
   `test_section_with_holdings_overlap_and_tracking` (holdings date and age in the table),
   `test_lookthrough_for_another_date_raises`.
@@ -71,10 +79,9 @@ is six months old. The opposite error is to analyse 30 September with a holdings
 - **Staleness is flagged, not refused.** `look_through` accepts a snapshot of any age that is
   not in the future. Only the health check and the report table point out its age. Whether a
   warning appears depends on the threshold the user sets.
-- **Not reachable from the runner yet.** The `portfolio_report` experiment kind, which the CLI
-  and the app use, passes no look-through inputs. In those runs the report states that
-  look-through was not done, and `data_quality.stale_holdings` is "not applicable". Look-through and its staleness
-  check work only through the library.
+- **Only with holdings files.** The `portfolio_report` experiment kind runs look-through only
+  when holdings files are given (phase 7.4b). Without them, the report states that
+  look-through was not done, and `data_quality.stale_holdings` is "not applicable".
 - `as_of` is the holdings date, not the publication date. A snapshot dated 30 September but
   published in late October passes the look-ahead check for a 15 October analysis. For
   historical analyses, the user must pick snapshots that were available at the time.

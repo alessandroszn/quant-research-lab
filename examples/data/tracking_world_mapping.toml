@@ -1,0 +1,18 @@
+# Synthetic tracking file mapping: exactly two columns, the fund (instrument id = its ISIN)
+# and its index. The fund series must be NAV or total return, the index total return.
+date_column = "Data"
+date_format = "%d/%m/%Y"
+delimiter = ";"
+decimal_separator = ","
+thousands_separator = "."
+encoding = "utf-8"
+currency = "EUR"
+frequency = "monthly"
+
+[columns."IE0000000012"]
+instrument = "IE0000000012"
+price_type = "nav"
+
+[columns."WORLD-INDEX"]
+instrument = "WORLD-INDEX"
+price_type = "total_return"
