@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Notices that travel with the outputs (phase 7.2). The `projection`, `optimisation`,
+  `scenario_analysis` and `backtest` kinds now state what their outputs are not: a forecast, a
+  recommendation or a probability of loss. Each notice ends with "Research analytics, not
+  investment advice."
+  - **Where it appears:** `NOTICE.txt` in the output folder (tagged `descriptive`), a new
+    `"notice"` field in `record.json` (`null` for the other kinds), the `qrlab run` output and
+    the app's results panel. `RECORD_FORMAT` stays 1: the field is an addition.
+  - **In the figure:** the projection fan chart carries a footer, "Scenarios from stated
+    assumptions, not a forecast.", through the new `line_figure(note=...)` parameter. Without a
+    note, figures are byte-identical to before.
+  - **Sensitivity off:** a projection run with `sensitivity = false` says so in its notice.
+  - `ExperimentOutput` gains `notice: str | None = None`.
 - `qrlab.core.require_periods_per_year` (phase 7.1): a `periods_per_year` that contradicts the
   dates' frequency now raises, with the value to use. For example, 252 on monthly data raises
   with "use 12".

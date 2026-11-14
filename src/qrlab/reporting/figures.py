@@ -53,6 +53,7 @@ def line_figure(
     style: NumberStyle,
     markers: Sequence[date] = (),
     marker_label: str = "",
+    note: str = "",
 ) -> bytes:
     """Draw one or more dated series as lines and return PNG bytes.
 
@@ -68,6 +69,9 @@ def line_figure(
         Dates marked with vertical dotted lines (e.g. external flows).
     marker_label
         Legend entry for the markers.
+    note
+        A footer line drawn inside the image, so that it stays with the figure when the file is
+        copied on its own (for example "not a forecast"). Empty: no footer, image unchanged.
     """
     if not lines:
         raise ValidationError("a figure needs at least one line")
@@ -104,7 +108,11 @@ def line_figure(
             )
         if len(validated) > 1 or (markers and marker_label):
             ax.legend(loc="best", frameon=False)
-        figure.tight_layout()
+        if note:
+            figure.text(0.01, 0.01, note, ha="left", va="bottom", fontsize=7, color="0.35")
+            figure.tight_layout(rect=(0.0, 0.05, 1.0, 1.0))
+        else:
+            figure.tight_layout()
         buffer = io.BytesIO()
         figure.savefig(buffer, format="png", dpi=DPI, metadata={"Software": None})
     return buffer.getvalue()

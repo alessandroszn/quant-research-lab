@@ -48,7 +48,12 @@ from qrlab.optimization.risk_based import (
 from qrlab.risk.covariance import CovarianceEstimate, ledoit_wolf_covariance
 from qrlab.simulation.plan import TaxModel
 
-__all__ = ["KIND", "read_returns"]
+__all__ = ["KIND", "NOTICE", "read_returns"]
+
+NOTICE = (
+    "One historical path, with the stated costs, lag and taxes. Past results are not a "
+    "forecast. Research analytics, not investment advice."
+)
 
 _PARAMETERS = (
     "returns_format",
@@ -249,6 +254,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             "trades": Tagged(trades, tag),
         },
         scalars=scalars,
+        notice=NOTICE,
     )
 
 

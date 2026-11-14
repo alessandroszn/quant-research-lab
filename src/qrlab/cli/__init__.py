@@ -56,6 +56,8 @@ def main(
     record = result.record
     print(f"output: {result.output_dir}")
     print(f"status: {record['status']}; configurations tried: {record['configurations_tried']}")
+    if record.get("notice"):
+        print(f"notice: {record['notice']}")
     if not result.succeeded:
         print(f"error: {record['error']}", file=sys.stderr)
         return RUN_FAILED

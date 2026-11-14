@@ -123,3 +123,14 @@ def test_figure_with_two_lines_and_marker_legend() -> None:
         marker_label="Flows",
     )
     assert png.startswith(PNG_SIGNATURE)
+
+
+def test_figure_note_is_drawn_without_changing_the_size() -> None:
+    """Design note 7.2: an empty note changes nothing; a note is a footer of the same image."""
+    kwargs = {"title": "Value", "y_label": "EUR", "axis": AxisFormat.NUMBER, "style": EN}
+    plain = line_figure([("Value", _series())], **kwargs)  # type: ignore[arg-type]
+    assert line_figure([("Value", _series())], note="", **kwargs) == plain  # type: ignore[arg-type]
+    noted = line_figure([("Value", _series())], note="Scenarios, not a forecast.", **kwargs)  # type: ignore[arg-type]
+    assert noted.startswith(PNG_SIGNATURE)
+    assert noted != plain
+    assert noted[16:24] == plain[16:24]  # PNG width and height

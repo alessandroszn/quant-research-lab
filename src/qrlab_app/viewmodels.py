@@ -82,6 +82,7 @@ class ResultView:
     scalars: tuple[tuple[str, object, str], ...]  # name, value as recorded, tag
     figures: tuple[Path, ...]
     report: Path | None
+    notice: str | None = None
 
 
 def load_result(output_dir: Path) -> ResultView:
@@ -110,6 +111,7 @@ def load_result(output_dir: Path) -> ResultView:
         scalars=scalars,
         figures=tuple(figures),
         report=report,
+        notice=record.get("notice"),
     )
 
 

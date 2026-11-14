@@ -49,7 +49,12 @@ from qrlab.optimization.risk_based import (
 from qrlab.risk.covariance import CovarianceEstimate
 from qrlab.risk.decomposition import effective_number_of_bets, volatility_contributions
 
-__all__ = ["KIND", "METHODS"]
+__all__ = ["KIND", "METHODS", "NOTICE"]
+
+NOTICE = (
+    "In-sample weights: what this method does with these estimates. Not a forecast and not a "
+    "recommendation. Research analytics, not investment advice."
+)
 
 METHODS: Mapping[str, set[str]] = {
     "equal_weights": set(),
@@ -153,7 +158,9 @@ def _run(context: RunContext) -> ExperimentOutput:
         "effective_number_of_bets": Tagged(effective_number_of_bets(cov, w), "in_sample"),
         "active_constraints": Tagged(", ".join(result.active) or "none", "in_sample"),
     }
-    return ExperimentOutput(tables={"weights": Tagged(table_out, "in_sample")}, scalars=scalars)
+    return ExperimentOutput(
+        tables={"weights": Tagged(table_out, "in_sample")}, scalars=scalars, notice=NOTICE
+    )
 
 
 KIND = ExperimentKind(
