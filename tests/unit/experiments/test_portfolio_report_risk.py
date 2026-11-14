@@ -20,10 +20,14 @@ then 0 %.
 
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import zipfile
+from datetime import UTC, datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -153,7 +157,8 @@ TWO_FUNDS_EXPORT = (
 
 
 def _two_funds(tmp: Path, *, risk: str = RISK.format(frequency="monthly", window=4),
-               extra_inputs: str = "", daily: bool = False) -> Path:  # fmt: skip
+               extra_inputs: str = "", daily: bool = False,
+               price_type: str = "price") -> Path:  # fmt: skip
     tmp.mkdir(parents=True, exist_ok=True)
     a, b = _backwards(RETURNS_A), _backwards(RETURNS_B)
     rows = [(d, [pa, pb]) for d, pa, pb in zip(MONTH_ENDS, a, b, strict=True)]
@@ -166,7 +171,9 @@ def _two_funds(tmp: Path, *, risk: str = RISK.format(frequency="monthly", window
             for day in days
         ]
         frequency = "daily"
-    prices = _write_prices(tmp, "prices", rows, [FUND_A, FUND_B], frequency=frequency)
+    prices = _write_prices(
+        tmp, "prices", rows, [FUND_A, FUND_B], frequency=frequency, price_type=price_type
+    )
     instruments = (
         INSTRUMENT.format(isin=FUND_A, currency="EUR")
         + "\n"
@@ -347,3 +354,71 @@ def test_the_kind_lists_the_risk_inputs() -> None:
     kind = KINDS["portfolio_report"]
     assert "scenarios" in kind.optional_inputs
     assert "risk" in kind.optional_parameters
+
+
+def test_nav_prices_need_no_price_only_notice(tmp_path: Path) -> None:
+    record, _ = _run(_two_funds(tmp_path, price_type="nav"))
+    assert record["status"] == "success", record["error"]
+    assert record["notice"] is None
+
+
+def test_cornish_fisher_is_reported_when_defined(tmp_path: Path, rng: np.random.Generator) -> None:
+    """With 120 fat-tailed monthly returns the Cornish-Fisher expansion is a quantile."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    days = pd.date_range("2016-01-29", periods=121, freq="BME")
+    ra = 0.005 + 0.02 * rng.standard_t(5, 120)  # fat tails: inside the expansion's domain
+    rb = 0.003 + 0.015 * rng.standard_t(5, 120)
+    rows = [
+        (d.strftime("%d/%m/%Y"), [pa, pb])
+        for d, pa, pb in zip(days, _backwards(tuple(ra)), _backwards(tuple(rb)), strict=True)
+    ]
+    prices = _write_prices(tmp_path, "prices", rows, [FUND_A, FUND_B], price_type="nav")
+    last = days[-1].strftime("%d/%m/%Y")
+    export = (
+        f"t3;{last};Acquisto;IE0000000020;5;100,00;EUR;;;;;;\n"
+        f"t2;{last};Acquisto;IE0000000012;5;100,00;EUR;;;;;;\n"
+        f"t1;{days[0].strftime('%d/%m/%Y')};Bonifico in entrata;;;;EUR;1.000,00;;;;;\n"
+    )
+    instruments = (
+        INSTRUMENT.format(isin=FUND_A, currency="EUR")
+        + "\n"
+        + INSTRUMENT.format(isin=FUND_B, currency="EUR")
+    )
+    config = _config(
+        tmp_path, export=export, instruments=instruments, prices=prices,
+        parameters=RISK.format(frequency="monthly", window=120),
+    )  # fmt: skip
+    record, out = _run(config)
+    assert record["status"] == "success", record["error"]
+    var_es = pd.read_csv(out / "var_es.csv", index_col=0, keep_default_na=False)
+    assert var_es.loc["Cornish-Fisher", "note"] == ""
+    assert float(str(var_es.loc["Cornish-Fisher", "var"])) > 0
+
+
+def test_unit_values_need_fx_and_known_currencies() -> None:
+    from qrlab.core.money import Currency
+    from qrlab.data import parse_ecb_fx
+    from qrlab.data.provenance import Provenance
+    from qrlab.experiments.kinds._portfolio_risk import unit_values
+
+    eur, usd, gbp = Currency("EUR"), Currency("USD"), Currency("GBP")
+    with pytest.raises(ValidationError, match="needs an fx input"):
+        unit_values(None, eur, {usd})
+    content = io.BytesIO()
+    with zipfile.ZipFile(content, "w") as archive:
+        archive.writestr("eurofxref-hist.csv", "Date,USD,\n2026-01-30,1.25,\n")
+    data = content.getvalue()
+    provenance = Provenance(
+        source="ecb", dataset="eurofxref-hist", url="file:fx.zip",
+        retrieved_at=datetime(2026, 2, 1, tzinfo=UTC), sha256=hashlib.sha256(data).hexdigest(),
+        size_bytes=len(data), terms="synthetic",
+    )  # fmt: skip
+    fx = parse_ecb_fx(data, provenance)
+    with pytest.raises(ValidationError, match="no ECB rate for GBP"):
+        unit_values(fx, eur, {gbp})
+
+
+@pytest.mark.parametrize("risk", ["\nrisk = 3\n"])
+def test_risk_must_be_a_table(tmp_path: Path, risk: str) -> None:
+    with pytest.raises(ValidationError, match=r"\[parameters.risk\] must be a table"):
+        validate_experiment(_two_funds(tmp_path, risk=risk), kinds=KINDS)

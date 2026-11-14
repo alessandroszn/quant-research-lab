@@ -68,6 +68,13 @@ and the gap between gross and net compounds.
 - For a real portfolio, transactions carry their own fees and taxes as money
   ({py:class}`qrlab.portfolio.Transaction`), and the health checks report the weighted TER and
   the trading-cost drag. An unknown TER is excluded and reported, never counted as zero.
+- **The Italian tax position of a real account** ({py:func}`qrlab.tax.italian_tax_position`,
+  phase 8.6a).
+  - It recomputes the tax of each sale under the Italian rules, with their sources and the
+    date they were checked: capital income versus other income, the losses balance with its
+    four-year expiry, and the 48.08 % share of government bonds.
+  - It then compares the result with the tax the broker withheld. A difference is shown,
+    never absorbed. Its report section is titled "analytics, not tax advice".
 
 ## What guards it
 
@@ -96,9 +103,17 @@ and the gap between gross and net compounds.
   bid-ask spread that changes over time, no market impact, no minimum commission, no currency
   conversion fee and no borrowing cost for short positions.
 - Costs and tax are paid pro rata from all holdings, not from a cash account.
-- Tax is one flat rate on realised gains, with an average cost basis per asset. A loss on one
-  asset does not offset a gain on another, and losses are not carried forward, so tax is
-  slightly overstated. Tax on dividends and coupons is not modelled.
+- In backtests and projections, tax is one flat rate on realised gains, with an average cost
+  basis per asset. A loss on one asset does not offset a gain on another, and losses are not
+  carried forward, so tax is slightly overstated. Tax on dividends and coupons is not modelled.
+  The Italian split, where ETF gains cannot use losses, is planned as 8.6b.
+- **Limits of the Italian tax analytics.**
+  - Dividends and interest are listed with their withheld tax, not recomputed.
+  - Stamp duty and IVAFE are not computed.
+  - Foreign currency held as *redditi diversi* is not treated.
+  - There is one account per report.
+  - The regime and the government-bond shares are declared by the user, not read from the
+    broker.
 - The backtest ignores the wealth-tax rate of the tax model. Its net value does not deduct the
   tax on gains still unrealised at the end; `final_basis` lets the caller compute it, as the
   rebalancing study does.

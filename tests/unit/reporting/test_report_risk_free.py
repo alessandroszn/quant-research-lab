@@ -34,3 +34,21 @@ def test_a_missing_sharpe_ratio_says_why() -> None:
 
 def test_without_a_risk_free_series_there_is_no_sharpe_row() -> None:
     assert "Sharpe ratio" not in render_html(toy_report(Language.EN))
+
+
+def test_tax_section_dichiarativo_with_a_flagged_fund_and_no_losses() -> None:
+    from datetime import date
+    from decimal import Decimal
+
+    from qrlab.tax import Category, Regime, TaxEvent, TaxPosition
+    from support.portfolio import X
+
+    event = TaxEvent(
+        date(2026, 2, 27), "main", X.code, Category.NOT_COMPUTED, Decimal(100), Decimal(0),
+        Decimal(0), Decimal(0), None, Decimal(0),
+    )  # fmt: skip
+    position = TaxPosition(date(2026, 3, 31), Regime.DICHIARATIVO, (event,), (), (X.code,))
+    page = render_html(toy_report(Language.EN, tax=position))
+    assert "the tax shown is an estimate to declare" in page
+    assert "Not computed: Example World Equity UCITS ETF" in page
+    assert "Losses balance" not in page

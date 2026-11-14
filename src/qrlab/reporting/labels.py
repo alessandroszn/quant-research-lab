@@ -33,6 +33,47 @@ _EN = {
     "sharpe": "Sharpe ratio (TWR in excess of the risk-free rate, annualised)",
     "sharpe_value": "{value} ± {se} (n = {n})",
     "sharpe_missing": "The Sharpe ratio is not shown: {reason}",
+    "tax_title": "Tax position (analytics, not tax advice)",
+    "tax_intro": "Account in the {regime} regime. Rules as checked on {checked}.",
+    "tax_regime_amministrato": "amministrato (the broker withholds the tax)",
+    "tax_regime_dichiarativo": "dichiarativo (you declare the tax)",
+    "tax_rules": (
+        "Gains on ETFs and funds are capital income, taxed in full; losses on them and results "
+        "on shares, bonds and ETCs are other income. Losses offset only other income, oldest "
+        "first, until 31 December of the fourth following year. The share due to government "
+        "bonds counts for 48.08 %."
+    ),
+    "tax_estimate": "Nothing is withheld in this regime: the tax shown is an estimate to declare.",
+    "tax_flagged": (
+        "Not computed: {names}. Funds domiciled outside the EU and EEA are taxed at progressive"
+        " income-tax rates."
+    ),
+    "tax_sources": "Sources: {sources}.",
+    "tax_events": "Sales and their tax",
+    "tax_events_note": (
+        "Result: net of fees, before tax. Base: after the government-bond share. Difference: "
+        "tax withheld minus tax due; a difference is shown, never absorbed."
+    ),
+    "tax_category": "Category",
+    "tax_cat_redditi_di_capitale": "Capital income",
+    "tax_cat_redditi_diversi": "Other income",
+    "tax_cat_not_computed": "Not computed",
+    "tax_result": "Result",
+    "tax_public_share": "Government bonds",
+    "tax_base": "Base",
+    "tax_offset": "Losses used",
+    "tax_due": "Tax due",
+    "tax_withheld": "Tax withheld",
+    "tax_difference": "Difference",
+    "tax_totals": "Totals",
+    "tax_losses_remaining": "Losses still usable",
+    "tax_losses": "Losses balance (zainetto) by year",
+    "tax_year": "Year",
+    "tax_amount": "Losses",
+    "tax_used": "Used",
+    "tax_expired": "Expired",
+    "tax_remaining": "Remaining",
+    "tax_usable_until": "Usable until",
     "not_annualised": "Not annualised: the period is shorter than one year.",
     "positions": "Positions",
     "account": "Account",
@@ -305,6 +346,50 @@ _IT = {
     "sharpe": "Sharpe ratio (TWR in eccesso rispetto al tasso privo di rischio, annualizzato)",
     "sharpe_value": "{value} ± {se} (n = {n})",
     "sharpe_missing": "Lo Sharpe ratio non è mostrato: {reason}",
+    "tax_title": "Posizione fiscale (analisi, non consulenza fiscale)",
+    "tax_intro": "Conto in regime {regime}. Regole verificate al {checked}.",
+    "tax_regime_amministrato": "amministrato (il broker trattiene le imposte)",
+    "tax_regime_dichiarativo": "dichiarativo (le imposte le dichiari tu)",
+    "tax_rules": (
+        "I guadagni su ETF e fondi sono redditi di capitale, tassati per intero; le perdite su "
+        "di essi e i risultati su azioni, obbligazioni ed ETC sono redditi diversi. Le minus "
+        "compensano solo redditi diversi, dalle più vecchie, fino al 31 dicembre del quarto "
+        "anno successivo. La quota dovuta ai titoli di Stato conta per il 48,08 %."
+    ),
+    "tax_estimate": (
+        "In questo regime non si trattiene nulla: l'imposta mostrata è una stima da dichiarare."
+    ),
+    "tax_flagged": (
+        "Non calcolato: {names}. I fondi domiciliati fuori da UE e SEE sono tassati con le "
+        "aliquote progressive IRPEF."
+    ),
+    "tax_sources": "Fonti: {sources}.",
+    "tax_events": "Vendite e imposte",
+    "tax_events_note": (
+        "Risultato: al netto delle commissioni, prima delle imposte. Base: dopo la quota dei "
+        "titoli di Stato. Differenza: imposta trattenuta meno imposta dovuta; una differenza è "
+        "mostrata, mai assorbita."
+    ),
+    "tax_category": "Categoria",
+    "tax_cat_redditi_di_capitale": "Redditi di capitale",
+    "tax_cat_redditi_diversi": "Redditi diversi",
+    "tax_cat_not_computed": "Non calcolato",
+    "tax_result": "Risultato",
+    "tax_public_share": "Titoli di Stato",
+    "tax_base": "Base",
+    "tax_offset": "Minus usate",
+    "tax_due": "Imposta dovuta",
+    "tax_withheld": "Imposta trattenuta",
+    "tax_difference": "Differenza",
+    "tax_totals": "Totali",
+    "tax_losses_remaining": "Minus ancora utilizzabili",
+    "tax_losses": "Zainetto fiscale per anno",
+    "tax_year": "Anno",
+    "tax_amount": "Minus",
+    "tax_used": "Usate",
+    "tax_expired": "Scadute",
+    "tax_remaining": "Residue",
+    "tax_usable_until": "Utilizzabili fino al",
     "not_annualised": "Non annualizzato: il periodo è inferiore a un anno.",
     "positions": "Posizioni",
     "account": "Conto",

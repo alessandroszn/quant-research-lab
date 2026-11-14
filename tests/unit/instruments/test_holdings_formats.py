@@ -296,3 +296,11 @@ def test_csv_through_the_general_parser_matches_parse_holdings_csv(tmp_path: Pat
         sector_taxonomy="GICS",
     )
     assert direct.holdings.equals(_parse(content, mapping).holdings)
+
+
+def test_xlsx_mapping_rules(tmp_path: Path) -> None:
+    mapping = _mapping(tmp_path, XLSX_MAPPING)
+    with pytest.raises(ValidationError, match="sheet name"):
+        replace(mapping, sheet=None)
+    with pytest.raises(ValidationError, match="only for csv"):
+        replace(mapping, delimiter=",")

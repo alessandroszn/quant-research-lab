@@ -431,7 +431,7 @@ qrlab.reporting.RiskFreeSummary  class(source: 'str', total: 'float', sharpe: 'S
 qrlab.reporting.RiskFreeSummary.reason  attribute str = ''
 qrlab.reporting.Section  class(title: 'str', paragraphs: 'tuple[str, ...]', tables: 'tuple[Table, ...]', figures: 'tuple[Figure, ...]') -> None
 qrlab.reporting.Table  class(title: 'str', columns: 'tuple[str, ...]', rows: 'tuple[tuple[str, ...], ...]', align: 'tuple[str, ...]', notes: 'tuple[str, ...]') -> None
-qrlab.reporting.build_portfolio_report  function(*, name: 'str', history: 'LedgerHistory', valuation: 'Valuation', prices: 'Mapping[Isin, PriceSeries]', to_base: 'ToBase', language: 'Language', generated_at: 'datetime', flow_timing: 'FlowTiming', max_price_age_days: 'int', fx_description: 'str', provenance: 'Sequence[Provenance]', instruments: 'Mapping[Isin, Instrument]', import_notes: 'Sequence[str]', return_frequency: 'tuple[Frequency, float] | None', checks: 'CheckResult | None', lookthrough: 'LookThroughInputs | None', risk: 'RiskSummary | None', projection: 'ProjectionResult | None', risk_free: 'RiskFreeSummary | None') -> 'Report'
+qrlab.reporting.build_portfolio_report  function(*, name: 'str', history: 'LedgerHistory', valuation: 'Valuation', prices: 'Mapping[Isin, PriceSeries]', to_base: 'ToBase', language: 'Language', generated_at: 'datetime', flow_timing: 'FlowTiming', max_price_age_days: 'int', fx_description: 'str', provenance: 'Sequence[Provenance]', instruments: 'Mapping[Isin, Instrument]', import_notes: 'Sequence[str]', return_frequency: 'tuple[Frequency, float] | None', checks: 'CheckResult | None', lookthrough: 'LookThroughInputs | None', risk: 'RiskSummary | None', projection: 'ProjectionResult | None', risk_free: 'RiskFreeSummary | None', tax: 'TaxPosition | None') -> 'Report'
 qrlab.reporting.escape  function(text: 'str') -> 'str'
 qrlab.reporting.format_date  function(day: 'date', *, language: 'Language') -> 'str'
 qrlab.reporting.format_money  function(amount: 'Money', *, style: 'NumberStyle') -> 'str'
@@ -531,6 +531,24 @@ qrlab.stats.ols  function(y: 'pd.Series', x: 'pd.DataFrame', *, add_intercept: '
 qrlab.stats.rolling_ols  function(y: 'pd.Series', x: 'pd.DataFrame', *, window: 'int', add_intercept: 'bool', cov_type: 'CovType', hac_lags: 'int | None') -> 'RollingResult'
 qrlab.stats.stationary_bootstrap  function(data: 'pd.Series | pd.DataFrame', statistic: 'Callable[[np.ndarray], float]', *, mean_block_length: 'float', n_resamples: 'int', confidence: 'float', rng: 'np.random.Generator') -> 'BootstrapResult'
 qrlab.stats.stationary_bootstrap_indices  function(n: 'int', *, mean_block_length: 'float', n_resamples: 'int', rng: 'np.random.Generator') -> 'np.ndarray'
+qrlab.tax.Category  enum
+qrlab.tax.Category.CAPITAL_INCOME  member = 'redditi_di_capitale'
+qrlab.tax.Category.OTHER_INCOME  member = 'redditi_diversi'
+qrlab.tax.Category.NOT_COMPUTED  member = 'not_computed'
+qrlab.tax.LossLot  class(year: 'int', amount: 'Decimal', used: 'Decimal', expired: 'Decimal') -> None
+qrlab.tax.LossLot.expires  property
+qrlab.tax.LossLot.remaining  property
+qrlab.tax.Regime  enum
+qrlab.tax.Regime.AMMINISTRATO  member = 'amministrato'
+qrlab.tax.Regime.DICHIARATIVO  member = 'dichiarativo'
+qrlab.tax.TaxEvent  class(trade_date: 'date', account: 'str', isin: 'str', category: 'Category', gain: 'Decimal', public_share: 'Decimal', base: 'Decimal', offset: 'Decimal', tax_due: 'Decimal | None', tax_withheld: 'Decimal') -> None
+qrlab.tax.TaxEvent.difference  property
+qrlab.tax.TaxPosition  class(as_of: 'date', regime: 'Regime', events: 'tuple[TaxEvent, ...]', losses: 'tuple[LossLot, ...]', flagged: 'tuple[str, ...]', sources: 'tuple[str, ...]' = ('TUIR, D.P.R. 917/1986, artt. 44, 67, 68 (to 31/12/2026)', 'Testo unico imposte sui redditi, D.Lgs. 117/2026, artt. 46, 76, 77 (from 1/1/2027)', 'D.L. 66/2014, art. 3 (26 %)', 'D.L. 138/2011, art. 2; D.M. 13/12/2011; Circolare AdE 19/E del 27/06/2014 (48.08 %)', 'D.Lgs. 461/1997, art. 6 (regime amministrato)', 'L. 111/2023, art. 5: unification of financial income not in force (checked 14/11/2026)')) -> None
+qrlab.tax.TaxPosition.losses_remaining  property
+qrlab.tax.TaxPosition.sources  attribute tuple = ['TUIR, D.P.R. 917/1986, artt. 44, 67, 68 (to 31/12/2026)', 'Testo unico imposte sui redditi, D.Lgs. 117/2026, artt. 46, 76, 77 (from 1/1/2027)', 'D.L. 66/2014, art. 3 (26 %)', 'D.L. 138/2011, art. 2; D.M. 13/12/2011; Circolare AdE 19/E del 27/06/2014 (48.08 %)', 'D.Lgs. 461/1997, art. 6 (regime amministrato)', 'L. 111/2023, art. 5: unification of financial income not in force (checked 14/11/2026)']
+qrlab.tax.TaxPosition.tax_due  property
+qrlab.tax.TaxPosition.tax_withheld  property
+qrlab.tax.italian_tax_position  function(history: 'LedgerHistory', transactions: 'Sequence[Transaction]', instruments: 'Mapping[Isin, Instrument]', *, regime: 'Regime', public_share: 'Mapping[Isin, Decimal]', as_of: 'date', to_base: 'ToBase') -> 'TaxPosition'
 qrlab.validation.Split  class(train: 'np.ndarray', test: 'np.ndarray', train_start: 'date', train_end: 'date', test_start: 'date', test_end: 'date', purged: 'int', last_label_end: 'date') -> None
 qrlab.validation.Splits  class(index: 'pd.DatetimeIndex', splits: 'tuple[Split, ...]', kind: 'str', params: 'dict[str, int]', unused: 'int') -> None
 qrlab.validation.expanding_splits  function(index: 'pd.DatetimeIndex', *, min_train: 'int', test_size: 'int', step: 'int', embargo: 'int', label_ends: 'pd.Series | None') -> 'Splits'

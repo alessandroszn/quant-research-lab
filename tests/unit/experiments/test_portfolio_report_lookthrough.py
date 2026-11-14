@@ -353,3 +353,32 @@ def test_an_issuer_map_needs_holdings(tmp_path: Path) -> None:
     )
     with pytest.raises(ValidationError, match="issuers file"):
         validate_experiment(config, kinds=KINDS)
+
+
+@pytest.mark.parametrize(
+    ("extra", "match"),
+    [
+        ("holdings = 3\n", r"\[parameters.holdings\] must hold one table per fund ISIN"),
+        (f"holdings = {{ {FUND} = 3 }}\n", r"\[parameters.holdings.IE0000000012\] must be a table"),
+    ],
+)
+def test_holdings_parameters_must_be_tables(tmp_path: Path, extra: str, match: str) -> None:
+    config = _setup(tmp_path, holdings=False, treatment=None, parameters_extra=extra)
+    with pytest.raises(ValidationError, match=match):
+        validate_experiment(config, kinds=KINDS)
+
+
+def test_tracking_needs_the_fund_in_the_instruments_file(tmp_path: Path) -> None:
+    config = _setup(tmp_path, holdings=False, treatment=None, tracking=True)
+    other = tmp_path / "instruments_other.toml"
+    text = (ROOT / "examples/data/instruments.toml").read_text(encoding="utf-8")
+    other.write_text(text.replace("IE0000000012", "IE0000000020"), encoding="utf-8")
+    config.write_text(
+        config.read_text(encoding="utf-8").replace(
+            (ROOT / "examples/data/instruments.toml").as_posix(), other.as_posix()
+        ),
+        encoding="utf-8",
+    )
+    record, _ = _run(config)
+    assert record["status"] == "failure"
+    assert "not in the instruments file" in str(record["error"])
