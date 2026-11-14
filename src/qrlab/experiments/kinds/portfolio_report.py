@@ -50,6 +50,14 @@ see ``qrlab.experiments.kinds._portfolio_risk``. The run then writes ``risk_retu
 ``risk_contributions.csv``, ``var_es.csv`` (and ``scenarios.csv``) and the scalars
 ``volatility_period``, ``volatility_annual``, ``var_historical`` and ``es_historical``.
 
+Projection (phase 8.4), optional: ``[parameters.projection]`` projects today's portfolio
+(value, weights, date) with stated return assumptions, one table per held position and one for
+cash, a correlation for every pair of risky assets, flows (a savings plan), costs (a number or
+``"ter"``, the weighted TER of the instruments file), inflation and taxes, and its own ``seed``.
+The sensitivity table is always computed. See
+``qrlab.experiments.kinds._portfolio_projection``. The run then writes ``fan_real.csv``,
+``terminal.csv``, ``sensitivity.csv`` and the fan chart, and the projection scalars.
+
 Valuation dates are the dates of all price files from the first transaction on. The report is
 descriptive.
 """
@@ -82,8 +90,14 @@ from qrlab.experiments.kinds._params import (
     text,
     whole,
 )
+from qrlab.experiments.kinds._portfolio_projection import (
+    ProjectionSpec,
+    parse_projection,
+    project_portfolio,
+)
 from qrlab.experiments.kinds._portfolio_risk import PRICE_ONLY, RiskSpec, compute_risk, parse_risk
 from qrlab.experiments.kinds._studies import raw_provenance
+from qrlab.experiments.kinds.projection import SCENARIOS
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.io import (
@@ -140,6 +154,7 @@ _OPTIONAL_PARAMETERS = (
     "holdings",
     "tracking",
     "risk",
+    "projection",
 )
 
 
@@ -162,6 +177,7 @@ class _Parameters:
     targets: Mapping[str, float] | None
     fx_max_age_days: int | None
     risk: RiskSpec | None
+    projection: ProjectionSpec | None
     treatment: WeightTreatment | None
     holdings: Mapping[Isin, _Holdings]
     index_hedged_to: Mapping[Isin, Currency | None]
@@ -215,6 +231,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         if "fx_max_age_days" in parameters
         else None,
         risk=parse_risk(parameters),
+        projection=parse_projection(parameters),
         treatment=WeightTreatment(
             choice(parameters, "lookthrough_treatment", {"as_reported", "normalised"})
         )
@@ -447,6 +464,17 @@ def _run(context: RunContext) -> ExperimentOutput:
             fx=fx_rates,
             scenarios=load_scenarios(files["scenarios"]) if "scenarios" in files else (),
         )
+    plan = None
+    if p.projection is not None:
+        plan = project_portfolio(
+            p.projection,
+            start=dates[-1],
+            value=float(valuation.totals[dates[-1]]),
+            base=p.base,
+            position_weights=check_context.position_weights(),
+            cash_weight=sum(check_context.cash_weights().values()),
+            instruments=instruments,
+        )
     report = build_portfolio_report(
         name=p.title,
         history=history,
@@ -470,7 +498,7 @@ def _run(context: RunContext) -> ExperimentOutput:
         checks=checks,
         lookthrough=lookthrough,
         risk=None if risk is None else risk.summary,
-        projection=None,
+        projection=None if plan is None else plan[0].result,
     )
     findings = pd.DataFrame(
         [
@@ -495,14 +523,31 @@ def _run(context: RunContext) -> ExperimentOutput:
         scalars["unexplained_weight"] = Tagged(
             float(rows.loc[rows["kind"] == UNEXPLAINED, "weight"].sum()), "descriptive"
         )
-    notice = None
+    caveats = []
+    figures = {}
     if risk is not None:
         tables |= risk.tables
         scalars |= risk.scalars
         if risk.price_only:
-            notice = f"{PRICE_ONLY.format(names=', '.join(risk.price_only))} {ADVICE}"
+            caveats.append(PRICE_ONLY.format(names=", ".join(risk.price_only)))
+    if plan is not None:
+        run, cost = plan
+        summary = run.result.summary
+        tables |= run.tables
+        figures["fan_real"] = run.figure
+        scalars |= {
+            "projection_p_goal": Tagged(summary.p_goal, "descriptive"),
+            "projection_p_goal_se": Tagged(summary.p_goal_se, "descriptive"),
+            "projection_terminal_mean_real": Tagged(summary.terminal_mean_real, "descriptive"),
+            "projection_annual_cost": Tagged(cost, "descriptive"),
+        }
+        caveats.append(SCENARIOS)
     return ExperimentOutput(
-        tables=tables, scalars=scalars, report_html=render_html(report), notice=notice
+        tables=tables,
+        scalars=scalars,
+        figures=figures,
+        report_html=render_html(report),
+        notice=" ".join([*caveats, ADVICE]) if caveats else None,
     )
 
 
