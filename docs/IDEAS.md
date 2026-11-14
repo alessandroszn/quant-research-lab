@@ -21,6 +21,7 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Fama-MacBeth regressions | 2.2 `stats` | Cross-sectional asset pricing tests, needed for the factor-zoo study (5.3). |
 | PDF export of reports | 2.3 `reporting` | Roadmap mentions HTML/PDF; HTML only in v1. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |
+| Total-return series for distributing funds | 8.7 | A total-return file per fund, used by the diversification checks and the report's risk, so that a distributing fund's returns include its distributions. |
 | Loss carry-forward in TaxModel (8.6b) | 8.6 | Projections and backtests with the Italian split: ETF gains cannot use losses; other income can, for four years. |
 | Italian taxes on income and wealth | 8.6 | Recompute dividend and coupon taxes (with foreign withholding and treaties); stamp duty and IVAFE; foreign currency as redditi diversi. |
 | Benchmark series in the portfolio report | 8.5 | The relative checks (beta, tracking error against a benchmark) need a benchmark input; with it, beta on excess returns of the €STR. |

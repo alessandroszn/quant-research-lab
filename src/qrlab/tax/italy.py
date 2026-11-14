@@ -48,6 +48,7 @@ __all__ = [
     "RATE",
     "RULES_CHECKED_ON",
     "SOURCES",
+    "SOURCES_IT",
     "Category",
     "LossLot",
     "Regime",
@@ -76,6 +77,16 @@ SOURCES = (
     "D.Lgs. 461/1997, art. 6 (regime amministrato)",
     "L. 111/2023, art. 5: unification of financial income not in force (checked 14/11/2026)",
 )
+SOURCES_IT = (
+    "TUIR, D.P.R. 917/1986, artt. 44, 67, 68 (fino al 31/12/2026)",
+    "Testo unico imposte sui redditi, D.Lgs. 117/2026, artt. 46, 76, 77 (dal 1/1/2027)",
+    "D.L. 66/2014, art. 3 (26 %)",
+    "D.L. 138/2011, art. 2; D.M. 13/12/2011; Circolare AdE 19/E del 27/06/2014 (48,08 %)",
+    "D.Lgs. 461/1997, art. 6 (regime amministrato)",
+    "L. 111/2023, art. 5: unificazione dei redditi finanziari non in vigore (verificato il "
+    "14/11/2026)",
+)
+"""The same sources, in Italian, for reports in Italian."""
 
 
 class Regime(Enum):

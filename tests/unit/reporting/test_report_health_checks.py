@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import re
+from dataclasses import replace
 
 import pytest
 
@@ -128,6 +129,14 @@ def test_section_in_italian() -> None:
     text = _text(render_html(_report(Language.IT, checks=RESULT)))
     assert "Controlli di salute" in text
     assert "Critica Dimensione del fondo IE0000000012 40.000.000,00 EUR < 50.000.000,00 EUR" in text
+    assert "nessun benchmark indicato" in text  # the library's reason, in Italian (8.7)
+    assert "I motivi sono in inglese" not in text  # every reason here has an Italian form
+
+
+def test_an_unknown_reason_keeps_the_english_note() -> None:
+    unknown = replace(RESULT, not_applicable=(("risk.beta", "a reason the catalog lacks"),))
+    text = _text(render_html(_report(Language.IT, checks=unknown)))
+    assert "a reason the catalog lacks" in text
     assert "I motivi sono in inglese" in text
 
 
