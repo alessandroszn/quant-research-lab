@@ -480,6 +480,7 @@ qrlab.scenarios.load_scenarios  function(path: 'Path') -> 'tuple[Scenario, ...]'
 qrlab.scenarios.run_scenario  function(scenario: 'Scenario', portfolio: 'StressPortfolio', market: 'MarketData') -> 'ScenarioResult'
 qrlab.simulation.Flow  class(kind: 'str', amount: 'float', first: 'int', last: 'int', indexed: 'bool') -> None
 qrlab.simulation.LogMoments  class(mean: 'pd.Series', covariance: 'pd.DataFrame', n_obs: 'int') -> None
+qrlab.simulation.LossRules  class(carry_years: 'int', fund_assets: 'frozenset[str]') -> None
 qrlab.simulation.MAX_CELLS  constant int = 50000000
 qrlab.simulation.Plan  class(initial_wealth: 'float', currency: 'Currency', weights: 'pd.Series', periods_per_year: 'int', flows: 'tuple[Flow, ...]', flow_timing: 'str', rebalance_every: 'int | None', annual_cost: 'float', inflation: 'float', taxes: 'TaxModel') -> None
 qrlab.simulation.Projection  class(nominal: 'np.ndarray', real: 'np.ndarray', depleted_period: 'np.ndarray', shortfall: 'np.ndarray', taxes_paid: 'np.ndarray', liquidation_value: 'np.ndarray', plan: 'Plan', engine: 'str') -> None
@@ -489,7 +490,7 @@ qrlab.simulation.SensitivityRow  class(key: 'str', label: 'str', p_goal: 'float'
 qrlab.simulation.SimulatedReturns  class(returns: 'np.ndarray', assets: 'tuple[str, ...]', engine: 'str', params: 'dict[str, float]' = <factory>) -> None
 qrlab.simulation.SimulatedReturns.n_paths  property
 qrlab.simulation.SimulatedReturns.n_periods  property
-qrlab.simulation.TaxModel  class(capital_gains_rate: 'float', wealth_tax_rate: 'float') -> None
+qrlab.simulation.TaxModel  class(capital_gains_rate: 'float', wealth_tax_rate: 'float', losses: 'LossRules | None' = None) -> None
 qrlab.simulation.bootstrap_returns  function(history: 'pd.DataFrame', *, kind: 'ReturnKind', missing: 'NanPolicy', mean_block_length: 'float', n_paths: 'int', n_periods: 'int', rng: 'np.random.Generator', max_cells: 'int') -> 'SimulatedReturns'
 qrlab.simulation.log_moments  function(returns: 'pd.DataFrame', *, kind: 'ReturnKind', missing: 'NanPolicy') -> 'LogMoments'
 qrlab.simulation.normal_returns  function(moments: 'LogMoments', *, n_paths: 'int', n_periods: 'int', rng: 'np.random.Generator', max_cells: 'int') -> 'SimulatedReturns'

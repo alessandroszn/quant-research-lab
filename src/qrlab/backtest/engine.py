@@ -35,6 +35,7 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Money
 from qrlab.core.series import NanPolicy, validate_frame
 from qrlab.optimization.rebalancing import CalendarPolicy, CostModel, ThresholdPolicy
+from qrlab.simulation.losses import LossBalance, fund_mask, realised_tax
 from qrlab.simulation.plan import TaxModel
 
 __all__ = [
@@ -202,6 +203,18 @@ def _run(
     assets = frame.columns
     w0 = _weights(initial_weights, assets, long_only, "initial weights").to_numpy()
     rate = 0.0 if taxes is None else taxes.capital_gains_rate
+    losses = None
+    if taxes is not None and taxes.losses is not None:
+        first_year = int(frame.index[0].year)
+        losses = (
+            fund_mask(taxes.losses, [str(a) for a in assets]),
+            LossBalance(
+                paths=1,
+                years=int(frame.index[-1].year) - first_year + 1,
+                carry_years=taxes.losses.carry_years,
+            ),
+            first_year,
+        )
     gross = w0 * value
     net = w0 * value
     basis = net.copy()
@@ -232,8 +245,9 @@ def _run(
         if due:
             d = destination.reindex(assets).to_numpy(dtype=np.float64)
             gross = d * gross.sum()
+            year = int(frame.index[t - 1].year)
             (turnover, traded, cost, tax, count), net, basis = _trade_net(
-                net, basis, d, costs, rate
+                net, basis, d, costs, rate, losses, year
             )
             executions.append(
                 Execution(
@@ -277,7 +291,13 @@ def _run(
 
 
 def _trade_net(
-    holdings: np.ndarray, basis: np.ndarray, destination: np.ndarray, costs: CostModel, rate: float
+    holdings: np.ndarray,
+    basis: np.ndarray,
+    destination: np.ndarray,
+    costs: CostModel,
+    rate: float,
+    losses: tuple[np.ndarray, LossBalance, int] | None = None,
+    year: int = 0,
 ) -> tuple[tuple[float, float, float, float, int], np.ndarray, np.ndarray]:
     value = float(holdings.sum())
     new = destination * value
@@ -288,7 +308,11 @@ def _trade_net(
     cost = costs.proportional * traded + costs.fixed * count
     sold = np.where(delta < 0, -delta / np.where(holdings > 0, holdings, 1.0), 0.0)
     gains = sold * (holdings - basis)
-    tax = rate * float(np.clip(gains, 0.0, None).sum())
+    if losses is None:
+        tax = rate * float(np.clip(gains, 0.0, None).sum())
+    else:
+        funds, balance, first_year = losses
+        tax = float(realised_tax(gains[None, :], rate, funds, balance, year - first_year)[0])
     basis = basis * (1.0 - sold) + np.clip(delta, 0.0, None)
     keep = 1.0 - (cost + tax) / value
     turnover = traded / value

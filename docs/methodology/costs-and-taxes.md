@@ -75,6 +75,17 @@ and the gap between gross and net compounds.
     four-year expiry, and the 48.08 % share of government bonds.
   - It then compares the result with the tax the broker withheld. A difference is shown,
     never absorbed. Its report section is titled "analytics, not tax advice".
+- **Italian losses in projections and backtests** ({py:class}`qrlab.simulation.LossRules`,
+  phase 8.6b), an optional field of {py:class}`qrlab.simulation.TaxModel`.
+  - Gains on the assets named in `fund_assets` are capital income: taxed in full, never
+    reduced by losses.
+  - Every realised loss, on any asset, joins a balance by year. Gains on the other assets
+    are reduced first by the losses of the same sale, then by the balance, oldest year
+    first, until `carry_years` after the year a loss was realised (4 in Italy).
+  - Projections keep one balance per path, with years from `periods_per_year`. Backtests
+    keep one, by calendar year of the execution date. Withdrawals still pay the stated net
+    amount: the gross sale is solved in closed form with the offset.
+  - For funds only, the rules change no number, bit for bit; the tests check it.
 
 ## What guards it
 
@@ -88,6 +99,11 @@ and the gap between gross and net compounds.
 - `tests/unit/simulation/test_plan.py`: `test_costs_hand_example`,
   `test_withdrawal_tax_hand_example`, `test_wealth_tax_is_charged_pro_rata`,
   `test_rebalancing_keeps_basis_for_the_liquidation_tax`.
+- `tests/unit/simulation/test_losses.py`: `test_the_notes_case_by_hand` (156 on a fund gain,
+  a share gain covered by the balance, expiry in year 6),
+  `test_rebalancing_carries_a_share_loss_by_hand`,
+  `test_a_withdrawal_beyond_the_carried_losses_by_hand`,
+  `test_backtest_carries_the_share_loss_by_hand`, and the two funds-only byte-identity tests.
 - `tests/unit/simulation/test_outcomes.py`: `test_after_tax_and_nominal_terminal_values`,
   `test_sensitivity_with_common_random_numbers` (costs ±0.5 point rows).
 - `tests/unit/checks/test_checks_concentration_costs_data.py`: `test_weighted_ter_hand_example`,
@@ -104,9 +120,14 @@ and the gap between gross and net compounds.
   conversion fee and no borrowing cost for short positions.
 - Costs and tax are paid pro rata from all holdings, not from a cash account.
 - In backtests and projections, tax is one flat rate on realised gains, with an average cost
-  basis per asset. A loss on one asset does not offset a gain on another, and losses are not
-  carried forward, so tax is slightly overstated. Tax on dividends and coupons is not modelled.
-  The Italian split, where ETF gains cannot use losses, is planned as 8.6b.
+  basis per asset. Tax on dividends and coupons is not modelled.
+  - **Without `LossRules`,** a loss on one asset does not offset a gain on another, and
+    losses are not carried forward, so tax is slightly overstated when the portfolio holds
+    shares, bonds or ETCs.
+  - **With `LossRules`,** the 48.08 % share of government bonds is not applied: it is an
+    analytics input of the tax position, not a projection assumption.
+  - **`LossRules` is a library option only.** The `backtest`, `projection` and report
+    configs do not set it yet; it is listed in `docs/IDEAS.md`.
 - **Limits of the Italian tax analytics.**
   - Dividends and interest are listed with their withheld tax, not recomputed.
   - Stamp duty and IVAFE are not computed.

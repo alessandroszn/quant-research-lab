@@ -9,6 +9,7 @@ from qrlab.simulation.engines import (
     normal_returns,
     student_t_returns,
 )
+from qrlab.simulation.losses import LossRules
 from qrlab.simulation.outcomes import (
     ProjectionResult,
     ProjectionSummary,
@@ -23,6 +24,7 @@ __all__ = [
     "MAX_CELLS",
     "Flow",
     "LogMoments",
+    "LossRules",
     "Plan",
     "Projection",
     "ProjectionResult",
