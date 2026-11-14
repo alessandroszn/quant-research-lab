@@ -42,6 +42,14 @@ With either, the look-through on the last valuation date goes to the health chec
 report, and the run writes ``exposures.csv`` (one row per piece of exposure) and the scalars
 ``lookthrough_funds`` and ``unexplained_weight``. Without them, nothing changes.
 
+Risk and stress tests (phase 8.3), optional: ``[parameters.risk]`` with ``frequency``
+(``weekly``/``monthly``), ``window`` (number of returns), ``confidence`` and ``covariance`` (as in
+``risk_report``), and an optional ``scenarios`` input (the TOML of ``scenario_analysis``). The
+returns come from the report's own price files and the ECB rates of ``fx``, at today's weights;
+see ``qrlab.experiments.kinds._portfolio_risk``. The run then writes ``risk_returns.csv``,
+``risk_contributions.csv``, ``var_es.csv`` (and ``scenarios.csv``) and the scalars
+``volatility_period``, ``volatility_annual``, ``var_historical`` and ``es_historical``.
+
 Valuation dates are the dates of all price files from the first transaction on. The report is
 descriptive.
 """
@@ -62,9 +70,10 @@ from qrlab.core.money import Currency, Money
 from qrlab.data.ecb import FX_DATASET, parse_ecb_fx
 from qrlab.data.ecb import SOURCE as ECB_SOURCE
 from qrlab.data.ecb import TERMS as ECB_TERMS
-from qrlab.data.provenance import Provenance
+from qrlab.data.provenance import Dataset, Provenance
 from qrlab.data.user_csv import load_csv_mapping, parse_price_csv
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds._frames import ADVICE
 from qrlab.experiments.kinds._params import (
     choice,
     day,
@@ -73,6 +82,7 @@ from qrlab.experiments.kinds._params import (
     text,
     whole,
 )
+from qrlab.experiments.kinds._portfolio_risk import PRICE_ONLY, RiskSpec, compute_risk, parse_risk
 from qrlab.experiments.kinds._studies import raw_provenance
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.instruments.identifiers import Isin
@@ -93,6 +103,7 @@ from qrlab.portfolio.valuation import EcbConverter, PriceSeries, value_portfolio
 from qrlab.reporting.formatting import Language
 from qrlab.reporting.html import render_html
 from qrlab.reporting.portfolio_report import build_portfolio_report
+from qrlab.scenarios.definitions import load_scenarios
 
 __all__ = ["KIND"]
 
@@ -114,7 +125,7 @@ _INPUTS = (
     "instruments",
     "checks",
 )
-_OPTIONAL_INPUTS = ("fx", "issuers")
+_OPTIONAL_INPUTS = ("fx", "issuers", "scenarios")
 _GROUPS = (
     "extra_prices",
     "extra_prices_mapping",
@@ -123,7 +134,13 @@ _GROUPS = (
     "tracking",
     "tracking_mapping",
 )
-_OPTIONAL_PARAMETERS = ("fx_max_age_days", "lookthrough_treatment", "holdings", "tracking")
+_OPTIONAL_PARAMETERS = (
+    "fx_max_age_days",
+    "lookthrough_treatment",
+    "holdings",
+    "tracking",
+    "risk",
+)
 
 
 @dataclass(frozen=True)
@@ -144,6 +161,7 @@ class _Parameters:
     generated_at: datetime
     targets: Mapping[str, float] | None
     fx_max_age_days: int | None
+    risk: RiskSpec | None
     treatment: WeightTreatment | None
     holdings: Mapping[Isin, _Holdings]
     index_hedged_to: Mapping[Isin, Currency | None]
@@ -196,6 +214,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         fx_max_age_days=whole(parameters, "fx_max_age_days", minimum=0)
         if "fx_max_age_days" in parameters
         else None,
+        risk=parse_risk(parameters),
         treatment=WeightTreatment(
             choice(parameters, "lookthrough_treatment", {"as_reported", "normalised"})
         )
@@ -246,12 +265,16 @@ def _check_inputs(parameters: object, names: frozenset[str]) -> None:
         raise ValidationError(
             "lookthrough_treatment is required with holdings and refused without them"
         )
+    if "scenarios" in names and p.risk is None:
+        raise ValidationError("a scenarios file is used only with [parameters.risk]")
     if "issuers" in names and not keys("holdings"):
         raise ValidationError("an issuers file is used only with holdings files")
 
 
-def _converter(context: RunContext, p: _Parameters) -> tuple[ToBase, str, list[Provenance]]:
-    """Return the base-currency converter, its report description and its provenance."""
+def _converter(
+    context: RunContext, p: _Parameters
+) -> tuple[ToBase, str, list[Provenance], Dataset | None]:
+    """Return the converter, its report description, its provenance and the FX dataset."""
     if "fx" not in context.inputs:
 
         def base_only(amount: Money, on: date) -> Money:
@@ -263,15 +286,14 @@ def _converter(context: RunContext, p: _Parameters) -> tuple[ToBase, str, list[P
                 )
             return amount
 
-        return base_only, f"{p.base.code} only (no conversion)", []
+        return base_only, f"{p.base.code} only (no conversion)", [], None
     path = context.inputs["fx"]
     provenance = raw_provenance(path, source=ECB_SOURCE, dataset=FX_DATASET, terms=ECB_TERMS)
     age = p.fx_max_age_days
     assert age is not None  # checked at validation
-    converter = EcbConverter(
-        parse_ecb_fx(path.read_bytes(), provenance), base=p.base, max_age_days=age
-    )
-    return converter, f"ECB reference rates, max age {age} days", [provenance]
+    rates = parse_ecb_fx(path.read_bytes(), provenance)
+    converter = EcbConverter(rates, base=p.base, max_age_days=age)
+    return converter, f"ECB reference rates, max age {age} days", [provenance], rates
 
 
 def _lookthrough(
@@ -358,7 +380,7 @@ def _lookthrough(
 def _run(context: RunContext) -> ExperimentOutput:
     p: _Parameters = context.parameters  # type: ignore[assignment]
     files = context.inputs
-    to_base, fx_description, fx_provenance = _converter(context, p)
+    to_base, fx_description, fx_provenance, fx_rates = _converter(context, p)
     export = files["transactions"]
     imported = parse_broker_csv(
         export.read_bytes(),
@@ -409,6 +431,22 @@ def _run(context: RunContext) -> ExperimentOutput:
     lookthrough, lookthrough_provenance = _lookthrough(context, p, check_context, instruments)
     check_context = replace(check_context, lookthrough=lookthrough)
     checks = run_checks(check_context, load_check_config(files["checks"]))
+    risk = None
+    if p.risk is not None:
+        position_weights = check_context.position_weights()
+        risk = compute_risk(
+            p.risk,
+            as_of=dates[-1],
+            value=float(valuation.totals[dates[-1]]),
+            base=p.base,
+            prices=prices,
+            names={isin: instrument.name for isin, instrument in instruments.items()},
+            position_weights=position_weights,
+            cash_weights=check_context.cash_weights(),
+            exposure_currencies={i: check_context.exposure_currency(i) for i in position_weights},
+            fx=fx_rates,
+            scenarios=load_scenarios(files["scenarios"]) if "scenarios" in files else (),
+        )
     report = build_portfolio_report(
         name=p.title,
         history=history,
@@ -431,7 +469,7 @@ def _run(context: RunContext) -> ExperimentOutput:
         return_frequency=(Frequency.MONTHLY, 12.0) if p.monthly else None,
         checks=checks,
         lookthrough=lookthrough,
-        risk=None,
+        risk=None if risk is None else risk.summary,
         projection=None,
     )
     findings = pd.DataFrame(
@@ -457,7 +495,15 @@ def _run(context: RunContext) -> ExperimentOutput:
         scalars["unexplained_weight"] = Tagged(
             float(rows.loc[rows["kind"] == UNEXPLAINED, "weight"].sum()), "descriptive"
         )
-    return ExperimentOutput(tables=tables, scalars=scalars, report_html=render_html(report))
+    notice = None
+    if risk is not None:
+        tables |= risk.tables
+        scalars |= risk.scalars
+        if risk.price_only:
+            notice = f"{PRICE_ONLY.format(names=', '.join(risk.price_only))} {ADVICE}"
+    return ExperimentOutput(
+        tables=tables, scalars=scalars, report_html=render_html(report), notice=notice
+    )
 
 
 KIND = ExperimentKind(

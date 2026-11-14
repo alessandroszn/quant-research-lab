@@ -21,6 +21,8 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Fama-MacBeth regressions | 2.2 `stats` | Cross-sectional asset pricing tests, needed for the factor-zoo study (5.3). |
 | PDF export of reports | 2.3 `reporting` | Roadmap mentions HTML/PDF; HTML only in v1. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |
+| VaR backtest in the portfolio report | 8.3 | The `risk_report` kind has Kupiec and Christoffersen tests; the report's risk section is descriptive only. |
+| Factor proxies in the portfolio report | 8.3 | Betas for positions without their own history, so factor shocks and older crises cover them (as `scenario_analysis` does). |
 | Duplicated exposure by name | 8.2 | `duplicated_exposure` matches securities by ISIN only; files without ISINs (some issuers) could use the normalised names already used for overlap, labelled approximate. |
 | Fund-of-funds look-through | 2.5 `lookthrough` | A fund held inside a fund is one security; a second level needs that fund's holdings. |
 | Sector for direct positions | 2.5 `lookthrough` | Master data has no sector field, so direct stocks show an unknown sector. |
