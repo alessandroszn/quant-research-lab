@@ -67,6 +67,13 @@ its Mertens (2002) standard error and the number of returns. The run writes
 ``risk_free.csv`` and the scalars ``risk_free_total``, ``sharpe_ratio`` and
 ``sharpe_ratio_se``.
 
+Italian tax position (phase 8.6a), optional: ``[parameters.tax]`` with ``regime``
+(``amministrato``/``dichiarativo``) and ``public_share`` (a table: ISIN -> share of Italian and
+white-list government bonds, required for every fund and bond sold; 0 for an equity fund). The
+report gains a "Tax position (analytics, not tax advice)" section, with its sources; the run
+writes ``tax_events.csv``, ``losses_balance.csv`` and the scalars ``tax_due``,
+``tax_withheld`` and ``losses_remaining``. See :mod:`qrlab.tax.italy`.
+
 Valuation dates are the dates of all price files from the first transaction on. The report is
 descriptive.
 """
@@ -76,6 +83,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import date, datetime
+from decimal import Decimal
 
 import numpy as np
 import pandas as pd
@@ -98,6 +106,7 @@ from qrlab.experiments.kinds._params import (
     day,
     local_provenance,
     moment,
+    table,
     text,
     whole,
 )
@@ -131,6 +140,7 @@ from qrlab.reporting.formatting import Language
 from qrlab.reporting.html import render_html
 from qrlab.reporting.portfolio_report import RiskFreeSummary, build_portfolio_report
 from qrlab.scenarios.definitions import load_scenarios
+from qrlab.tax.italy import Regime, TaxPosition, italian_tax_position
 
 __all__ = ["KIND"]
 
@@ -168,6 +178,7 @@ _OPTIONAL_PARAMETERS = (
     "tracking",
     "risk",
     "projection",
+    "tax",
 )
 
 
@@ -191,6 +202,7 @@ class _Parameters:
     fx_max_age_days: int | None
     risk: RiskSpec | None
     projection: ProjectionSpec | None
+    tax: tuple[Regime, dict[Isin, Decimal]] | None
     treatment: WeightTreatment | None
     holdings: Mapping[Isin, _Holdings]
     index_hedged_to: Mapping[Isin, Currency | None]
@@ -245,6 +257,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         else None,
         risk=parse_risk(parameters),
         projection=parse_projection(parameters),
+        tax=_parse_tax(parameters),
         treatment=WeightTreatment(
             choice(parameters, "lookthrough_treatment", {"as_reported", "normalised"})
         )
@@ -267,6 +280,23 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
             for isin, spec in _per_fund(parameters, "tracking", {"index_hedged_to"}).items()
         },
     )
+
+
+def _parse_tax(parameters: Mapping[str, object]) -> tuple[Regime, dict[Isin, Decimal]] | None:
+    """Read ``[parameters.tax]``: the regime and the government-bond shares, or ``None``."""
+    if "tax" not in parameters:
+        return None
+    spec = table(parameters, "tax", required={"regime", "public_share"}, optional=set())
+    regime = Regime(choice(spec, "regime", {r.value for r in Regime}))
+    shares = spec["public_share"]
+    if not isinstance(shares, dict):
+        raise ValidationError("[parameters.tax] public_share must be a table of ISIN = share")
+    out = {}
+    for code, value in shares.items():
+        if type(value) not in (int, float) or not 0 <= value <= 1:
+            raise ValidationError(f"public_share of {code} must be a number in [0, 1]")
+        out[Isin(code)] = Decimal(repr(value))
+    return regime, out
 
 
 def _check_inputs(parameters: object, names: frozenset[str]) -> None:
@@ -443,6 +473,49 @@ def _risk_free(
     return RiskFreeSummary("€STR (ECB)", total, sharpe, reason), table, [provenance]
 
 
+def _tax_tables(position: TaxPosition) -> dict[str, Tagged]:
+    """Return the tax events and the losses balance as tables."""
+    events = pd.DataFrame(
+        [
+            {
+                "date": e.trade_date,
+                "isin": e.isin,
+                "category": e.category.value,
+                "result": float(e.gain),
+                "public_share": float(e.public_share),
+                "base": float(e.base),
+                "losses_used": float(e.offset),
+                "tax_due": None if e.tax_due is None else float(e.tax_due),
+                "tax_withheld": float(e.tax_withheld),
+                "difference": float(e.difference),
+            }
+            for e in position.events
+        ],
+        columns=[
+            "date", "isin", "category", "result", "public_share", "base", "losses_used",
+            "tax_due", "tax_withheld", "difference",
+        ],
+    ).set_index("date")  # fmt: skip
+    losses = pd.DataFrame(
+        [
+            {
+                "year": lot.year,
+                "losses": float(lot.amount),
+                "used": float(lot.used),
+                "expired": float(lot.expired),
+                "remaining": float(lot.remaining),
+                "usable_until": lot.expires,
+            }
+            for lot in position.losses
+        ],
+        columns=["year", "losses", "used", "expired", "remaining", "usable_until"],
+    ).set_index("year")
+    return {
+        "tax_events": Tagged(events, "descriptive"),
+        "losses_balance": Tagged(losses, "descriptive"),
+    }
+
+
 def _run(context: RunContext) -> ExperimentOutput:
     p: _Parameters = context.parameters  # type: ignore[assignment]
     files = context.inputs
@@ -514,6 +587,17 @@ def _run(context: RunContext) -> ExperimentOutput:
             fx=fx_rates,
             scenarios=load_scenarios(files["scenarios"]) if "scenarios" in files else (),
         )
+    tax_position = None
+    if p.tax is not None:
+        tax_position = italian_tax_position(
+            history,
+            imported.transactions,
+            instruments,
+            regime=p.tax[0],
+            public_share=p.tax[1],
+            as_of=dates[-1],
+            to_base=to_base,
+        )
     plan = None
     if p.projection is not None:
         plan = project_portfolio(
@@ -551,6 +635,7 @@ def _run(context: RunContext) -> ExperimentOutput:
         risk=None if risk is None else risk.summary,
         projection=None if plan is None else plan[0].result,
         risk_free=risk_free,
+        tax=tax_position,
     )
     findings = pd.DataFrame(
         [
@@ -577,6 +662,13 @@ def _run(context: RunContext) -> ExperimentOutput:
         )
     caveats = []
     figures = {}
+    if tax_position is not None:
+        tables |= _tax_tables(tax_position)
+        scalars |= {
+            "tax_due": Tagged(float(tax_position.tax_due), "descriptive"),
+            "tax_withheld": Tagged(float(tax_position.tax_withheld), "descriptive"),
+            "losses_remaining": Tagged(float(tax_position.losses_remaining), "descriptive"),
+        }
     if risk_free is not None and risk_free_table is not None:
         tables["risk_free"] = Tagged(risk_free_table, "descriptive")
         scalars["risk_free_total"] = Tagged(risk_free.total, "descriptive")

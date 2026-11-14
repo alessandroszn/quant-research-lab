@@ -8,6 +8,37 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- The Italian tax position of a real account (phase 8.6a), as analytics, not tax advice: the
+  new package `qrlab.tax` (`italian_tax_position`).
+  - **Categories:** gains on ETFs and funds are *redditi di capitale*; losses on them, and
+    results on shares, bonds and ETCs, are *redditi diversi*.
+  - **The losses balance (*zainetto*):** losses are kept by year, used oldest first, and
+    expire on 31 December of year + 4.
+  - **Rates:** 26 %. The share due to government bonds counts for 48.08 %, for bonds and
+    funds alike.
+  - **Regimes:** amministrato, where each sale is taxed when it happens and compared with the
+    tax withheld, and dichiarativo, where the year is netted and the tax is an estimate.
+  - **Non-harmonised funds** (domiciled outside the EU and EEA) are flagged, not computed.
+  - **Taxable gain:** the ledger's gain is net of the tax withheld on the sale, so the engine
+    adds that tax back.
+  - **Sources:** the rules carry them and their date (checked 14/11/2026), with the TUIR
+    1986 and D.Lgs. 117/2026 article numbers. Sales outside 1/7/2014–31/12/2027 raise.
+- **In the `portfolio_report` kind:** an optional `[parameters.tax]` (`regime`,
+  `public_share`) adds a "Tax position (analytics, not tax advice)" section, `tax_events.csv`,
+  `losses_balance.csv` and the scalars `tax_due`, `tax_withheld` and `losses_remaining`.
+  Without it, outputs are byte-identical.
+- **Hand-checked:**
+  - a five-year sequence with tax due of 572 and 400 of losses expired;
+  - the example of Circolare AdE 19/E/2014 (base 258.72, tax 67.27);
+  - a government bond (125.01);
+  - a bond fund's loss entering the balance at 792.32;
+  - dichiarativo netting within a year.
+- **Coverage.** Tests close the coverage gaps left by phases 8.2–8.5, mostly validation
+  messages and the Cornish-Fisher case. Coverage is back to 100 %.
+
+### Changed
+
+- `build_portfolio_report` takes the required keyword `tax` (pass `None` for none).
 - A risk-free rate and the Sharpe ratio in the portfolio report (phase 8.5).
   - **`qrlab.core.overnight_returns`** compounds an overnight rate over periods: simple
     interest over weekends and holidays, compounding between business days, as in the ECB's

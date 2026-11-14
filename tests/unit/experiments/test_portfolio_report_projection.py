@@ -297,3 +297,46 @@ def test_without_projection_nothing_changes(tmp_path: Path) -> None:
 
 def test_the_kind_lists_the_projection() -> None:
     assert "projection" in KINDS["portfolio_report"].optional_parameters
+
+
+ASSET = f"\n[parameters.projection.assets.{FUND_A}]\nmean = 0.004\nvolatility = 0.04\n"
+BASE = PROJECTION.format(paths=10, periods=12, cost="0.0", flows="")
+
+
+@pytest.mark.parametrize(
+    ("projection", "match"),
+    [
+        ("\nprojection = 3\n", r"\[parameters.projection\] must be a table"),
+        (BASE.replace("seed = 7", "seed = -1") + ASSET, "seed"),
+        (BASE.replace("percentiles = [5, 50, 95]", "percentiles = []") + ASSET, "percentiles"),
+        (BASE + "assets = 3\n", "one table per held position"),
+        (BASE + ASSET.replace("volatility = 0.04", "volatility = -0.1"), "volatility"),
+        (BASE + "correlations = 3\n" + ASSET, "correlations\\] must be a table"),
+        (BASE + f'correlations = {{ "{FUND_A}" = 0.5 }}\n' + ASSET, "two different assets"),
+        (BASE + f'correlations = {{ "{FUND_A} {FUND_B}" = 2 }}\n' + ASSET, r"\[-1, 1\]"),
+        (
+            BASE
+            + f'correlations = {{ "{FUND_A} {FUND_B}" = 0.5, "{FUND_B} {FUND_A}" = 0.5 }}\n'
+            + ASSET,
+            "twice",
+        ),
+    ],
+)
+def test_more_projection_parameters_are_validated(
+    tmp_path: Path, projection: str, match: str
+) -> None:
+    with pytest.raises(ValidationError, match=match):
+        validate_experiment(_setup(tmp_path, projection=projection), kinds=KINDS)
+
+
+def test_ter_cost_with_cash_counts_cash_at_zero(tmp_path: Path) -> None:
+    """10,000 in a fund with a 0.20 % TER and 500 of cash: 0.20 % x 10,000 / 10,500."""
+    projection = (
+        PROJECTION.format(paths=10, periods=12, cost='"ter"', flows="")
+        + f"\n[parameters.projection.assets.{FUND_A}]\nmean = {MEAN}\nvolatility = 0.0\n"
+        + "\n[parameters.projection.cash]\nmean = 0.0\nvolatility = 0.0\n"
+    )
+    record, _ = _run(_setup(tmp_path, projection=projection, cash=True))
+    assert record["status"] == "success", record["error"]
+    cost = record["scalars"]["projection_annual_cost"]["value"]  # type: ignore[index]
+    assert cost == pytest.approx(0.0020 * 10_000 / 10_500)
