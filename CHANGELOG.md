@@ -8,6 +8,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Projection and savings plan in the `portfolio_report` kind (phase 8.4), with an optional
+  `[parameters.projection]`. Without it, outputs are byte-identical.
+  - **Starting point:** today's portfolio, its value, weights and date. The kind does not ask
+    for them.
+  - **Return assumptions:** stated, never estimated from the history. There is one table per
+    held position and one for cash. Every pair of risky assets needs a correlation, and none
+    defaults.
+  - **Plan:** flows (a savings plan), rebalancing, inflation and taxes. Costs are a number or
+    `"ter"`, the TER of the instruments file weighted by today's weights.
+  - **Seed:** the projection has its own `seed`.
+  - **Sensitivity:** always computed, and it cannot be switched off in the report.
+  - **Outputs:** the report's projection section, `fan_real.csv`, `terminal.csv`,
+    `sensitivity.csv` and the fan chart. The scalars are `projection_p_goal`,
+    `projection_p_goal_se`, `projection_terminal_mean_real` and `projection_annual_cost`.
+  - **Notice:** "not a forecast", the notice of 7.2.
+  - **Hand-checked:**
+    - a deterministic plan (zero volatility) ending at 11,856.50 EUR, to the cent;
+    - the log-normal median within four Monte Carlo standard errors;
+    - a weighted TER of 0.16 %;
+    - cash compounding on its own without rebalancing.
+  - **Shared code:** the `projection` kind now shares its plan code with the report
+    (`run_plan`, `parse_engine`, `parse_flows`). Its outputs are byte-identical.
 - Risk and stress tests in the `portfolio_report` kind (phase 8.3), with an optional
   `[parameters.risk]`: `frequency` (`weekly`/`monthly`), `window`, `confidence`, `covariance`.
   There is also an optional `scenarios` input. Without them, outputs are byte-identical.

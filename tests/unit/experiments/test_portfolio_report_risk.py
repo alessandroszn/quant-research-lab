@@ -346,4 +346,4 @@ def test_without_risk_nothing_changes(tmp_path: Path) -> None:
 def test_the_kind_lists_the_risk_inputs() -> None:
     kind = KINDS["portfolio_report"]
     assert "scenarios" in kind.optional_inputs
-    assert kind.optional_parameters[-1] == "risk"
+    assert "risk" in kind.optional_parameters

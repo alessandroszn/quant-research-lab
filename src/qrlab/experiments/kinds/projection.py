@@ -29,7 +29,13 @@ from qrlab.simulation.engines import (
     normal_returns,
     student_t_returns,
 )
-from qrlab.simulation.outcomes import sensitivity, shifted_moments, summarize
+from qrlab.simulation.outcomes import (
+    ProjectionResult,
+    SensitivityRow,
+    sensitivity,
+    shifted_moments,
+    summarize,
+)
 from qrlab.simulation.plan import Flow, Plan, TaxModel, project
 
 SCENARIOS = (
@@ -39,7 +45,7 @@ SCENARIOS = (
 NO_SENSITIVITY = "No sensitivity analysis was run for this projection."
 ADVICE = "Research analytics, not investment advice."
 
-__all__ = ["KIND"]
+__all__ = ["KIND", "PlanRun", "parse_engine", "parse_flows", "run_plan"]
 
 _PARAMETERS = (
     "assets",
@@ -92,16 +98,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
     vol = np.array([number(r, "volatility") for r in rows])
     covariance = pd.DataFrame(corr * np.outer(vol, vol), index=names, columns=names)
     moments = LogMoments(pd.Series([number(r, "mean") for r in rows], index=names), covariance, 0)
-    engine_table = parameters["engine"]
-    if not isinstance(engine_table, dict):
-        raise ValidationError("engine must be a table")
-    engine = choice(engine_table, "name", {"normal", "student_t"})
-    require_keys(
-        engine_table,
-        required={"name"} | ({"dof"} if engine == "student_t" else set()),
-        optional=set(),
-        where="engine",
-    )
+    engine, dof = parse_engine(parameters)
     plan_table = table(
         parameters,
         "plan",
@@ -118,11 +115,58 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         },
         optional=set(),
     )
-    flows_list = parameters["flows"]
-    if not isinstance(flows_list, list):
+    rebalance = whole(plan_table, "rebalance_every", minimum=0)
+    plan = Plan(
+        initial_wealth=number(plan_table, "initial_wealth"),
+        currency=Currency(text(plan_table, "currency")),
+        weights=pd.Series([number(r, "weight") for r in rows], index=names),
+        periods_per_year=whole(plan_table, "periods_per_year", minimum=1),
+        flows=parse_flows(parameters["flows"]),
+        flow_timing=choice(plan_table, "flow_timing", {"start", "end"}),
+        rebalance_every=rebalance or None,
+        annual_cost=number(plan_table, "annual_cost"),
+        inflation=number(plan_table, "inflation"),
+        taxes=TaxModel(number(plan_table, "capital_gains_tax"), number(plan_table, "wealth_tax")),
+    )
+    levels = parameters["percentiles"]
+    if not isinstance(levels, list):
+        raise ValidationError("percentiles must be a list of numbers")
+    return _Parameters(
+        moments=moments,
+        engine=engine,
+        dof=dof,
+        plan=plan,
+        paths=whole(parameters, "paths", minimum=10),
+        periods=whole(parameters, "periods", minimum=1),
+        start=day(parameters, "start"),
+        goal=number(parameters, "goal_real"),
+        percentiles=tuple(float(x) for x in levels),
+        early=whole(parameters, "early_periods", minimum=1),
+        sensitivity=boolean(parameters, "sensitivity"),
+    )
+
+
+def parse_engine(parameters: Mapping[str, object]) -> tuple[str, float | None]:
+    """Read ``engine = { name = "normal" }`` or ``{ name = "student_t", dof = ... }``."""
+    engine_table = parameters["engine"]
+    if not isinstance(engine_table, dict):
+        raise ValidationError("engine must be a table")
+    engine = choice(engine_table, "name", {"normal", "student_t"})
+    require_keys(
+        engine_table,
+        required={"name"} | ({"dof"} if engine == "student_t" else set()),
+        optional=set(),
+        where="engine",
+    )
+    return engine, number(engine_table, "dof") if engine == "student_t" else None
+
+
+def parse_flows(value: object) -> tuple[Flow, ...]:
+    """Read an array of ``{kind, amount, first, last, indexed}`` flow tables (may be empty)."""
+    if not isinstance(value, list):
         raise ValidationError("flows must be an array of tables (empty for none)")
     flows = []
-    for item in flows_list:
+    for item in value:
         if not isinstance(item, dict):
             raise ValidationError("each flow must be a table")
         require_keys(
@@ -140,70 +184,64 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
                 boolean(item, "indexed"),
             )
         )
-    rebalance = whole(plan_table, "rebalance_every", minimum=0)
-    plan = Plan(
-        initial_wealth=number(plan_table, "initial_wealth"),
-        currency=Currency(text(plan_table, "currency")),
-        weights=pd.Series([number(r, "weight") for r in rows], index=names),
-        periods_per_year=whole(plan_table, "periods_per_year", minimum=1),
-        flows=tuple(flows),
-        flow_timing=choice(plan_table, "flow_timing", {"start", "end"}),
-        rebalance_every=rebalance or None,
-        annual_cost=number(plan_table, "annual_cost"),
-        inflation=number(plan_table, "inflation"),
-        taxes=TaxModel(number(plan_table, "capital_gains_tax"), number(plan_table, "wealth_tax")),
-    )
-    levels = parameters["percentiles"]
-    if not isinstance(levels, list):
-        raise ValidationError("percentiles must be a list of numbers")
-    return _Parameters(
-        moments=moments,
-        engine=engine,
-        dof=number(engine_table, "dof") if engine == "student_t" else None,
-        plan=plan,
-        paths=whole(parameters, "paths", minimum=10),
-        periods=whole(parameters, "periods", minimum=1),
-        start=day(parameters, "start"),
-        goal=number(parameters, "goal_real"),
-        percentiles=tuple(float(x) for x in levels),
-        early=whole(parameters, "early_periods", minimum=1),
-        sensitivity=boolean(parameters, "sensitivity"),
-    )
+    return tuple(flows)
 
 
-def _run(context: RunContext) -> ExperimentOutput:
-    p: _Parameters = context.parameters  # type: ignore[assignment]
-    seed = int(context.seed)  # type: ignore[arg-type]
+@dataclass(frozen=True)
+class PlanRun:
+    """A projected plan: the report's result, the output tables and the fan chart."""
+
+    result: ProjectionResult
+    tables: dict[str, Tagged]
+    figure: bytes
+
+
+def run_plan(
+    *,
+    moments: LogMoments,
+    engine: str,
+    dof: float | None,
+    plan: Plan,
+    paths: int,
+    periods: int,
+    start: date,
+    goal: float,
+    percentiles: tuple[float, ...],
+    early: int,
+    seed: int,
+    with_sensitivity: bool,
+) -> PlanRun:
+    """Simulate, project and summarise a plan; the sensitivity reuses the same seed."""
 
     def simulate(shift: float, scale: float) -> SimulatedReturns:
-        moments = shifted_moments(
-            p.moments,
+        shifted = shifted_moments(
+            moments,
             annual_mean_shift=shift,
             vol_scale=scale,
-            periods_per_year=p.plan.periods_per_year,
+            periods_per_year=plan.periods_per_year,
         )
         rng = np.random.default_rng(seed)
-        if p.engine == "student_t":
+        if engine == "student_t":
             return student_t_returns(
-                moments,
-                dof=float(p.dof or 0),
-                n_paths=p.paths,
-                n_periods=p.periods,
+                shifted,
+                dof=float(dof or 0),
+                n_paths=paths,
+                n_periods=periods,
                 rng=rng,
                 max_cells=MAX_CELLS,
             )
         return normal_returns(
-            moments, n_paths=p.paths, n_periods=p.periods, rng=rng, max_cells=MAX_CELLS
+            shifted, n_paths=paths, n_periods=periods, rng=rng, max_cells=MAX_CELLS
         )
 
     returns = simulate(0.0, 1.0)
     summary = summarize(
-        project(p.plan, returns),
+        project(plan, returns),
         returns,
-        start=p.start,
-        goal_real=p.goal,
-        percentiles=p.percentiles,
-        early_periods=p.early,
+        start=start,
+        goal_real=goal,
+        percentiles=percentiles,
+        early_periods=early,
     )
     labels = [f"P{x:g}" for x in summary.percentiles]
     index = pd.DatetimeIndex([pd.Timestamp(d) for d in summary.dates], name="date")
@@ -217,8 +255,9 @@ def _run(context: RunContext) -> ExperimentOutput:
         index=labels,
     )
     tables = {"fan_real": Tagged(fan, "descriptive"), "terminal": Tagged(terminal, "descriptive")}
-    if p.sensitivity:
-        rows = sensitivity(p.plan, simulate, goal_real=p.goal)
+    rows: tuple[SensitivityRow, ...] = ()
+    if with_sensitivity:
+        rows = sensitivity(plan, simulate, goal_real=goal)
         tables["sensitivity"] = Tagged(
             pd.DataFrame(
                 [(r.key, r.label, r.p_goal, r.p_goal_se, r.median_terminal_real) for r in rows],
@@ -226,25 +265,45 @@ def _run(context: RunContext) -> ExperimentOutput:
             ),
             "descriptive",
         )
-    caveats = [SCENARIOS] if p.sensitivity else [SCENARIOS, NO_SENSITIVITY]
-    notice = " ".join([*caveats, ADVICE])
     figure = line_figure(
         [(c, fan[c]) for c in fan.columns],
         title="Projected real wealth",
-        y_label=p.plan.currency.code,
+        y_label=plan.currency.code,
         axis=AxisFormat.NUMBER,
         style=style_for(Language.EN),
         note="Scenarios from stated assumptions, not a forecast.",
     )
+    return PlanRun(ProjectionResult(summary, rows), tables, figure)
+
+
+def _run(context: RunContext) -> ExperimentOutput:
+    p: _Parameters = context.parameters  # type: ignore[assignment]
+    run = run_plan(
+        moments=p.moments,
+        engine=p.engine,
+        dof=p.dof,
+        plan=p.plan,
+        paths=p.paths,
+        periods=p.periods,
+        start=p.start,
+        goal=p.goal,
+        percentiles=p.percentiles,
+        early=p.early,
+        seed=int(context.seed),  # type: ignore[arg-type]
+        with_sensitivity=p.sensitivity,
+    )
+    summary = run.result.summary
+    caveats = [SCENARIOS] if p.sensitivity else [SCENARIOS, NO_SENSITIVITY]
+    notice = " ".join([*caveats, ADVICE])
     return ExperimentOutput(
-        tables=tables,
+        tables=run.tables,
         scalars={
             "p_goal": Tagged(summary.p_goal, "descriptive"),
             "p_goal_se": Tagged(summary.p_goal_se, "descriptive"),
             "p_depleted": Tagged(summary.p_depleted, "descriptive"),
             "terminal_mean_real": Tagged(summary.terminal_mean_real, "descriptive"),
         },
-        figures={"fan_real": figure},
+        figures={"fan_real": run.figure},
         notice=notice,
     )
 

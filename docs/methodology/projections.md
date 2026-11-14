@@ -86,11 +86,14 @@ run with 10,000 paths (seed 42) estimates the probability of reaching 200,000 as
   in a footer of the PNG fan chart, in the `qrlab run` output and in the app's results panel.
   When `sensitivity = false`, it adds "No sensitivity analysis was run for this projection."
   The CSV tables carry no note of their own: copied on their own, they lose it.
-- The `portfolio_report` kind never includes a projection, so its projection section always
-  reads "No projection was computed for this report." The report section with a projection is
-  reached only by calling {py:func}`qrlab.reporting.build_portfolio_report` from Python. The
-  desktop app also shows a general "not investment advice" notice on its Home and Settings
-  screens.
+- **In the `portfolio_report` kind, a projection is optional** (phase 8.4). It starts from
+  today's portfolio, with return assumptions stated per held position and for cash, never
+  estimated from the history. Every pair of risky assets needs a correlation. There the
+  sensitivity cannot be switched off. Without `[parameters.projection]` the section reads
+  "No projection was computed for this report." The desktop app also shows a general "not
+  investment advice" notice on its Home and Settings screens.
+- **Foreign assets and cash are projected in the base currency, with no currency model.** The
+  stated return and volatility of each position must include its currency risk.
 - The `projection` kind offers only the normal and Student-t engines. The block bootstrap is
   available from the library only.
 - The normal and Student-t engines draw independent returns with fixed parameters: no
