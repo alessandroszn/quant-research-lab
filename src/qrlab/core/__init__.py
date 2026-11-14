@@ -30,6 +30,7 @@ from qrlab.core.errors import (
     ValidationError,
 )
 from qrlab.core.money import MINOR_UNITS, Currency, FxRate, Money, convert
+from qrlab.core.rates import overnight_returns
 from qrlab.core.returns import (
     AggregatedReturns,
     ReturnKind,
@@ -68,6 +69,7 @@ __all__ = [
     "excess_returns",
     "infer_frequency",
     "log_to_simple",
+    "overnight_returns",
     "prices_to_returns",
     "require_periods_per_year",
     "require_same_index",

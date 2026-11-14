@@ -29,6 +29,10 @@ _EN = {
     "max_drawdown": "Maximum drawdown (TWR path)",
     "volatility": "Volatility, annualised",
     "volatility_omitted": "Volatility is omitted: no regular return frequency was declared.",
+    "risk_free_total": "Risk-free return over the period ({source})",
+    "sharpe": "Sharpe ratio (TWR in excess of the risk-free rate, annualised)",
+    "sharpe_value": "{value} ± {se} (n = {n})",
+    "sharpe_missing": "The Sharpe ratio is not shown: {reason}",
     "not_annualised": "Not annualised: the period is shorter than one year.",
     "positions": "Positions",
     "account": "Account",
@@ -297,6 +301,10 @@ _IT = {
     "volatility_omitted": (
         "Volatilità omessa: nessuna frequenza regolare dei rendimenti dichiarata."
     ),
+    "risk_free_total": "Rendimento privo di rischio nel periodo ({source})",
+    "sharpe": "Sharpe ratio (TWR in eccesso rispetto al tasso privo di rischio, annualizzato)",
+    "sharpe_value": "{value} ± {se} (n = {n})",
+    "sharpe_missing": "Lo Sharpe ratio non è mostrato: {reason}",
     "not_annualised": "Non annualizzato: il periodo è inferiore a un anno.",
     "positions": "Posizioni",
     "account": "Conto",
