@@ -97,7 +97,10 @@ def test_section_with_holdings_overlap_and_tracking() -> None:
     assert "Not explained by the holdings 1.20%" in text  # 0.6 x (1 - 0.98)
     assert "Alpha (" + X + ") 42.00%" in text  # 0.6 x 0.5 + 0.2 x 0.6
     assert "Unnamed 10.80%" in text
-    assert f"IE0000000012 {B.code} 50.00% 18.00% / 0.00%" in text  # min(0.5, 0.6), no ISIN 0.18
+    # min(0.5, 0.6) by ISIN; nothing by name (the unlisted holdings of A match no name in B);
+    # 0.18 of A has no ISIN.
+    assert f"IE0000000012 {B.code} 50.00% 0.00% 18.00% / 0.00%" in text
+    assert "Matches by name are approximate." in text
     assert "NAV -0.20% -0.20% 0.20% 0.00%" in text
     assert "Total return 0.00% n/a n/a n/a" in text  # B: short period, no master data
 

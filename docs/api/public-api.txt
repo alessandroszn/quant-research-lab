@@ -207,12 +207,20 @@ qrlab.instruments.AssetClass.MULTI_ASSET  member = 'multi_asset'
 qrlab.instruments.AssetClass.CASH  member = 'cash'
 qrlab.instruments.AssetClass.OTHER  member = 'other'
 qrlab.instruments.COUNTRIES  constant frozenset = ['AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HM', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'UM', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'YE', 'YT', 'ZA', 'ZM', 'ZW']
+qrlab.instruments.COUNTRY_ALIASES  constant mappingproxy
+qrlab.instruments.COUNTRY_NAMES  constant mappingproxy
+qrlab.instruments.CountryFormat  enum
+qrlab.instruments.CountryFormat.ISO_ALPHA2  member = 'iso_alpha2'
+qrlab.instruments.CountryFormat.NAME  member = 'name'
 qrlab.instruments.Distribution  enum
 qrlab.instruments.Distribution.ACCUMULATING  member = 'accumulating'
 qrlab.instruments.Distribution.DISTRIBUTING  member = 'distributing'
 qrlab.instruments.FUND_TYPES  constant frozenset
 qrlab.instruments.HOLDING_COLUMNS  constant tuple = ['name', 'isin', 'weight', 'country', 'sector', 'currency', 'asset_class']
-qrlab.instruments.HoldingsCsvMapping  class(skip_rows: 'int', delimiter: 'str', decimal_separator: 'str', thousands_separator: 'str | None', encoding: 'str', weight_unit: 'WeightUnit', missing_tokens: 'tuple[str, ...]', columns: 'Mapping[str, str]', asset_class: 'AssetClass | None', asset_class_values: 'Mapping[str, AssetClass]') -> None
+qrlab.instruments.HoldingsCsvMapping  class(skip_rows: 'int', delimiter: 'str | None', decimal_separator: 'str', thousands_separator: 'str | None', encoding: 'str | None', weight_unit: 'WeightUnit', missing_tokens: 'tuple[str, ...]', columns: 'Mapping[str, str]', asset_class: 'AssetClass | None', asset_class_values: 'Mapping[str, AssetClass]', file_format: 'HoldingsFileFormat', sheet: 'str | None', country_format: 'CountryFormat', country_values: 'Mapping[str, str | None]') -> None
+qrlab.instruments.HoldingsFileFormat  enum
+qrlab.instruments.HoldingsFileFormat.CSV  member = 'csv'
+qrlab.instruments.HoldingsFileFormat.XLSX  member = 'xlsx'
 qrlab.instruments.HoldingsSnapshot  class(fund: 'Isin', as_of: 'date', holdings: 'pd.DataFrame', provenance: 'Provenance', weight_basis: 'str', sector_taxonomy: 'str | None', notes: 'tuple[str, ...]') -> None
 qrlab.instruments.Instrument  class(isin: 'Isin', name: 'str', instrument_type: 'InstrumentType', asset_class: 'AssetClass', currency: 'Currency', as_of: 'date', domicile: 'str | None', replication: 'Replication | None', distribution: 'Distribution | None', ter: 'Decimal | None', benchmark: 'str | None', hedged_to: 'Currency | None', inception: 'date | None', fund_size: 'Money | None', source: 'str') -> None
 qrlab.instruments.Instrument.is_fund  property
@@ -242,13 +250,16 @@ qrlab.instruments.Replication.SYNTHETIC  member = 'synthetic'
 qrlab.instruments.WeightUnit  enum
 qrlab.instruments.WeightUnit.PERCENT  member = 'percent'
 qrlab.instruments.WeightUnit.DECIMAL  member = 'decimal'
+qrlab.instruments.country_code  function(name: 'str') -> 'str'
 qrlab.instruments.holdings_issues  function(snapshot: 'HoldingsSnapshot', *, on: 'date', max_age_days: 'int', weight_tolerance: 'float') -> 'list[Issue]'
 qrlab.instruments.is_valid_isin  function(code: 'str') -> 'bool'
 qrlab.instruments.load_holdings_mapping  function(path: 'Path') -> 'HoldingsCsvMapping'
 qrlab.instruments.load_instruments  function(path: 'Path') -> 'list[Instrument]'
+qrlab.instruments.load_issuer_map  function(path: 'Path') -> 'dict[Isin, str]'
 qrlab.instruments.master_data_issues  function(instruments: 'Iterable[Instrument]', *, on: 'date', max_age_days: 'int') -> 'list[Issue]'
 qrlab.instruments.normalised_weights  function(snapshot: 'HoldingsSnapshot') -> 'pd.Series'
 qrlab.instruments.parse_holdings_csv  function(content: 'bytes', provenance: 'Provenance', mapping: 'HoldingsCsvMapping', *, fund: 'Isin', as_of: 'date', weight_basis: 'str', sector_taxonomy: 'str | None') -> 'HoldingsSnapshot'
+qrlab.instruments.parse_holdings_file  function(content: 'bytes', provenance: 'Provenance', mapping: 'HoldingsCsvMapping', *, fund: 'Isin', as_of: 'date', weight_basis: 'str', sector_taxonomy: 'str | None') -> 'HoldingsSnapshot'
 qrlab.instruments.validate_country  function(code: 'object') -> 'str'
 qrlab.lookthrough.CASH  constant str = 'cash'
 qrlab.lookthrough.Dimension  enum
@@ -265,7 +276,8 @@ qrlab.lookthrough.LookThrough.largest  method(dimension: 'Dimension') -> 'tuple[
 qrlab.lookthrough.LookThroughInputs  class(exposures: 'LookThrough', snapshots: 'Mapping[Isin, HoldingsSnapshot]', tracking: 'Mapping[Isin, tuple[TrackingSeries, TrackingSeries]]') -> None
 qrlab.lookthrough.LookThroughInputs.overlaps  method() -> 'list[Overlap]'
 qrlab.lookthrough.NOT_LOOKED_THROUGH  constant str = 'not looked through'
-qrlab.lookthrough.Overlap  class(first: 'Isin', second: 'Isin', overlap: 'float', unmatched_first: 'float', unmatched_second: 'float') -> None
+qrlab.lookthrough.Overlap  class(first: 'Isin', second: 'Isin', overlap: 'float', unmatched_first: 'float', unmatched_second: 'float', by_name: 'float' = 0.0) -> None
+qrlab.lookthrough.Overlap.by_name  attribute float = 0.0
 qrlab.lookthrough.SPECIAL_BUCKETS  constant frozenset = ['cash', 'not looked through', 'unexplained', 'unknown']
 qrlab.lookthrough.TrackingDifference  class(start: 'date', end: 'date', fund_return: 'float', index_return: 'float', difference: 'float', annualised: 'float | None', by_year: 'Mapping[int, float]') -> None
 qrlab.lookthrough.TrackingSeries  class(levels: 'pd.Series', price_type: 'PriceType', currency: 'Currency', hedged_to: 'Currency | None') -> None

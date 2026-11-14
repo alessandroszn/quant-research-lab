@@ -8,6 +8,37 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Issuer holdings files as published (phase 8.2a: the reading layer; the iShares and Vanguard
+  mapping files follow in 8.2b, from the real downloads).
+  - **Country names.** `qrlab.instruments.countries` maps one ISO 3166-1 short name per code,
+    plus listed aliases ("Korea (South)", "Taiwan", "Turkey"…), to alpha-2 codes. Matching
+    ignores case, accents and spacing. An unknown name raises with its line; it is never
+    guessed. The names were checked against `pycountry` 26.2.16, which is not a dependency.
+  - **Holdings mappings** gain three keys:
+    - `country_format`: `"iso_alpha2"` or `"name"`;
+    - `country_values`: the file's own wording mapped to a code or `"unknown"`, such as
+      "European Union" or a cash line;
+    - `file_format`: `"csv"` or `"xlsx"`, with `sheet` for a workbook.
+  - **`parse_holdings_file`** reads CSV and xlsx files alike. Numeric cells are read as numbers.
+  - **Overlap matched by name.** Where a fund lists a security without an ISIN, the overlap
+    between funds also matches by normalised name (`qrlab.lookthrough.names.name_key`). This
+    part is reported on its own (`Overlap.by_name`) and labelled approximate in the report.
+    Two ISINs are never matched by name, and cash lines never are.
+  - **Issuer maps.** `load_issuer_map` reads a CSV `isin,issuer`; the `portfolio_report` kind
+    takes it as an optional `issuers` input, with holdings files. Example: two share classes of
+    one company count as one issuer.
+- New runtime dependency **openpyxl** (MIT). Reason: Vanguard publishes holdings as Excel
+  workbooks. Converting them to CSV by hand would be an unrecorded transformation of a raw
+  file, and it can change numbers and dates. It is used only to read xlsx holdings. New dev
+  dependency `types-openpyxl`, for mypy.
+
+### Changed
+
+- **Breaking for 1.0.0rc1 holdings mappings:** `country_format` and `file_format` are now
+  required, with `delimiter` and `encoding` for CSV and `sheet` for xlsx. Add
+  `file_format = "csv"` and `country_format = "iso_alpha2"` to keep the old behaviour. 1.0.0 is
+  not released yet.
+- The report's overlap table has a new column, "Of which by name", and a note.
 - Look-through and tracking in the `portfolio_report` kind (phase 7.4b), all optional. Without
   them, the existing configs run with byte-identical outputs.
   - **Holdings:** the groups `holdings` and `holdings_mapping`, keyed by fund ISIN, with

@@ -814,17 +814,23 @@ class _Builder:
         overlaps = inputs.overlaps()
         if overlaps:
             rows = tuple(
-                (p.first.code, p.second.code, self.pct(p.overlap),
+                (p.first.code, p.second.code, self.pct(p.overlap), self.pct(p.by_name),
                  f"{self.pct(p.unmatched_first)} / {self.pct(p.unmatched_second)}")
                 for p in overlaps
             )  # fmt: skip
             tables.append(
                 Table(
                     self.t("lt_overlap"),
-                    (self.t("fund"), self.t("fund"), self.t("overlap"), self.t("unmatched")),
+                    (
+                        self.t("fund"),
+                        self.t("fund"),
+                        self.t("overlap"),
+                        self.t("overlap_by_name"),
+                        self.t("unmatched"),
+                    ),
                     rows,
-                    ("left", "left", "right", "right"),
-                    (),
+                    ("left", "left", "right", "right", "right"),
+                    (self.t("lt_overlap_note"),),
                 )
             )
         tracking = []

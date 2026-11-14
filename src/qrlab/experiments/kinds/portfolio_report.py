@@ -29,6 +29,10 @@ Look-through and tracking (phase 7.4b), all optional, keyed by fund ISIN:
   date), ``weight_basis`` and ``sector_taxonomy`` (text, or ``"none"``). ``lookthrough_treatment``
   (``as_reported``/``normalised``) is required with holdings and refused without them. A fund
   not held on the last valuation date, or holdings dated after it, raise.
+- ``issuers`` (phase 8.2): a CSV ``isin,issuer`` (:func:`qrlab.instruments.load_issuer_map`)
+  that groups the securities of one issuer in the issuer exposure and its check; only with
+  holdings files. Holdings may be CSV or xlsx, with country codes or names, as their mapping
+  declares (:func:`qrlab.instruments.parse_holdings_file`).
 - ``[inputs.tracking]`` and ``[inputs.tracking_mapping]``: a price file with exactly two
   columns, the fund's (instrument id = its ISIN; NAV or total return) and its index's (total
   return), with ``[parameters.tracking.<ISIN>]`` giving ``index_hedged_to`` (a currency code or
@@ -72,7 +76,12 @@ from qrlab.experiments.kinds._params import (
 from qrlab.experiments.kinds._studies import raw_provenance
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.instruments.identifiers import Isin
-from qrlab.instruments.io import load_holdings_mapping, load_instruments, parse_holdings_csv
+from qrlab.instruments.io import (
+    load_holdings_mapping,
+    load_instruments,
+    load_issuer_map,
+    parse_holdings_file,
+)
 from qrlab.instruments.master import Instrument
 from qrlab.lookthrough.exposures import UNEXPLAINED, WeightTreatment, look_through
 from qrlab.lookthrough.inputs import LookThroughInputs
@@ -105,7 +114,7 @@ _INPUTS = (
     "instruments",
     "checks",
 )
-_OPTIONAL_INPUTS = ("fx",)
+_OPTIONAL_INPUTS = ("fx", "issuers")
 _GROUPS = (
     "extra_prices",
     "extra_prices_mapping",
@@ -237,6 +246,8 @@ def _check_inputs(parameters: object, names: frozenset[str]) -> None:
         raise ValidationError(
             "lookthrough_treatment is required with holdings and refused without them"
         )
+    if "issuers" in names and not keys("holdings"):
+        raise ValidationError("an issuers file is used only with holdings files")
 
 
 def _converter(context: RunContext, p: _Parameters) -> tuple[ToBase, str, list[Provenance]]:
@@ -289,7 +300,7 @@ def _lookthrough(
         isin = held(code, "holdings")
         spec = p.holdings[isin]
         source = local_provenance(path, dataset=f"holdings_{code}")
-        snapshots[isin] = parse_holdings_csv(
+        snapshots[isin] = parse_holdings_file(
             path.read_bytes(),
             source,
             load_holdings_mapping(mappings[code]),
@@ -328,6 +339,10 @@ def _lookthrough(
         tracking_difference(fund, index)  # refuses series that cannot be compared
         tracking[isin] = (fund, index)
         provenance.append(source)
+    issuers = None
+    if "issuers" in context.inputs:
+        issuers = load_issuer_map(context.inputs["issuers"])
+        provenance.append(local_provenance(context.inputs["issuers"], dataset="issuers"))
     exposures = look_through(
         as_of=as_of,
         position_weights=weights,
@@ -335,7 +350,7 @@ def _lookthrough(
         instruments=instruments,
         snapshots=snapshots,
         treatment=p.treatment or WeightTreatment.AS_REPORTED,  # no holdings: nothing to weigh
-        issuers=None,
+        issuers=issuers,
     )
     return LookThroughInputs(exposures, snapshots, tracking), provenance
 

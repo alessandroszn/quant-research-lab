@@ -323,3 +323,33 @@ def test_the_kind_lists_the_lookthrough_inputs() -> None:
     kind = KINDS["portfolio_report"]
     assert kind.input_groups[2:] == ("holdings", "holdings_mapping", "tracking", "tracking_mapping")
     assert kind.optional_parameters[1:] == ("lookthrough_treatment", "holdings", "tracking")
+
+
+def test_an_issuer_map_in_the_kind_by_hand(tmp_path: Path) -> None:
+    """Corp A (40 %) and Corp B (25 %) of one issuer, through a fund at 60 %: 0.6 x 0.65 = 39 %."""
+    issuers = tmp_path / "issuers.csv"
+    issuers.write_text(
+        "isin,issuer\nUS0000000119,Example Group\nUS0000000127,Example Group\n", encoding="utf-8"
+    )
+    record, out = _run(_setup(tmp_path / "run", inputs_extra=f'issuers = "{issuers.as_posix()}"\n'))
+    assert record["status"] == "success", record["error"]
+    findings = pd.read_csv(out / "check_findings.csv")
+    issuer = findings[findings["check"] == "lookthrough.issuer"]
+    assert issuer["observed"].tolist() == pytest.approx([0.39])
+    rows = pd.read_csv(out / "exposures.csv", index_col=0, keep_default_na=False)
+    grouped = rows.groupby("issuer")["weight"].sum()
+    assert grouped["Example Group"] == pytest.approx(0.39)
+    assert "issuers" in record["inputs"]  # type: ignore[operator]
+
+
+def test_an_issuer_map_needs_holdings(tmp_path: Path) -> None:
+    issuers = tmp_path / "issuers.csv"
+    issuers.write_text("isin,issuer\nUS0000000119,Example Group\n", encoding="utf-8")
+    config = _setup(
+        tmp_path / "run",
+        holdings=False,
+        treatment=None,
+        inputs_extra=f'issuers = "{issuers.as_posix()}"\n',
+    )
+    with pytest.raises(ValidationError, match="issuers file"):
+        validate_experiment(config, kinds=KINDS)
