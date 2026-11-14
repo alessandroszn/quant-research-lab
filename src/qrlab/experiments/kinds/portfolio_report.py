@@ -22,6 +22,22 @@ Several currencies (phase 7.4a), all optional:
   mapping per key (e.g. ``usd``), with the same keys in both groups, for prices in other
   currencies. An ISIN in two price files raises.
 
+Look-through and tracking (phase 7.4b), all optional, keyed by fund ISIN:
+
+- ``[inputs.holdings]`` and ``[inputs.holdings_mapping]``: the fund's holdings file and its
+  mapping (phase 1.3), with ``[parameters.holdings.<ISIN>]`` giving ``as_of`` (the holdings
+  date), ``weight_basis`` and ``sector_taxonomy`` (text, or ``"none"``). ``lookthrough_treatment``
+  (``as_reported``/``normalised``) is required with holdings and refused without them. A fund
+  not held on the last valuation date, or holdings dated after it, raise.
+- ``[inputs.tracking]`` and ``[inputs.tracking_mapping]``: a price file with exactly two
+  columns, the fund's (instrument id = its ISIN; NAV or total return) and its index's (total
+  return), with ``[parameters.tracking.<ISIN>]`` giving ``index_hedged_to`` (a currency code or
+  ``"none"``). The fund's hedge currency comes from the instruments file.
+
+With either, the look-through on the last valuation date goes to the health checks and the
+report, and the run writes ``exposures.csv`` (one row per piece of exposure) and the scalars
+``lookthrough_funds`` and ``unexplained_weight``. Without them, nothing changes.
+
 Valuation dates are the dates of all price files from the first transaction on. The report is
 descriptive.
 """
@@ -29,7 +45,7 @@ descriptive.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 
 import pandas as pd
@@ -47,6 +63,7 @@ from qrlab.data.user_csv import load_csv_mapping, parse_price_csv
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._params import (
     choice,
+    day,
     local_provenance,
     moment,
     text,
@@ -55,7 +72,11 @@ from qrlab.experiments.kinds._params import (
 from qrlab.experiments.kinds._studies import raw_provenance
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.instruments.identifiers import Isin
-from qrlab.instruments.io import load_instruments
+from qrlab.instruments.io import load_holdings_mapping, load_instruments, parse_holdings_csv
+from qrlab.instruments.master import Instrument
+from qrlab.lookthrough.exposures import UNEXPLAINED, WeightTreatment, look_through
+from qrlab.lookthrough.inputs import LookThroughInputs
+from qrlab.lookthrough.tracking import TrackingSeries, tracking_difference
 from qrlab.portfolio.broker_import import load_broker_mapping, parse_broker_csv
 from qrlab.portfolio.ledger import ToBase, replay
 from qrlab.portfolio.performance import FlowTiming, external_flows_by_date, time_weighted_returns
@@ -85,8 +106,22 @@ _INPUTS = (
     "checks",
 )
 _OPTIONAL_INPUTS = ("fx",)
-_GROUPS = ("extra_prices", "extra_prices_mapping")
-_OPTIONAL_PARAMETERS = ("fx_max_age_days",)
+_GROUPS = (
+    "extra_prices",
+    "extra_prices_mapping",
+    "holdings",
+    "holdings_mapping",
+    "tracking",
+    "tracking_mapping",
+)
+_OPTIONAL_PARAMETERS = ("fx_max_age_days", "lookthrough_treatment", "holdings", "tracking")
+
+
+@dataclass(frozen=True)
+class _Holdings:
+    as_of: date
+    weight_basis: str
+    sector_taxonomy: str | None
 
 
 @dataclass(frozen=True)
@@ -100,6 +135,32 @@ class _Parameters:
     generated_at: datetime
     targets: Mapping[str, float] | None
     fx_max_age_days: int | None
+    treatment: WeightTreatment | None
+    holdings: Mapping[Isin, _Holdings]
+    index_hedged_to: Mapping[Isin, Currency | None]
+
+
+def _per_fund(
+    parameters: Mapping[str, object], key: str, required: set[str]
+) -> dict[Isin, Mapping[str, object]]:
+    """Read ``[parameters.<key>.<ISIN>]`` tables (absent: empty)."""
+    if key not in parameters:
+        return {}
+    value = parameters[key]
+    if not isinstance(value, dict) or not value:
+        raise ValidationError(f"[parameters.{key}] must hold one table per fund ISIN")
+    out: dict[Isin, Mapping[str, object]] = {}
+    for code, spec in value.items():
+        if not isinstance(spec, dict):
+            raise ValidationError(f"[parameters.{key}.{code}] must be a table")
+        require_keys(spec, required=required, optional=set(), where=f"[parameters.{key}.{code}]")
+        out[Isin(code)] = spec
+    return out
+
+
+def _currency_or_none(parent: Mapping[str, object], key: str) -> Currency | None:
+    value = text(parent, key)
+    return None if value == "none" else Currency(value)
 
 
 def _parse(parameters: Mapping[str, object]) -> _Parameters:
@@ -126,6 +187,27 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         fx_max_age_days=whole(parameters, "fx_max_age_days", minimum=0)
         if "fx_max_age_days" in parameters
         else None,
+        treatment=WeightTreatment(
+            choice(parameters, "lookthrough_treatment", {"as_reported", "normalised"})
+        )
+        if "lookthrough_treatment" in parameters
+        else None,
+        holdings={
+            isin: _Holdings(
+                as_of=day(spec, "as_of"),
+                weight_basis=text(spec, "weight_basis"),
+                sector_taxonomy=None
+                if text(spec, "sector_taxonomy") == "none"
+                else text(spec, "sector_taxonomy"),
+            )
+            for isin, spec in _per_fund(
+                parameters, "holdings", {"as_of", "weight_basis", "sector_taxonomy"}
+            ).items()
+        },
+        index_hedged_to={
+            isin: _currency_or_none(spec, "index_hedged_to")
+            for isin, spec in _per_fund(parameters, "tracking", {"index_hedged_to"}).items()
+        },
     )
 
 
@@ -135,11 +217,25 @@ def _check_inputs(parameters: object, names: frozenset[str]) -> None:
         raise ValidationError(
             "fx_max_age_days is required with an fx input and refused without one"
         )
-    keys = [{n.split(".", 1)[1] for n in names if n.startswith(f"{g}.")} for g in _GROUPS]
-    if keys[0] != keys[1]:
+
+    def keys(group: str) -> set[str]:
+        return {n.split(".", 1)[1] for n in names if n.startswith(f"{group}.")}
+
+    pairs: list[tuple[str, set[str], set[str], set[str] | None]] = [
+        ("extra_prices and extra_prices_mapping", keys("extra_prices"),
+         keys("extra_prices_mapping"), None),
+        ("holdings, holdings_mapping and [parameters.holdings]", keys("holdings"),
+         keys("holdings_mapping"), {i.code for i in p.holdings}),
+        ("tracking, tracking_mapping and [parameters.tracking]", keys("tracking"),
+         keys("tracking_mapping"), {i.code for i in p.index_hedged_to}),
+    ]  # fmt: skip
+    for label, files, file_mappings, specs in pairs:
+        if files != file_mappings or (specs is not None and specs != files):
+            given = [sorted(files), sorted(file_mappings)] + ([sorted(specs)] if specs else [])
+            raise ValidationError(f"{label} need the same keys: got {given}")
+    if bool(keys("holdings")) != (p.treatment is not None):
         raise ValidationError(
-            "extra_prices and extra_prices_mapping need the same keys: "
-            f"{sorted(keys[0])} and {sorted(keys[1])}"
+            "lookthrough_treatment is required with holdings and refused without them"
         )
 
 
@@ -165,6 +261,83 @@ def _converter(context: RunContext, p: _Parameters) -> tuple[ToBase, str, list[P
         parse_ecb_fx(path.read_bytes(), provenance), base=p.base, max_age_days=age
     )
     return converter, f"ECB reference rates, max age {age} days", [provenance]
+
+
+def _lookthrough(
+    context: RunContext,
+    p: _Parameters,
+    check_context: CheckContext,
+    instruments: Mapping[Isin, Instrument],
+) -> tuple[LookThroughInputs | None, list[Provenance]]:
+    """Build the look-through on the last valuation date from the holdings and tracking files."""
+    holdings_files, tracking_files = context.group("holdings"), context.group("tracking")
+    if not holdings_files and not tracking_files:
+        return None, []
+    as_of = check_context.as_of
+    weights = check_context.position_weights()
+    provenance: list[Provenance] = []
+
+    def held(code: str, what: str) -> Isin:
+        isin = Isin(code)
+        if isin not in weights:
+            raise ValidationError(f"{what} of {code}: the fund is not held on {as_of}")
+        return isin
+
+    snapshots = {}
+    mappings = context.group("holdings_mapping")
+    for code, path in sorted(holdings_files.items()):
+        isin = held(code, "holdings")
+        spec = p.holdings[isin]
+        source = local_provenance(path, dataset=f"holdings_{code}")
+        snapshots[isin] = parse_holdings_csv(
+            path.read_bytes(),
+            source,
+            load_holdings_mapping(mappings[code]),
+            fund=isin,
+            as_of=spec.as_of,
+            weight_basis=spec.weight_basis,
+            sector_taxonomy=spec.sector_taxonomy,
+        )
+        provenance.append(source)
+    tracking = {}
+    mappings = context.group("tracking_mapping")
+    for code, path in sorted(tracking_files.items()):
+        isin = held(code, "tracking")
+        source = local_provenance(path, dataset=f"tracking_{code}")
+        data = parse_price_csv(path.read_bytes(), source, load_csv_mapping(mappings[code]))
+        columns = [str(c) for c in data.dataset.data.columns]
+        if code not in columns or len(columns) != 2:
+            raise ValidationError(
+                f"tracking file of {code} needs exactly two columns: the column for {code} (the "
+                f"fund) and one for its index; got {columns}"
+            )
+        if isin not in instruments:
+            raise ValidationError(f"tracking of {code}: the fund is not in the instruments file")
+        index_column = next(c for c in columns if c != code)
+        currency = data.dataset.currency
+        assert currency is not None  # a price mapping always has a currency
+        fund = TrackingSeries(
+            data.dataset.data[code], data.price_types[code], currency, instruments[isin].hedged_to
+        )
+        index = TrackingSeries(
+            data.dataset.data[index_column],
+            data.price_types[index_column],
+            currency,
+            p.index_hedged_to[isin],
+        )
+        tracking_difference(fund, index)  # refuses series that cannot be compared
+        tracking[isin] = (fund, index)
+        provenance.append(source)
+    exposures = look_through(
+        as_of=as_of,
+        position_weights=weights,
+        cash_weights=check_context.cash_weights(),
+        instruments=instruments,
+        snapshots=snapshots,
+        treatment=p.treatment or WeightTreatment.AS_REPORTED,  # no holdings: nothing to weigh
+        issuers=None,
+    )
+    return LookThroughInputs(exposures, snapshots, tracking), provenance
 
 
 def _run(context: RunContext) -> ExperimentOutput:
@@ -218,6 +391,8 @@ def _run(context: RunContext) -> ExperimentOutput:
         target_weights=p.targets,
         lookthrough=None,
     )
+    lookthrough, lookthrough_provenance = _lookthrough(context, p, check_context, instruments)
+    check_context = replace(check_context, lookthrough=lookthrough)
     checks = run_checks(check_context, load_check_config(files["checks"]))
     report = build_portfolio_report(
         name=p.title,
@@ -230,12 +405,17 @@ def _run(context: RunContext) -> ExperimentOutput:
         flow_timing=p.timing,
         max_price_age_days=p.max_price_age_days,
         fx_description=fx_description,
-        provenance=[imported.provenance, *price_provenance, *fx_provenance],
+        provenance=[
+            imported.provenance,
+            *price_provenance,
+            *lookthrough_provenance,
+            *fx_provenance,
+        ],
         instruments=instruments,
         import_notes=list(imported.notes),
         return_frequency=(Frequency.MONTHLY, 12.0) if p.monthly else None,
         checks=checks,
-        lookthrough=None,
+        lookthrough=lookthrough,
         risk=None,
         projection=None,
     )
@@ -247,17 +427,22 @@ def _run(context: RunContext) -> ExperimentOutput:
         columns=["check", "severity", "subject", "observed", "threshold"],
     )
     end = valuation.totals[dates[-1]]
-    return ExperimentOutput(
-        tables={"check_findings": Tagged(findings, "descriptive")},
-        scalars={
-            "end_value": Tagged(float(end), "descriptive"),
-            "twr_total": Tagged(float(twr.total), "descriptive"),
-            "critical_findings": Tagged(
-                float(sum(f.severity.value == "critical" for f in checks.findings)), "descriptive"
-            ),
-        },
-        report_html=render_html(report),
-    )
+    tables = {"check_findings": Tagged(findings, "descriptive")}
+    scalars = {
+        "end_value": Tagged(float(end), "descriptive"),
+        "twr_total": Tagged(float(twr.total), "descriptive"),
+        "critical_findings": Tagged(
+            float(sum(f.severity.value == "critical" for f in checks.findings)), "descriptive"
+        ),
+    }
+    if lookthrough is not None:
+        rows = lookthrough.exposures.rows
+        tables["exposures"] = Tagged(rows.rename_axis("row"), "descriptive")
+        scalars["lookthrough_funds"] = Tagged(float(len(lookthrough.snapshots)), "descriptive")
+        scalars["unexplained_weight"] = Tagged(
+            float(rows.loc[rows["kind"] == UNEXPLAINED, "weight"].sum()), "descriptive"
+        )
+    return ExperimentOutput(tables=tables, scalars=scalars, report_html=render_html(report))
 
 
 KIND = ExperimentKind(

@@ -8,6 +8,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Look-through and tracking in the `portfolio_report` kind (phase 7.4b), all optional. Without
+  them, the existing configs run with byte-identical outputs.
+  - **Holdings:** the groups `holdings` and `holdings_mapping`, keyed by fund ISIN, with
+    `[parameters.holdings.<ISIN>]` (`as_of`, `weight_basis`, `sector_taxonomy`).
+    `lookthrough_treatment` is required with holdings and refused without them.
+  - **Tracking:** the groups `tracking` and `tracking_mapping`, two-column price files with the
+    fund's NAV or total return and its index's total return, with
+    `[parameters.tracking.<ISIN>] index_hedged_to`.
+  - **What it feeds:** the look-through on the last valuation date goes to the report's
+    look-through section and to the nine look-through, tracking and stale-holdings checks.
+  - **New outputs:** `exposures.csv` and the scalars `lookthrough_funds` and
+    `unexplained_weight`.
+  - **What is refused:** holdings or tracking for a fund not held, and holdings dated after the
+    report.
+  - **Hand-checked:** 24.0 / 15.0 / 12.0 / 8.4 % and 0.6 % unexplained for a fund at 60 %, and a
+    tracking difference of -0.09 %. The kind's exposures equal `look_through` called directly.
+  - **Full example:** `example_portfolio_report_full.toml` now includes look-through and
+    tracking, and the app's smoke test runs it. Its USD fund now has its own made-up ISIN,
+    `US0000001000`, distinct from a security in the world fund's holdings.
 - Several currencies in the `portfolio_report` kind (phase 7.4a). All of it is optional:
   existing configs run unchanged, with byte-identical outputs.
   - **`fx` input:** the ECB `eurofxref-hist` zip. Its provenance comes from the raw store's

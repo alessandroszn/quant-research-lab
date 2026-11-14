@@ -582,3 +582,35 @@ def test_settings_file_round_trip(qapp: QApplication, tmp_path: Path) -> None:
     assert [r.path for r in again.recent()] == [odd.resolve()]
     with pytest.raises(ValueError, match="INI"):
         QtSettingsStore(QSettings(str(tmp_path / "x.conf"), QSettings.Format.NativeFormat))
+
+
+def test_the_full_portfolio_example_runs_in_the_app(qapp: QApplication, tmp_path: Path) -> None:
+    """Two currencies, input groups, look-through and tracking, run from the app (7.4b)."""
+    root = tmp_path / "ws"
+    (root / "configs").mkdir(parents=True)
+    full = ROOT / "configs" / "experiments" / "example_portfolio_report_full.toml"
+    text = full.read_text(encoding="utf-8")
+    text = text.replace('"../../', f'"{ROOT.as_posix()}/').replace(
+        '"../', f'"{(ROOT / "configs").as_posix()}/'
+    )
+    start = text.index('directory = "')
+    end = text.index('"', start + len('directory = "'))
+    text = text[:start] + 'directory = "../results/full"' + text[end + 1 :]
+    (root / "configs" / "full.toml").write_text(text, encoding="utf-8")
+    user = FakeUser(root)
+    pool = QThreadPool()
+    window = _window(user, pool)
+    window.home.open_button.click()
+    portfolio = window.screen_for("portfolio_report")
+    portfolio.refresh()
+    assert portfolio.configs.count() == 1
+    portfolio.configs.itemClicked.emit(portfolio.configs.item(0))
+    portfolio.validate_button.click()
+    assert portfolio.message.text().startswith("Valid: example-portfolio-report-full")
+    portfolio.run_button.click()
+    _wait(portfolio, pool)
+    assert portfolio.message.text() == "Finished: success."
+    tabs = [portfolio.results.tabs.tabText(i) for i in range(portfolio.results.tabs.count())]
+    assert "exposures [descriptive]" in tabs
+    assert portfolio.results.report_button.isEnabled()
+    window.close()

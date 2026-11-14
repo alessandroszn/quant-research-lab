@@ -1,8 +1,8 @@
 Riferimento;Data;Operazione;ISIN;Quantita;Prezzo;Divisa;Importo;Commissioni;Imposte;Controvalore;Divisa controvalore;Descrizione
 t5;31/03/2026;Vendita;IE0000000012;-50;54,00;EUR;;-10,00;;;;
-t9;27/02/2026;Dividendo;US0000000119;;;USD;5,00;;;;;
+t9;27/02/2026;Dividendo;US0000001000;;;USD;5,00;;;;;
 t4;27/02/2026;Dividendo;IE0000000012;;;EUR;100,00;;;;;
-t8;30/01/2026;Acquisto;US0000000119;10;100,00;USD;;-2,00;;;;
+t8;30/01/2026;Acquisto;US0000001000;10;100,00;USD;;-2,00;;;;
 t7;30/01/2026;Cambio valuta;;;;EUR;-1.000,00;;;1.240,00;USD;
 t3;30/01/2026;Bonifico in entrata;;;;EUR;5.000,00;;;;;
 t2;02/01/2026;Acquisto;IE0000000012;100;50,00;EUR;;-10,00;;;;

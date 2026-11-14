@@ -1,0 +1,9 @@
+Synthetic World Equity UCITS ETF
+Holdings as of 31/03/2026
+Name,ISIN,Weight (%),Country Code,Sector,Currency,Asset Class
+Example Corp A,US0000000119,40.0,US,Technology,USD,Equity
+Example Corp B,US0000000127,25.0,US,Health Care,USD,Equity
+Example Corp C,JP0000000133,20.0,JP,Industrials,JPY,Equity
+Example Corp D,DE0000000140,14.0,DE,Financials,EUR,Equity
+
+Synthetic file: the weights deliberately sum to 99 % to show the unexplained bucket.
