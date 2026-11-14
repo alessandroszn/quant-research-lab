@@ -1,0 +1,33 @@
+# Synthetic master data for the full example portfolio (made-up ISINs with valid check
+# digits).
+[IE0000000012]
+name = "Example World Equity UCITS ETF"
+instrument_type = "etf"
+asset_class = "equity"
+currency = "EUR"
+as_of = 2026-01-02
+domicile = "IE"
+replication = "physical_sampling"
+distribution = "accumulating"
+ter = "0.0020"
+benchmark = "Example World Index"
+hedged_to = "none"
+inception = "unknown"
+fund_size = "unknown"
+source = "synthetic example"
+
+[US0000000119]
+name = "Example US Equity ETF"
+instrument_type = "etf"
+asset_class = "equity"
+currency = "USD"
+as_of = 2026-01-02
+domicile = "US"
+replication = "physical_full"
+distribution = "distributing"
+ter = "0.0010"
+benchmark = "Example US Index"
+hedged_to = "none"
+inception = "unknown"
+fund_size = "unknown"
+source = "synthetic example"

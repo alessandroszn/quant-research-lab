@@ -165,12 +165,16 @@ qrlab.data.parse_long_short_returns  function(content: 'bytes', provenance: 'Pro
 qrlab.data.parse_price_csv  function(content: 'bytes', provenance: 'Provenance', mapping: 'CsvMapping') -> 'PriceData'
 qrlab.data.parse_signal_doc  function(content: 'bytes', provenance: 'Provenance') -> 'pd.DataFrame'
 qrlab.data.parse_yield_curve  function(content: 'bytes', provenance: 'Provenance') -> 'Dataset'
-qrlab.experiments.ExperimentConfig  class(path: 'Path', name: 'str', kind: 'str', hypothesis: 'str', seed: 'int | None', inputs: 'Mapping[str, Path]', given_inputs: 'Mapping[str, str]', parameters: 'Mapping[str, object]', output_dir: 'Path', raw: 'Mapping[str, object]', hash: 'str') -> None
-qrlab.experiments.ExperimentKind  class(name: 'str', description: 'str', inputs: 'tuple[str, ...]', needs_seed: 'bool', parameters: 'tuple[str, ...]', parse: 'Callable[[Mapping[str, object]], object]', run: 'Callable[[RunContext], ExperimentOutput]', optional_inputs: 'tuple[str, ...]' = ()) -> None
+qrlab.experiments.ExperimentConfig  class(path: 'Path', name: 'str', kind: 'str', hypothesis: 'str', seed: 'int | None', inputs: 'Mapping[str, Path]', given_inputs: 'Mapping[str, str]', parameters: 'Mapping[str, object]', output_dir: 'Path', raw: 'Mapping[str, object]', hash: 'str', input_groups: 'frozenset[str]' = frozenset()) -> None
+qrlab.experiments.ExperimentConfig.input_groups  attribute frozenset = []
+qrlab.experiments.ExperimentKind  class(name: 'str', description: 'str', inputs: 'tuple[str, ...]', needs_seed: 'bool', parameters: 'tuple[str, ...]', parse: 'Callable[[Mapping[str, object]], object]', run: 'Callable[[RunContext], ExperimentOutput]', optional_inputs: 'tuple[str, ...]' = (), input_groups: 'tuple[str, ...]' = (), optional_parameters: 'tuple[str, ...]' = (), check_inputs: 'Callable[[object, frozenset[str]], None] | None' = None) -> None
+qrlab.experiments.ExperimentKind.input_groups  attribute tuple = []
 qrlab.experiments.ExperimentKind.optional_inputs  attribute tuple = []
+qrlab.experiments.ExperimentKind.optional_parameters  attribute tuple = []
 qrlab.experiments.ExperimentOutput  class(tables: 'Mapping[str, Tagged]' = <factory>, scalars: 'Mapping[str, Tagged]' = <factory>, figures: 'Mapping[str, bytes]' = <factory>, report_html: 'str | None' = None, notice: 'str | None' = None) -> None
 qrlab.experiments.RECORD_FORMAT  constant int = 1
 qrlab.experiments.RunContext  class(config: 'ExperimentConfig', parameters: 'object', inputs: 'Mapping[str, Path]', seed: 'int | None') -> None
+qrlab.experiments.RunContext.group  method(name: 'str') -> 'dict[str, Path]'
 qrlab.experiments.RunResult  class(output_dir: 'Path', record: 'Mapping[str, Any]') -> None
 qrlab.experiments.RunResult.succeeded  property
 qrlab.experiments.TAGS  constant frozenset = ['descriptive', 'in_sample', 'out_of_sample']

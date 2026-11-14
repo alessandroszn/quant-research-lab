@@ -187,7 +187,14 @@ def config_template(kind: ExperimentKind) -> str:
     lines += ["", "[inputs]"]
     lines += [f'{name} = "../data/FILL-IN"' for name in kind.inputs]
     lines += [f'# {name} = "../data/FILL-IN"  # optional' for name in kind.optional_inputs]
+    for group in kind.input_groups:
+        lines += [
+            "",
+            f"# [inputs.{group}]  # optional group: one file per key",
+            '# KEY = "../data/FILL-IN"',
+        ]
     lines += ["", "[parameters]"]
     lines += [f"# {name} = FILL-IN" for name in kind.parameters]
+    lines += [f"# {name} = FILL-IN  # optional" for name in kind.optional_parameters]
     lines += ["", "[output]", 'directory = "../results/my-experiment"', ""]
     return "\n".join(lines)

@@ -29,6 +29,18 @@ directory = "../../results/example-risk-report"
 
 - **Unknown keys raise.** A typo is never silently ignored, and the same holds for unknown
   inputs.
+- **Groups of files.** A kind may accept a table of files with free keys instead of a single
+  file. For example, the `portfolio_report` kind takes one extra price file per currency:
+  ```toml
+  [inputs.extra_prices]
+  usd = "../../examples/data/prices_usd.csv"
+
+  [inputs.extra_prices_mapping]
+  usd = "../../examples/data/prices_usd_mapping.toml"
+  ```
+  Each file is recorded as `<group>.<key>` (here `extra_prices.usd`), with its SHA-256, like
+  any other input. Keys must be non-empty and contain no dot; `qrlab kinds` lists the groups
+  each kind accepts.
 - **Conventions are explicit.** Periods per year, the date format and decimal separator of
   input files, execution lags and cost models are parameters. Nothing is guessed.
 - **Templates.** `qrlab.experiments.workspace.config_template` writes a commented template for

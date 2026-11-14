@@ -41,7 +41,11 @@ def main(
             print(f"  inputs: {', '.join(kind.inputs) or 'none'}")
             if kind.optional_inputs:
                 print(f"  optional inputs: {', '.join(kind.optional_inputs)}")
+            if kind.input_groups:
+                print(f"  optional input groups: {', '.join(kind.input_groups)}")
             print(f"  parameters: {', '.join(kind.parameters)}")
+            if kind.optional_parameters:
+                print(f"  optional parameters: {', '.join(kind.optional_parameters)}")
             print(f"  seed: {'required' if kind.needs_seed else 'not used'}")
         return OK
     try:
