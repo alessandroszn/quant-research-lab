@@ -38,6 +38,7 @@ dependencies = [
     "scipy>=1.14",
     "statsmodels>=0.14",
     "matplotlib>=3.9",
+    "openpyxl>=3.1",
 ]
 
 [project.urls]
@@ -73,6 +74,7 @@ dev = [
     "scikit-learn>=1.9.1",
     "pyarrow>=18",
     "pyside6-essentials>=6.8",
+    "types-openpyxl>=3.1.5.20261017",
 ]
 docs = [
     "myst-parser>=4.0",

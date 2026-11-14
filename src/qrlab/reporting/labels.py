@@ -223,6 +223,11 @@ _EN = {
     "lt_overlap": "Overlap between funds",
     "fund": "Fund",
     "overlap": "Overlap",
+    "overlap_by_name": "Of which by name",
+    "lt_overlap_note": (
+        "Securities are matched by ISIN and, where a fund lists one without an ISIN, by "
+        "normalised name. Matches by name are approximate."
+    ),
     "unmatched": "Without ISIN",
     "lt_tracking": "Tracking difference",
     "series_type": "Series",
@@ -490,6 +495,11 @@ _IT = {
     "lt_overlap": "Sovrapposizione tra fondi",
     "fund": "Fondo",
     "overlap": "Sovrapposizione",
+    "overlap_by_name": "Di cui per nome",
+    "lt_overlap_note": (
+        "I titoli sono abbinati per ISIN e, dove un fondo ne indica uno senza ISIN, per nome "
+        "normalizzato. Gli abbinamenti per nome sono approssimati."
+    ),
     "unmatched": "Senza ISIN",
     "lt_tracking": "Tracking difference",
     "series_type": "Serie",

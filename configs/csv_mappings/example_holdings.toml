@@ -1,6 +1,7 @@
 # Example mapping for a fund holdings file (synthetic). Formats are declared, never guessed.
 # Save the issuer's file under data/ and import it with qrlab.data.import_local_file.
 
+file_format = "csv"              # "csv" or "xlsx" (an xlsx file needs sheet = "...")
 skip_rows = 2                    # lines before the header (issuer preamble)
 delimiter = ","
 decimal_separator = "."
@@ -9,6 +10,7 @@ encoding = "utf-8"
 weight_unit = "percent"          # "percent" (12.5 = 12.5 %) or "decimal" (0.125)
 missing_tokens = ["", "-"]       # cells meaning "unknown"
 asset_class = "column"           # "column" to read it from the file, or a fixed class like "equity"
+country_format = "iso_alpha2"    # "iso_alpha2" (US) or "name" (United States)
 
 # Canonical field -> header in the file. name and weight are required; isin, country, sector,
 # currency and asset_class are optional (unmapped fields are unknown for every holding).

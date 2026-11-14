@@ -28,7 +28,16 @@ Your files are read only through explicit mappings, so nothing about their forma
 
 - broker exports (transactions), through {py:func}`qrlab.portfolio.load_broker_mapping`;
 - price files, through {py:func}`qrlab.data.load_csv_mapping`;
-- fund holdings, through {py:func}`qrlab.instruments.load_holdings_mapping`.
+- fund holdings, through {py:func}`qrlab.instruments.load_holdings_mapping`, as CSV or Excel
+  (xlsx), with country codes or country names
+  ({py:func}`qrlab.instruments.parse_holdings_file`);
+- issuer maps (`isin,issuer`), through {py:func}`qrlab.instruments.load_issuer_map`.
+
+**Issuer holdings files** (iShares, Vanguard and others) are downloaded by you, for your own
+analysis, from the issuer's website. qrlab has no code that downloads them, and they are
+never redistributed: they stay in `data/`, and tests use synthetic files with the same
+layout. The terms of each issuer's website are reviewed before a mapping file for its layout
+is added to `configs/csv_mappings/`.
 
 {py:func}`qrlab.data.import_local_file` copies a file into the raw store with its provenance.
 
