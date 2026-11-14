@@ -20,6 +20,7 @@ as_of = 2026-10-30
 value = 100000
 currency = "EUR"
 position_returns_currency = "EUR"
+position_returns_price_type = "total_return"
 csv_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", decimal_separator = "." }
 
 [output]

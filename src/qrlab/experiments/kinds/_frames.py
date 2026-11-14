@@ -10,6 +10,7 @@ import pandas as pd
 from qrlab.core.errors import ValidationError
 from qrlab.core.returns import ReturnKind
 from qrlab.core.series import NanPolicy
+from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._params import boolean, choice, number, table, text
 from qrlab.risk.covariance import (
@@ -20,15 +21,54 @@ from qrlab.risk.covariance import (
 )
 
 __all__ = [
+    "ADVICE",
     "COVARIANCE_ESTIMATORS",
+    "PRICE_RETURNS",
     "covariance_spec",
     "estimate_covariance",
+    "price_type",
     "read_returns",
     "returns_format",
+    "returns_notice",
     "weights",
 ]
 
 COVARIANCE_ESTIMATORS = ("sample", "ewma", "ledoit_wolf")
+
+ADVICE = "Research analytics, not investment advice."
+PRICE_RETURNS = (
+    "Returns declared as price returns (dividends excluded): return levels are understated by "
+    "about the dividend yield; volatilities and correlations are barely affected."
+)
+_DECLARED = {"total_return": PriceType.TOTAL_RETURN, "price": PriceType.PRICE}
+
+
+def price_type(parameters: Mapping[str, object], key: str) -> PriceType:
+    """Read the declared price type of a returns file: ``"total_return"`` or ``"price"``.
+
+    ``"nav"`` is refused: a NAV return includes the income of an accumulating fund but not of a
+    distributing one, so it does not say which of the two the returns are. The declaration only
+    labels the data; nothing is converted.
+    """
+    if parameters.get(key) == "nav":
+        raise ValidationError(
+            f"{key} = 'nav' does not say whether income is included: declare 'total_return' "
+            "for an accumulating fund (income stays in the NAV) or 'price' for a distributing "
+            "fund (income is paid out)"
+        )
+    return _DECLARED[choice(parameters, key, set(_DECLARED))]
+
+
+def returns_notice(caveats: str | None, declared: PriceType | None) -> str | None:
+    """Join a kind's caveats, the price-return sentence when it applies, and :data:`ADVICE`.
+
+    ``declared`` is ``None`` when the run reads no returns file whose type was declared. With
+    no caveats and no price returns there is no notice (``None``).
+    """
+    sentences = [caveats] if caveats else []
+    if declared is PriceType.PRICE:
+        sentences.append(PRICE_RETURNS)
+    return " ".join([*sentences, ADVICE]) if sentences else None
 
 
 def returns_format(parameters: Mapping[str, object], key: str = "returns_format") -> dict[str, str]:

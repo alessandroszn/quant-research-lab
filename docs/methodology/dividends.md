@@ -36,6 +36,17 @@ gap is the dividend, not tracking.
 - **Valuation refuses total-return prices.** {py:class}`qrlab.portfolio.PriceSeries` raises for
   `PriceType.TOTAL_RETURN`, because the ledger already books dividends as cash. This blocks
   the double count in the example.
+- **Returns files declare their type** (phase 7.3). The `backtest`, `optimisation` and
+  `risk_report` kinds require `returns_price_type`; `scenario_analysis` requires
+  `position_returns_price_type`.
+  - **Values:** `"total_return"` or `"price"`. `"nav"` is refused because it is ambiguous: a
+    NAV return includes the income of an accumulating fund but not of a distributing one.
+  - **With `"price"`:** the run's notice (`NOTICE.txt`, the record, `qrlab run` and the app)
+    says that return levels are understated by about the dividend yield, while volatilities
+    and correlations are barely affected. The numbers themselves are unchanged.
+  - **Size of the error:** in the example above, 3 percentage points a year. `mean_variance`
+    and `maximum_sharpe` optimisation use mean returns and are the most affected; the
+    covariance-only methods hardly move.
 - **Tracking needs income on both sides.** {py:func}`qrlab.lookthrough.tracking_difference`
   and {py:func}`qrlab.lookthrough.tracking_error` accept a fund series only if it is NAV or
   total return, and an index series only if it is total return. A price-only fund series
@@ -58,6 +69,10 @@ gap is the dividend, not tracking.
 - `tests/unit/portfolio/test_performance.py`: `test_pnl_breakdown_toy_reconciles_exactly`
   (the toy portfolio includes a dividend of 100), `test_contribution_by_position_sums_to_total`.
 - `tests/unit/lookthrough/test_tracking.py`: `test_series_must_be_comparable`.
+- `tests/unit/experiments/test_returns_price_type.py`: `test_nav_is_refused_with_what_to_use_instead`,
+  `test_the_declaration_is_required`, `test_the_declaration_labels_the_data_and_changes_no_number`
+  (same tables and scalars with either declaration; the notice differs by the one sentence),
+  `test_no_position_returns_no_price_sentence`.
 - `tests/unit/data/test_user_csv.py`: `test_column_spec_validation`,
   `test_config_with_unknown_or_missing_keys_raises`.
 - `tests/unit/checks/test_checks_library.py`: `test_etf_shares_with_unknown_fields`,
@@ -65,12 +80,17 @@ gap is the dividend, not tracking.
 
 ## Limits
 
-- **The flag is required only where prices enter.** User price files, valuation and tracking
-  check the series type. The `backtest`, `optimisation`, `risk_report` and `scenario_analysis`
-  experiment kinds read a CSV of returns with no price-type field. Nothing checks whether those
-  returns include dividends; the user must supply total returns. The risk register's
-  "total- vs. price-return flag required" is therefore true for price data, not for return
-  files.
+- **A returns declaration is trusted.** qrlab cannot tell from a returns file whether
+  dividends are included. One value covers the whole file, so a file that mixes total-return
+  and price-return columns is not detected.
+- **Price returns are labelled, not converted.** No dividend yield is added; that would need
+  dated dividend data, which these kinds do not take.
+- **Factor and currency files declare nothing.** The `factors` and `fx` inputs of
+  `scenario_analysis` have no declaration: factor returns such as Fama-French already include
+  dividends, and currency returns have none.
+- **Backtest taxes.** The `backtest` kind taxes realised capital gains only. With total
+  returns, reinvested dividends are taxed inside the gain when sold, as for an accumulating
+  fund. Dividends paid out and taxed every year (a distributing fund) are not modelled.
 - **Accumulating versus distributing is recorded, not used in calculations.** The
   `distribution` field is optional and drives only the `etf_quality.distribution` preference
   check. No calculation changes with it, and nothing checks that a distributing fund's

@@ -13,6 +13,7 @@ returns = "../../examples/data/asset_returns.csv"
 [parameters]
 periods_per_year = 12
 returns_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", decimal_separator = "." }
+returns_price_type = "total_return"
 method = { name = "minimum_variance" }
 covariance = { estimator = "sample" }
 bounds = { min = 0.0, max = 0.6 }

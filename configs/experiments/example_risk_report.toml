@@ -14,6 +14,7 @@ returns = "../../examples/data/asset_returns.csv"
 confidence = 0.95
 periods_per_year = 12
 returns_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", decimal_separator = "." }
+returns_price_type = "total_return"
 weights = { equity_world = 0.4, equity_em = 0.2, bonds = 0.3, cash = 0.1 }
 covariance = { estimator = "ledoit_wolf" }
 filtered = { decay = 0.94, warmup = 24 }
