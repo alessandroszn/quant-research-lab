@@ -55,8 +55,11 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 | 4 Construction & backtest | validation, optimisation, backtest, attribution | **M4 Construction & Backtest** | 100–130 |
 | 5 Research | inference, experiments/CLI, four studies | **M5 Research** | 120–170 |
 | 6 Product | desktop app, `.exe` and installer, docs, release | **M6 v1.0** | 110–150 |
+| 7 Gap closing | `periods_per_year` check, output notices, returns price type, currencies and look-through in the report kind | — (done) | 15–20 |
+| 8 Real portfolio | first real run, issuer holdings, risk, projection, risk-free rate, Italian tax, Italian report | **M8 Real portfolio** | 38–58 |
 
-Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 is reached at M6.
+Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 is reached at M6; after
+it, each Level 8 phase is a `v1.N.0`, published in the weekly batches.
 
 ---
 
@@ -314,6 +317,59 @@ An honest null result is a valid result and is reported as such.
   2026-11-13.)
 
 **M6 — v1.0.**
+
+## Level 7 — Gap closing (done)
+
+The methodology pages and the corrected risk register (6.3b) found four places where the code
+promised less than the documentation implied. Each phase had its own design note in
+`docs/design/`.
+
+- **7.1:** `periods_per_year` is checked against the frequency of the dates.
+- **7.2:** notices that travel with the outputs (`NOTICE.txt`, the record, the CLI, the app,
+  figures).
+- **7.3:** returns files declare total or price returns.
+- **7.4:** several currencies (7.4a) and look-through and tracking (7.4b) in the
+  `portfolio_report` kind.
+
+## Level 8 — The report on a real portfolio → M8
+
+Plan: `docs/design/level-8-plan.md`. Each phase still has its own design note, approved before
+any code. Real files stay in `data/`; everything published is synthetic.
+
+### 8.1 First run on the real portfolio (3–5 h)
+- Run `portfolio_report` on the owner's files in `data/`, with private mappings there.
+- Reconcile the end value and cash with the broker's statement, and realised gains with its
+  tax statement.
+- Output: a public list of gaps with no personal data. It orders 8.2–8.7.
+
+### 8.2 Issuer holdings as published (6–10 h)
+- Country names to ISO 3166-1 alpha-2, with aliases; an unknown name raises.
+- An issuer map file, passed to the kind.
+- Holdings mappings for the issuers held, from files downloaded by hand; terms reviewed.
+
+### 8.3 Risk and stress tests in the report kind (6–8 h)
+- Position returns from the report's price files; `RiskSummary` with covariance, VaR, ES and
+  optional scenarios.
+
+### 8.4 Projection in the report kind (5–8 h)
+- `[parameters.projection]` from the current value and weights; a distribution with stated
+  assumptions and sensitivity.
+
+### 8.5 Risk-free rate (4–6 h)
+- Optional €STR input: Sharpe ratio on excess returns in the report, and beta on excess
+  returns in the checks.
+
+### 8.6 Italian tax position (10–15 h)
+- *Redditi di capitale* versus *redditi diversi*, the losses balance (*zainetto fiscale*) with
+  its four-year expiry, 26 % and 12.5 % rates, and reconciliation with the broker's taxes.
+- Loss carry-forward in `TaxModel` for simulation and backtest.
+- Rules stated with sources and checked against the law in force; analytics, not tax advice.
+
+### 8.7 A report entirely in Italian (4–6 h)
+- Translate import notes, not-applicable reasons and library messages shown in the report.
+- Total-return position returns for the diversification checks.
+
+**M8 — the report of a real portfolio, reconciled with the broker.**
 
 ---
 
