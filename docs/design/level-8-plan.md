@@ -1,8 +1,8 @@
 # Plan — Level 8: the report on a real portfolio (v1.x)
 
-Status: **draft, waiting for approval.** Once approved, this list moves into `docs/ROADMAP.md`
-as Level 8, and the ideas it takes are removed from `docs/IDEAS.md`. Every phase still gets its
-own design note, approved before any code.
+Status: **approved 2026-11-14.** This list is now Level 8 of `docs/ROADMAP.md`, and the ideas
+it takes were removed from `docs/IDEAS.md`. Every phase still gets its own design note, approved
+before any code.
 
 ## Why this level
 
