@@ -2,6 +2,9 @@
 
 Input ``returns``: a CSV of simple returns, one column per asset, read with the explicit
 ``[parameters.returns_format]`` (date column and format, delimiter, decimal separator).
+``returns_price_type`` declares ``"total_return"`` (dividends included) or ``"price"``
+(dividends excluded). It labels the data and changes no number; with ``"price"`` the notice
+says that return levels are understated by about the dividend yield.
 
 Strategies (``[parameters.strategy]``, ``name`` plus its own keys):
 
@@ -33,8 +36,9 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Money
 from qrlab.core.returns import ReturnKind
 from qrlab.core.series import NanPolicy
+from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
-from qrlab.experiments.kinds._frames import read_returns
+from qrlab.experiments.kinds._frames import price_type, read_returns, returns_notice
 from qrlab.experiments.kinds._params import choice, number, table, text, whole
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.optimization.constraints import Constraints
@@ -48,15 +52,15 @@ from qrlab.optimization.risk_based import (
 from qrlab.risk.covariance import CovarianceEstimate, ledoit_wolf_covariance
 from qrlab.simulation.plan import TaxModel
 
-__all__ = ["KIND", "NOTICE", "read_returns"]
+__all__ = ["CAVEATS", "KIND", "read_returns"]
 
-NOTICE = (
-    "One historical path, with the stated costs, lag and taxes. Past results are not a "
-    "forecast. Research analytics, not investment advice."
+CAVEATS = (
+    "One historical path, with the stated costs, lag and taxes. Past results are not a forecast."
 )
 
 _PARAMETERS = (
     "returns_format",
+    "returns_price_type",
     "strategy",
     "execution_lag",
     "policy",
@@ -73,6 +77,7 @@ _METHODS = {"equal_weights", "minimum_variance", "risk_parity", "maximum_diversi
 @dataclass(frozen=True)
 class _Parameters:
     returns_format: Mapping[str, str]
+    returns_price_type: PriceType
     strategy: Mapping[str, object]
     lag: int
     policy: Policy
@@ -133,6 +138,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
     rate = number(parameters, "capital_gains_tax")
     return _Parameters(
         returns_format={k: text(fmt, k) if k != "delimiter" else str(fmt[k]) for k in fmt},
+        returns_price_type=price_type(parameters, "returns_price_type"),
         strategy=strategy,
         lag=whole(parameters, "execution_lag", minimum=1),
         policy=policy,
@@ -254,7 +260,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             "trades": Tagged(trades, tag),
         },
         scalars=scalars,
-        notice=NOTICE,
+        notice=returns_notice(CAVEATS, p.returns_price_type),
     )
 
 

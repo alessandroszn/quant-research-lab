@@ -27,6 +27,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
     `summarize_backtest`, and the `risk_report` and `optimisation` kinds.
   - **When it does not:** series whose dates have no recognisable frequency are not checked.
 
+### Changed
+
+- **Breaking for 1.0.0rc1 configs:** the returns files of four kinds must declare whether
+  they include dividends (phase 7.3).
+  - **The new required key:** `returns_price_type` in `backtest`, `optimisation` and
+    `risk_report`, and `position_returns_price_type` in `scenario_analysis`. A config without
+    it fails validation and names the key.
+  - **Values:** `"total_return"` or `"price"`. `"nav"` is refused, because a NAV return
+    includes the income of an accumulating fund but not of a distributing one; the message
+    says which to declare.
+  - **What it does:** the declaration changes no number. With `"price"`, the run's notice says
+    that return levels are understated by about the dividend yield. `risk_report` has a notice
+    only in that case.
+  - **Why required:** a default would be the silent assumption this removes. 1.0.0 is not
+    released, so it is not a 2.0 change. The example configs declare `"total_return"`.
+
 ### Fixed
 
 - The beta health check passed `periods_per_year=1` whatever the frequency of the returns. Its

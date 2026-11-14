@@ -7,7 +7,8 @@ Inputs (CSV files read with ``[parameters.csv_format]``):
   to 1;
 - ``scenarios`` (required): the scenarios TOML of phase 3.2;
 - ``position_returns`` (optional): dated returns, one column per position ISIN, measured in
-  ``position_returns_currency``;
+  ``position_returns_currency`` and declared ``"total_return"`` or ``"price"`` in
+  ``position_returns_price_type`` (required, like the currency, even without the file);
 - ``factors`` (optional): dated factor returns, one column per factor;
 - ``betas`` (optional): column ``holding`` (ISIN) and one column per factor;
 - ``fx`` (optional): dated returns of one unit of each foreign currency in the base currency.
@@ -30,22 +31,32 @@ import pandas as pd
 
 from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency, Money
+from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
-from qrlab.experiments.kinds._frames import read_returns, returns_format
+from qrlab.experiments.kinds._frames import (
+    price_type,
+    read_returns,
+    returns_format,
+    returns_notice,
+)
 from qrlab.experiments.kinds._params import day, number, text
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.instruments.identifiers import Isin
 from qrlab.scenarios.definitions import HistoricalScenario, load_scenarios
 from qrlab.scenarios.engine import MarketData, PositionSeries, StressPortfolio, run_scenario
 
-__all__ = ["KIND", "NOTICE"]
+__all__ = ["CAVEATS", "KIND"]
 
-NOTICE = (
-    "What-if stress tests on today's weights. Not forecasts or probabilities of loss. "
-    "Research analytics, not investment advice."
+CAVEATS = "What-if stress tests on today's weights. Not forecasts or probabilities of loss."
+
+_PARAMETERS = (
+    "as_of",
+    "value",
+    "currency",
+    "csv_format",
+    "position_returns_currency",
+    "position_returns_price_type",
 )
-
-_PARAMETERS = ("as_of", "value", "currency", "csv_format", "position_returns_currency")
 _OPTIONAL_INPUTS = ("position_returns", "factors", "betas", "fx")
 
 
@@ -56,6 +67,7 @@ class _Parameters:
     currency: Currency
     csv_format: Mapping[str, str]
     returns_currency: Currency
+    returns_price_type: PriceType
 
 
 def _parse(parameters: Mapping[str, object]) -> _Parameters:
@@ -69,6 +81,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         currency=Currency(text(parameters, "currency")),
         csv_format=returns_format(parameters, "csv_format"),
         returns_currency=Currency(text(parameters, "position_returns_currency")),
+        returns_price_type=price_type(parameters, "position_returns_price_type"),
     )
 
 
@@ -185,7 +198,9 @@ def _run(context: RunContext) -> ExperimentOutput:
             "positions": Tagged(pd.DataFrame(rows), "descriptive"),
         },
         scalars={"scenarios_run": Tagged(float(len(summary)), "descriptive")},
-        notice=NOTICE,
+        notice=returns_notice(
+            CAVEATS, p.returns_price_type if "position_returns" in context.inputs else None
+        ),
     )
 
 

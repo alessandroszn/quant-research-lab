@@ -17,6 +17,7 @@ initial_value = 100000
 currency = "EUR"
 periods_per_year = 12
 returns_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", decimal_separator = "." }
+returns_price_type = "total_return"
 strategy = { name = "walk_forward", method = "minimum_variance", min_train = 36, step = 12, max_weight = 0.6 }
 policy = { type = "trade_on_signal" }
 costs = { proportional = 0.001, fixed = 1.0 }

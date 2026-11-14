@@ -29,7 +29,7 @@ implement them are not.
 *Portfolio risk: covariance, contributions, VaR/ES and a VaR backtest.*
 
 - Inputs: `returns`; optional: none
-- Parameters: `returns_format`, `weights`, `covariance`, `confidence`, `periods_per_year`, `filtered`, `backtest`
+- Parameters: `returns_format`, `returns_price_type`, `weights`, `covariance`, `confidence`, `periods_per_year`, `filtered`, `backtest`
 - Seed: not used
 
 ```{eval-rst}
@@ -43,7 +43,7 @@ implement them are not.
 *Historical and hypothetical stress tests of today's holdings (descriptive).*
 
 - Inputs: `holdings`, `scenarios`; optional: `position_returns`, `factors`, `betas`, `fx`
-- Parameters: `as_of`, `value`, `currency`, `csv_format`, `position_returns_currency`
+- Parameters: `as_of`, `value`, `currency`, `csv_format`, `position_returns_currency`, `position_returns_price_type`
 - Seed: not used
 
 ```{eval-rst}
@@ -71,7 +71,7 @@ implement them are not.
 *Portfolio weights by a construction method, in sample (not a forecast).*
 
 - Inputs: `returns`; optional: none
-- Parameters: `returns_format`, `method`, `covariance`, `bounds`, `periods_per_year`
+- Parameters: `returns_format`, `returns_price_type`, `method`, `covariance`, `bounds`, `periods_per_year`
 - Seed: not used
 
 ```{eval-rst}
@@ -85,7 +85,7 @@ implement them are not.
 *Backtest a named strategy with lag, costs and taxes (gross and net).*
 
 - Inputs: `returns`; optional: none
-- Parameters: `returns_format`, `strategy`, `execution_lag`, `policy`, `costs`, `capital_gains_tax`, `initial_weights`, `initial_value`, `currency`, `periods_per_year`
+- Parameters: `returns_format`, `returns_price_type`, `strategy`, `execution_lag`, `policy`, `costs`, `capital_gains_tax`, `initial_weights`, `initial_value`, `currency`, `periods_per_year`
 - Seed: not used
 
 ```{eval-rst}

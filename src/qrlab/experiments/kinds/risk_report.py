@@ -1,6 +1,9 @@
 """Experiment kind ``risk_report``: portfolio risk from an asset-returns CSV and fixed weights.
 
 Input ``returns``: simple returns, one column per asset (``[parameters.returns_format]``).
+``returns_price_type`` declares ``"total_return"`` (dividends included) or ``"price"``
+(dividends excluded). It labels the data and changes no number; with ``"price"`` the notice
+says that return levels are understated by about the dividend yield.
 
 - **Covariance** (``[parameters.covariance]``: sample, EWMA or Ledoit-Wolf) and the effective
   number of bets.
@@ -28,12 +31,15 @@ from qrlab.core.calendar import require_periods_per_year
 from qrlab.core.errors import ValidationError
 from qrlab.core.returns import ReturnKind
 from qrlab.core.series import NanPolicy
+from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._frames import (
     covariance_spec,
     estimate_covariance,
+    price_type,
     read_returns,
     returns_format,
+    returns_notice,
     weights,
 )
 from qrlab.experiments.kinds._params import choice, number, table, whole
@@ -55,6 +61,7 @@ BACKTEST_MODELS = ("historical", "normal", "cornish_fisher")
 
 _PARAMETERS = (
     "returns_format",
+    "returns_price_type",
     "weights",
     "covariance",
     "confidence",
@@ -67,6 +74,7 @@ _PARAMETERS = (
 @dataclass(frozen=True)
 class _Parameters:
     returns_format: Mapping[str, str]
+    returns_price_type: PriceType
     weights: Mapping[str, object]
     covariance: Mapping[str, object]
     confidence: float
@@ -89,6 +97,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         raise ValidationError("weights must be a non-empty table of asset = weight")
     return _Parameters(
         returns_format=returns_format(parameters),
+        returns_price_type=price_type(parameters, "returns_price_type"),
         weights=weights_value,
         covariance=covariance_spec(parameters),
         confidence=confidence,
@@ -187,6 +196,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             "var_backtest": Tagged(path, "out_of_sample"),
         },
         scalars=scalars,
+        notice=returns_notice(None, p.returns_price_type),
     )
 
 

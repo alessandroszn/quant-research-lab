@@ -18,7 +18,7 @@ from qrlab.experiments.workspace import config_template
 ROOT = Path(__file__).parents[3]
 FORMAT = (
     'returns_format = { date_column = "date", date_format = "%Y-%m-%d", delimiter = ",", '
-    'decimal_separator = "." }'
+    'decimal_separator = "." }\nreturns_price_type = "total_return"'
 )
 
 
@@ -245,7 +245,9 @@ end = 2020-03-31
 
 SCENARIO_PARAMS = (
     'as_of = 2026-10-30\nvalue = 100000\ncurrency = "EUR"\nposition_returns_currency = "EUR"\n'
-    + FORMAT.replace("returns_format", "csv_format")
+    + FORMAT.replace("returns_format", "csv_format").replace(
+        "returns_price_type", "position_returns_price_type"
+    )
 )
 
 

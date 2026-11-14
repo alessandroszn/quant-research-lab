@@ -1,6 +1,9 @@
 """Experiment kind ``optimisation``: portfolio weights from an asset-returns CSV.
 
 Input ``returns``: simple returns, one column per asset (``[parameters.returns_format]``).
+``returns_price_type`` declares ``"total_return"`` (dividends included) or ``"price"``
+(dividends excluded). It labels the data and changes no number; with ``"price"`` the notice
+says that return levels are understated by about the dividend yield.
 
 ``[parameters.method]`` has a ``name`` and its own keys:
 
@@ -24,12 +27,15 @@ import pandas as pd
 
 from qrlab.core.calendar import require_periods_per_year
 from qrlab.core.errors import ValidationError
+from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._frames import (
     covariance_spec,
     estimate_covariance,
+    price_type,
     read_returns,
     returns_format,
+    returns_notice,
 )
 from qrlab.experiments.kinds._params import choice, number, table, whole
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
@@ -49,11 +55,11 @@ from qrlab.optimization.risk_based import (
 from qrlab.risk.covariance import CovarianceEstimate
 from qrlab.risk.decomposition import effective_number_of_bets, volatility_contributions
 
-__all__ = ["KIND", "METHODS", "NOTICE"]
+__all__ = ["CAVEATS", "KIND", "METHODS"]
 
-NOTICE = (
+CAVEATS = (
     "In-sample weights: what this method does with these estimates. Not a forecast and not a "
-    "recommendation. Research analytics, not investment advice."
+    "recommendation."
 )
 
 METHODS: Mapping[str, set[str]] = {
@@ -67,12 +73,20 @@ METHODS: Mapping[str, set[str]] = {
 }
 """Method -> its extra keys."""
 
-_PARAMETERS = ("returns_format", "method", "covariance", "bounds", "periods_per_year")
+_PARAMETERS = (
+    "returns_format",
+    "returns_price_type",
+    "method",
+    "covariance",
+    "bounds",
+    "periods_per_year",
+)
 
 
 @dataclass(frozen=True)
 class _Parameters:
     returns_format: Mapping[str, str]
+    returns_price_type: PriceType
     method: Mapping[str, object]
     covariance: Mapping[str, object]
     lower: float
@@ -95,6 +109,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         raise ValidationError("bounds need min <= max and max > 0")
     return _Parameters(
         returns_format=returns_format(parameters),
+        returns_price_type=price_type(parameters, "returns_price_type"),
         method=method,
         covariance=covariance_spec(parameters),
         lower=lower,
@@ -159,7 +174,9 @@ def _run(context: RunContext) -> ExperimentOutput:
         "active_constraints": Tagged(", ".join(result.active) or "none", "in_sample"),
     }
     return ExperimentOutput(
-        tables={"weights": Tagged(table_out, "in_sample")}, scalars=scalars, notice=NOTICE
+        tables={"weights": Tagged(table_out, "in_sample")},
+        scalars=scalars,
+        notice=returns_notice(CAVEATS, p.returns_price_type),
     )
 
 
