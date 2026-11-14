@@ -8,6 +8,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- A report entirely in Italian (phase 8.7). `qrlab.reporting.messages` gives the Italian
+  form of every library message a report can show:
+  - import notes;
+  - why a health check does not apply, including the metric errors it passes on;
+  - measurement-detail keys and fixed phrases;
+  - the reason a Sharpe ratio is missing.
+
+  Values captured in a message are kept, with the Italian decimal comma.
+  - **Only whole messages are translated,** so text you write is never touched.
+  - **Guard test.** `tests/unit/reporting/test_messages.py` scans the library's source for
+    every message template and detail key, and fails if one has no Italian form. A rendered
+    Italian report is also checked for English library phrases.
+  - **Tax sources** have an Italian version (`qrlab.tax.italy.SOURCES_IT`).
+  - **English reports are unchanged.** Italian reports change only where library text was in
+    English, and they drop the "reasons are in English" footnote when every reason is
+    translated.
 - The Italian tax position of a real account (phase 8.6a), as analytics, not tax advice: the
   new package `qrlab.tax` (`italian_tax_position`).
   - **Categories:** gains on ETFs and funds are *redditi di capitale*; losses on them, and

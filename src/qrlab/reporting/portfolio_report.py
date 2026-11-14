@@ -66,12 +66,13 @@ from qrlab.reporting.formatting import (
 )
 from qrlab.reporting.html import Figure, Report, Section
 from qrlab.reporting.labels import label
+from qrlab.reporting.messages import detail_key, detail_value, is_known, translate
 from qrlab.reporting.tables import Table
 from qrlab.scenarios.definitions import HistoricalScenario
 from qrlab.scenarios.summary import RiskSummary
 from qrlab.simulation.outcomes import ProjectionResult
 from qrlab.simulation.plan import Flow
-from qrlab.tax.italy import RULES_CHECKED_ON, Regime, TaxPosition
+from qrlab.tax.italy import RULES_CHECKED_ON, SOURCES, SOURCES_IT, Regime, TaxPosition
 
 __all__ = ["RiskFreeSummary", "build_portfolio_report"]
 
@@ -348,7 +349,8 @@ class _Builder:
                 sharpe = self.risk_free.sharpe
                 if sharpe is None:
                     rows.append((self.t("sharpe"), self.t("not_available")))
-                    paragraphs.append(self.t("sharpe_missing", reason=self.risk_free.reason))
+                    reason = translate(self.risk_free.reason, self.language)
+                    paragraphs.append(self.t("sharpe_missing", reason=reason))
                 else:
                     value = self.t(
                         "sharpe_value",
@@ -570,7 +572,10 @@ class _Builder:
             ("left", "left", "left"),
             () if carried else (self.t("none"),),
         )
-        paragraphs = tuple(f"{self.t('import_notes')}: {note}" for note in self.import_notes)
+        paragraphs = tuple(
+            f"{self.t('import_notes')}: {translate(note, self.language)}"
+            for note in self.import_notes
+        )
         return Section(
             self.t("data_assumptions"), paragraphs, (sources, assumptions, carried_table), ()
         )
@@ -841,7 +846,10 @@ class _Builder:
         if position.flagged:
             names = ", ".join(self._name_of(code) for code in position.flagged)
             paragraphs.append(self.t("tax_flagged", names=names))
-        paragraphs.append(self.t("tax_sources", sources="; ".join(position.sources)))
+        sources = position.sources
+        if self.language is Language.IT and sources == SOURCES:
+            sources = SOURCES_IT
+        paragraphs.append(self.t("tax_sources", sources="; ".join(sources)))
         events = tuple(
             (
                 self.day(e.trade_date),
@@ -1080,7 +1088,11 @@ class _Builder:
                     self.t("subject_portfolio") if f.subject == "portfolio" else f.subject,
                     self._measure(f.observed, f.unit),
                     self._threshold(f),
-                    "; ".join(f"{k}: {v}" for k, v in f.details.items() if v),
+                    "; ".join(
+                        f"{detail_key(k, self.language)}: {detail_value(v, self.language)}"
+                        for k, v in f.details.items()
+                        if v
+                    ),
                 )
                 for f in ranked
             )
@@ -1092,7 +1104,11 @@ class _Builder:
             tables.append(Table(self.t("findings"), finding_columns, rows, align, ()))
         if result.not_applicable:
             reasons = tuple(
-                (check_label(c, self.language)[0], reason) for c, reason in result.not_applicable
+                (check_label(c, self.language)[0], translate(reason, self.language))
+                for c, reason in result.not_applicable
+            )
+            untranslated = self.language is Language.EN or not all(
+                is_known(reason) for _, reason in result.not_applicable
             )
             tables.append(
                 Table(
@@ -1100,7 +1116,7 @@ class _Builder:
                     (self.t("check"), self.t("reason")),
                     reasons,
                     ("left", "left"),
-                    (self.t("reasons_in_english"),),
+                    (self.t("reasons_in_english"),) if untranslated else (),
                 )
             )
         evaluated = (
