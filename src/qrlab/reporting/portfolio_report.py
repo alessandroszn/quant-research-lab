@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import importlib.metadata
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -40,7 +41,7 @@ from qrlab.lookthrough.inputs import LookThroughInputs
 from qrlab.lookthrough.tracking import td_vs_ter, tracking_difference
 from qrlab.metrics.drawdown import drawdown_series, max_drawdown
 from qrlab.metrics.errors import UndefinedMetricError
-from qrlab.metrics.performance import annualised_volatility
+from qrlab.metrics.performance import SharpeEstimate, annualised_volatility
 from qrlab.portfolio.ledger import LedgerHistory, ToBase
 from qrlab.portfolio.performance import (
     FlowTiming,
@@ -71,10 +72,32 @@ from qrlab.scenarios.summary import RiskSummary
 from qrlab.simulation.outcomes import ProjectionResult
 from qrlab.simulation.plan import Flow
 
-__all__ = ["build_portfolio_report"]
+__all__ = ["RiskFreeSummary", "build_portfolio_report"]
 
 ONE_YEAR_DAYS = 365
 TOP_BUCKETS = 10
+
+
+@dataclass(frozen=True)
+class RiskFreeSummary:
+    """A risk-free series over the report's TWR periods, and the Sharpe ratio it gives.
+
+    Parameters
+    ----------
+    source
+        Name of the series, e.g. ``"€STR (ECB)"``.
+    total
+        Compounded risk-free return over all TWR periods.
+    sharpe
+        Annualised Sharpe ratio of the TWR returns in excess of the series, or ``None``.
+    reason
+        Why ``sharpe`` is ``None`` (empty otherwise).
+    """
+
+    source: str
+    total: float
+    sharpe: SharpeEstimate | None
+    reason: str = ""
 
 
 def build_portfolio_report(
@@ -97,6 +120,7 @@ def build_portfolio_report(
     lookthrough: LookThroughInputs | None,
     risk: RiskSummary | None,
     projection: ProjectionResult | None,
+    risk_free: RiskFreeSummary | None,
 ) -> Report:
     """Build the portfolio report.
 
@@ -138,6 +162,9 @@ def build_portfolio_report(
     projection
         A projection of the portfolio with its sensitivity table, or ``None`` to say in the
         report that it was not computed.
+    risk_free
+        A risk-free series over the TWR periods and the Sharpe ratio it gives, or ``None``:
+        the summary then shows no Sharpe ratio.
     """
     if generated_at.utcoffset() is None:
         raise ValidationError("generated_at must be timezone-aware")
@@ -148,6 +175,7 @@ def build_portfolio_report(
         lookthrough,
         risk,
         projection,
+        risk_free,
     ).build()  # fmt: skip
 
 
@@ -172,7 +200,9 @@ class _Builder:
         lookthrough: LookThroughInputs | None,
         risk: RiskSummary | None,
         projection: ProjectionResult | None,
+        risk_free: RiskFreeSummary | None,
     ) -> None:
+        self.risk_free = risk_free
         self.name = name
         self.history = history
         self.valuation = valuation
@@ -299,6 +329,25 @@ class _Builder:
                 rows.append((self.t("volatility"), self.pct(volatility)))
             else:
                 paragraphs.append(self.t("volatility_omitted"))
+            if self.risk_free is not None:
+                rows.append(
+                    (
+                        self.t("risk_free_total", source=self.risk_free.source),
+                        self.pct(self.risk_free.total),
+                    )
+                )
+                sharpe = self.risk_free.sharpe
+                if sharpe is None:
+                    rows.append((self.t("sharpe"), self.t("not_available")))
+                    paragraphs.append(self.t("sharpe_missing", reason=self.risk_free.reason))
+                else:
+                    value = self.t(
+                        "sharpe_value",
+                        value=format_number(sharpe.value, 2, style=self.style),
+                        se=format_number(sharpe.standard_error, 2, style=self.style),
+                        n=str(sharpe.n),
+                    )
+                    rows.append((self.t("sharpe"), value))
         rows.append((self.t("mwr"), self.t("not_available") if mwr is None else self.pct(mwr.rate)))
         paragraphs += [self.t("twr_definition"), self.t("mwr_definition"), self.t("not_comparable")]
         table = Table(

@@ -58,6 +58,15 @@ The sensitivity table is always computed. See
 ``qrlab.experiments.kinds._portfolio_projection``. The run then writes ``fan_real.csv``,
 ``terminal.csv``, ``sensitivity.csv`` and the fan chart, and the projection scalars.
 
+Risk-free rate (phase 8.5), optional: an ``estr`` input, the ECB Data Portal file of the euro
+short-term rate (provenance from the raw store's sidecar). It needs ``return_frequency =
+"monthly"``. Each TWR period's risk-free return is the €STR compounded over exactly its dates
+(:func:`qrlab.core.rates.overnight_returns`, ACT/360, TARGET calendar); the report then shows
+the risk-free return and the Sharpe ratio of the excess returns, annualised by sqrt(12), with
+its Mertens (2002) standard error and the number of returns. The run writes
+``risk_free.csv`` and the scalars ``risk_free_total``, ``sharpe_ratio`` and
+``sharpe_ratio_se``.
+
 Valuation dates are the dates of all price files from the first transaction on. The report is
 descriptive.
 """
@@ -68,14 +77,16 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 
+import numpy as np
 import pandas as pd
 
 from qrlab.checks.context import CheckContext
 from qrlab.checks.engine import load_check_config, run_checks
-from qrlab.core.calendar import Frequency
+from qrlab.core.calendar import Frequency, target2_calendar
 from qrlab.core.errors import CurrencyError, ValidationError
 from qrlab.core.money import Currency, Money
-from qrlab.data.ecb import FX_DATASET, parse_ecb_fx
+from qrlab.core.rates import overnight_returns
+from qrlab.data.ecb import FX_DATASET, parse_ecb_fx, parse_estr
 from qrlab.data.ecb import SOURCE as ECB_SOURCE
 from qrlab.data.ecb import TERMS as ECB_TERMS
 from qrlab.data.provenance import Dataset, Provenance
@@ -110,13 +121,15 @@ from qrlab.instruments.master import Instrument
 from qrlab.lookthrough.exposures import UNEXPLAINED, WeightTreatment, look_through
 from qrlab.lookthrough.inputs import LookThroughInputs
 from qrlab.lookthrough.tracking import TrackingSeries, tracking_difference
+from qrlab.metrics.errors import UndefinedMetricError
+from qrlab.metrics.performance import SharpeSE, sharpe_ratio
 from qrlab.portfolio.broker_import import load_broker_mapping, parse_broker_csv
 from qrlab.portfolio.ledger import ToBase, replay
 from qrlab.portfolio.performance import FlowTiming, external_flows_by_date, time_weighted_returns
 from qrlab.portfolio.valuation import EcbConverter, PriceSeries, value_portfolio
 from qrlab.reporting.formatting import Language
 from qrlab.reporting.html import render_html
-from qrlab.reporting.portfolio_report import build_portfolio_report
+from qrlab.reporting.portfolio_report import RiskFreeSummary, build_portfolio_report
 from qrlab.scenarios.definitions import load_scenarios
 
 __all__ = ["KIND"]
@@ -139,7 +152,7 @@ _INPUTS = (
     "instruments",
     "checks",
 )
-_OPTIONAL_INPUTS = ("fx", "issuers", "scenarios")
+_OPTIONAL_INPUTS = ("fx", "issuers", "scenarios", "estr")
 _GROUPS = (
     "extra_prices",
     "extra_prices_mapping",
@@ -282,6 +295,11 @@ def _check_inputs(parameters: object, names: frozenset[str]) -> None:
         raise ValidationError(
             "lookthrough_treatment is required with holdings and refused without them"
         )
+    if "estr" in names and not p.monthly:
+        raise ValidationError(
+            'an estr input needs return_frequency = "monthly": the Sharpe ratio is on monthly '
+            "returns"
+        )
     if "scenarios" in names and p.risk is None:
         raise ValidationError("a scenarios file is used only with [parameters.risk]")
     if "issuers" in names and not keys("holdings"):
@@ -394,6 +412,37 @@ def _lookthrough(
     return LookThroughInputs(exposures, snapshots, tracking), provenance
 
 
+def _risk_free(
+    context: RunContext, dates: list[date], twr_returns: pd.Series
+) -> tuple[RiskFreeSummary | None, pd.DataFrame | None, list[Provenance]]:
+    """Return the €STR over the TWR periods, the Sharpe ratio, its table and provenance."""
+    if "estr" not in context.inputs:
+        return None, None, []
+    path = context.inputs["estr"]
+    provenance = raw_provenance(path, source=ECB_SOURCE, dataset="estr", terms=ECB_TERMS)
+    rates = parse_estr(path.read_bytes(), provenance).data["ESTR"]
+    calendar = target2_calendar(range(dates[0].year - 1, dates[-1].year + 2))
+    per_period = overnight_returns(rates, dates, day_count=360, calendar=calendar)
+    # Only returns between two valuation dates are periods; a return dated on the first date
+    # (flows at the start of that day) covers part of one day and is left out.
+    periods = twr_returns[pd.DatetimeIndex(twr_returns.index) > pd.Timestamp(dates[0])]
+    risk_free = per_period.reindex(pd.DatetimeIndex(periods.index))
+    excess = pd.Series(
+        periods.to_numpy() - risk_free.to_numpy(), index=risk_free.index, name="excess"
+    )
+    table = pd.DataFrame(
+        {"twr": periods.to_numpy(), "risk_free": risk_free.to_numpy(), "excess": excess},
+        index=pd.DatetimeIndex(periods.index, name="period_end"),
+    )
+    total = float(np.prod(1.0 + risk_free.to_numpy()) - 1.0)
+    try:
+        sharpe = sharpe_ratio(excess, periods_per_year=12, se_method=SharpeSE.IID_NON_NORMAL)
+        reason = ""
+    except (UndefinedMetricError, ValidationError) as exc:
+        sharpe, reason = None, str(exc)
+    return RiskFreeSummary("€STR (ECB)", total, sharpe, reason), table, [provenance]
+
+
 def _run(context: RunContext) -> ExperimentOutput:
     p: _Parameters = context.parameters  # type: ignore[assignment]
     files = context.inputs
@@ -433,6 +482,7 @@ def _run(context: RunContext) -> ExperimentOutput:
     )
     instruments = {i.isin: i for i in load_instruments(files["instruments"])}
     twr = time_weighted_returns(valuation, external_flows_by_date(history), flow_timing=p.timing)
+    risk_free, risk_free_table, risk_free_provenance = _risk_free(context, dates, twr.returns)
     check_context = CheckContext(
         as_of=dates[-1],
         history=history,
@@ -491,6 +541,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             *price_provenance,
             *lookthrough_provenance,
             *fx_provenance,
+            *risk_free_provenance,
         ],
         instruments=instruments,
         import_notes=list(imported.notes),
@@ -499,6 +550,7 @@ def _run(context: RunContext) -> ExperimentOutput:
         lookthrough=lookthrough,
         risk=None if risk is None else risk.summary,
         projection=None if plan is None else plan[0].result,
+        risk_free=risk_free,
     )
     findings = pd.DataFrame(
         [
@@ -525,6 +577,12 @@ def _run(context: RunContext) -> ExperimentOutput:
         )
     caveats = []
     figures = {}
+    if risk_free is not None and risk_free_table is not None:
+        tables["risk_free"] = Tagged(risk_free_table, "descriptive")
+        scalars["risk_free_total"] = Tagged(risk_free.total, "descriptive")
+        if risk_free.sharpe is not None:
+            scalars["sharpe_ratio"] = Tagged(risk_free.sharpe.value, "descriptive")
+            scalars["sharpe_ratio_se"] = Tagged(risk_free.sharpe.standard_error, "descriptive")
     if risk is not None:
         tables |= risk.tables
         scalars |= risk.scalars

@@ -8,6 +8,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- A risk-free rate and the Sharpe ratio in the portfolio report (phase 8.5).
+  - **`qrlab.core.overnight_returns`** compounds an overnight rate over periods: simple
+    interest over weekends and holidays, compounding between business days, as in the ECB's
+    compounded €STR averages. `day_count` is explicit (360 or 365). A business day without a
+    fixing raises.
+  - **The `portfolio_report` kind takes an optional `estr` input** (the ECB €STR file), with
+    `return_frequency = "monthly"`. Each monthly TWR period gets the €STR compounded over
+    exactly its dates.
+  - **In the summary:** the risk-free return and the Sharpe ratio of the excess returns, with
+    its Mertens standard error and `n` (e.g. `0.85 ± 0.40 (n = 24)`). If the Sharpe ratio is
+    undefined, the report says why.
+  - **New outputs:** `risk_free.csv` and the scalars `risk_free_total`, `sharpe_ratio` and
+    `sharpe_ratio_se`.
+  - **Hand-checked:** a Friday-to-Monday weekend at 3.6 % (0.03 % exactly), the Easter
+    five-day fixing, a Sharpe ratio of 4.0249 on (1, 2, 0, 3) %, and the accrual of a whole
+    month.
+  - **`qrlab.reporting.RiskFreeSummary`** is new. `build_portfolio_report` takes it as the
+    required keyword `risk_free` (pass `None` for none): every report input is explicit.
 - Projection and savings plan in the `portfolio_report` kind (phase 8.4), with an optional
   `[parameters.projection]`. Without it, outputs are byte-identical.
   - **Starting point:** today's portfolio, its value, weights and date. The kind does not ask

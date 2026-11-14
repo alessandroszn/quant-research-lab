@@ -1,0 +1,36 @@
+"""The risk-free rows of the portfolio report's summary (design 8.5)."""
+
+from __future__ import annotations
+
+from qrlab.core.calendar import Frequency
+from qrlab.metrics.performance import SharpeEstimate, SharpeSE
+from qrlab.reporting import Language, RiskFreeSummary, render_html
+from support.report import toy_report
+
+SHARPE = SharpeEstimate(0.8512, 0.4033, 24, SharpeSE.IID_NON_NORMAL)
+
+
+def test_rows_in_english_and_italian() -> None:
+    risk_free = RiskFreeSummary("€STR (ECB)", 0.0712, SHARPE)
+    english = render_html(
+        toy_report(Language.EN, return_frequency=(Frequency.MONTHLY, 12.0), risk_free=risk_free)
+    )
+    assert "Risk-free return over the period (€STR (ECB))" in english
+    assert "0.85 ± 0.40 (n = 24)" in english
+    italian = render_html(
+        toy_report(Language.IT, return_frequency=(Frequency.MONTHLY, 12.0), risk_free=risk_free)
+    )
+    assert "Sharpe ratio (TWR in eccesso rispetto al tasso privo di rischio" in italian
+    assert "0,85 ± 0,40 (n = 24)" in italian
+
+
+def test_a_missing_sharpe_ratio_says_why() -> None:
+    risk_free = RiskFreeSummary("€STR (ECB)", 0.01, None, "too few returns")
+    page = render_html(
+        toy_report(Language.EN, return_frequency=(Frequency.MONTHLY, 12.0), risk_free=risk_free)
+    )
+    assert "The Sharpe ratio is not shown: too few returns" in page
+
+
+def test_without_a_risk_free_series_there_is_no_sharpe_row() -> None:
+    assert "Sharpe ratio" not in render_html(toy_report(Language.EN))

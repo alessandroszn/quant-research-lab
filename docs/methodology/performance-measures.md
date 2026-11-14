@@ -53,6 +53,11 @@ The flow-timing convention also matters. With valuation dates only at year ends,
   "Money-weighted return (MWR, XIRR, a year)" on separate rows, with one sentence defining each
   and the note "TWR and MWR measure different things and are not comparable." The TWR is
   annualised only for periods of at least 365 days. Several MWR roots produce a warning.
+- **The Sharpe ratio is TWR-based and says so** (phase 8.5). With an €STR input, the report's
+  summary shows "Sharpe ratio (TWR in excess of the risk-free rate, annualised)" with its
+  standard error and the number of monthly returns. The risk-free return of each period is the
+  €STR compounded over exactly the period's dates
+  ({py:func}`qrlab.core.overnight_returns`); it is never the MWR's.
 
 ## What guards it
 
@@ -85,5 +90,9 @@ The flow-timing convention also matters. With valuation dates only at year ends,
   paid in, or no root in its search range) the report shows "n/a" instead of a number.
 - The `portfolio_report` experiment kind records only the TWR (`twr_total`) as a scalar in
   `record.json`. The MWR appears only in the HTML report.
+- **The Sharpe ratio uses monthly periods between valuation dates.** A return dated on the
+  first valuation date covers part of one day (flows at its start) and is left out. The
+  standard error (Mertens, 2002) assumes independent returns; with few months it is wide, and
+  `n` is always shown.
 
 Related: [risk register](../ARCHITECTURE.md#quantitative-risk-register)
