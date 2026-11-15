@@ -71,11 +71,13 @@ its Mertens (2002) standard error and the number of returns. The run writes
 ``risk_free.csv`` and the scalars ``risk_free_total``, ``sharpe_ratio`` and
 ``sharpe_ratio_se``.
 
-Italian tax position (phase 8.6a), optional: ``[parameters.tax]`` with ``regime``
+Tax position (phases 8.6a and 9.1), optional: ``[parameters.tax]`` with ``country`` (a code of
+:data:`qrlab.tax.REGIMES`), then that country's own keys. The report gains a "Tax position
+(analytics, not tax advice)" section, with its sources; the run writes the country's tables
+and scalars (:class:`qrlab.tax.TaxReport`). Italy (``country = "it"``): ``regime``
 (``amministrato``/``dichiarativo``) and ``public_share`` (a table: ISIN -> share of Italian and
-white-list government bonds, required for every fund and bond sold; 0 for an equity fund). The
-report gains a "Tax position (analytics, not tax advice)" section, with its sources; the run
-writes ``tax_events.csv``, ``losses_balance.csv`` and the scalars ``tax_due``,
+white-list government bonds, required for every fund and bond sold; 0 for an equity fund);
+it writes ``tax_events.csv``, ``losses_balance.csv`` and the scalars ``tax_due``,
 ``tax_withheld`` and ``losses_remaining``. See :mod:`qrlab.tax.italy`.
 
 Valuation dates are the dates of all price files from the first transaction on. The report is
@@ -87,7 +89,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import date, datetime
-from decimal import Decimal
 
 import numpy as np
 import pandas as pd
@@ -110,7 +111,6 @@ from qrlab.experiments.kinds._params import (
     day,
     local_provenance,
     moment,
-    table,
     text,
     whole,
 )
@@ -145,7 +145,8 @@ from qrlab.reporting.formatting import Language
 from qrlab.reporting.html import render_html
 from qrlab.reporting.portfolio_report import RiskFreeSummary, build_portfolio_report
 from qrlab.scenarios.definitions import load_scenarios
-from qrlab.tax.italy import Regime, TaxPosition, italian_tax_position
+from qrlab.tax.regime import ColumnKind, TaxInputs, TaxRegime, TaxReport
+from qrlab.tax.regimes import REGIMES, regime_for
 
 __all__ = ["KIND"]
 
@@ -217,7 +218,7 @@ class _Parameters:
     fx_max_age_days: int | None
     risk: RiskSpec | None
     projection: ProjectionSpec | None
-    tax: tuple[Regime, dict[Isin, Decimal]] | None
+    tax: tuple[TaxRegime, object] | None
     treatment: WeightTreatment | None
     holdings: Mapping[Isin, _Holdings]
     index_hedged_to: Mapping[Isin, Currency | None]
@@ -300,21 +301,21 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
     )
 
 
-def _parse_tax(parameters: Mapping[str, object]) -> tuple[Regime, dict[Isin, Decimal]] | None:
-    """Read ``[parameters.tax]``: the regime and the government-bond shares, or ``None``."""
+def _parse_tax(parameters: Mapping[str, object]) -> tuple[TaxRegime, object] | None:
+    """Read ``[parameters.tax]``: the country, then its own keys (phase 9.1), or ``None``."""
     if "tax" not in parameters:
         return None
-    spec = table(parameters, "tax", required={"regime", "public_share"}, optional=set())
-    regime = Regime(choice(spec, "regime", {r.value for r in Regime}))
-    shares = spec["public_share"]
-    if not isinstance(shares, dict):
-        raise ValidationError("[parameters.tax] public_share must be a table of ISIN = share")
-    out = {}
-    for code, value in shares.items():
-        if type(value) not in (int, float) or not 0 <= value <= 1:
-            raise ValidationError(f"public_share of {code} must be a number in [0, 1]")
-        out[Isin(code)] = Decimal(repr(value))
-    return regime, out
+    spec = parameters["tax"]
+    if not isinstance(spec, dict):
+        raise ValidationError("tax must be a table")
+    if "country" not in spec:
+        raise ValidationError(
+            f"[parameters.tax] needs country, one of {sorted(REGIMES)} (phase 9.1)"
+        )
+    regime = regime_for(spec["country"])
+    rest = {key: value for key, value in spec.items() if key != "country"}
+    require_keys(rest, required=set(regime.keys), optional=set(regime.optional_keys), where="tax")
+    return regime, regime.parse(rest)
 
 
 def _check_inputs(parameters: object, names: frozenset[str]) -> None:
@@ -497,47 +498,31 @@ def _risk_free(
     return RiskFreeSummary("€STR (ECB)", total, sharpe, reason), table, [provenance]
 
 
-def _tax_tables(position: TaxPosition) -> dict[str, Tagged]:
-    """Return the tax events and the losses balance as tables."""
-    events = pd.DataFrame(
-        [
-            {
-                "date": e.trade_date,
-                "isin": e.isin,
-                "category": e.category.value,
-                "result": float(e.gain),
-                "public_share": float(e.public_share),
-                "base": float(e.base),
-                "losses_used": float(e.offset),
-                "tax_due": None if e.tax_due is None else float(e.tax_due),
-                "tax_withheld": float(e.tax_withheld),
-                "difference": float(e.difference),
-            }
-            for e in position.events
-        ],
-        columns=[
-            "date", "isin", "category", "result", "public_share", "base", "losses_used",
-            "tax_due", "tax_withheld", "difference",
-        ],
-    ).set_index("date")  # fmt: skip
-    losses = pd.DataFrame(
-        [
-            {
-                "year": lot.year,
-                "losses": float(lot.amount),
-                "used": float(lot.used),
-                "expired": float(lot.expired),
-                "remaining": float(lot.remaining),
-                "usable_until": lot.expires,
-            }
-            for lot in position.losses
-        ],
-        columns=["year", "losses", "used", "expired", "remaining", "usable_until"],
-    ).set_index("year")
-    return {
-        "tax_events": Tagged(events, "descriptive"),
-        "losses_balance": Tagged(losses, "descriptive"),
-    }
+def _tax_tables(report: TaxReport) -> dict[str, Tagged]:
+    """Return the tax report's CSV tables (those with a file name), as described."""
+    tables = {}
+    for table in report.tables:
+        if table.file is None:
+            continue
+        keys = [c.key for c in table.columns]
+        frame = pd.DataFrame(
+            [
+                {c.key: _csv_cell(cell, c.kind) for cell, c in zip(row, table.columns, strict=True)}
+                for row in table.rows
+            ],
+            columns=keys,
+        ).set_index(table.index)
+        tables[table.file] = Tagged(frame, "descriptive")
+    return tables
+
+
+def _csv_cell(cell: object, kind: ColumnKind) -> object:
+    """Write a cell as the CSV holds it: amounts and shares as floats, the rest as they are."""
+    if cell is None:
+        return None
+    if kind in (ColumnKind.MONEY, ColumnKind.SHARE):
+        return float(cell)  # type: ignore[arg-type]
+    return cell
 
 
 def _run(context: RunContext) -> ExperimentOutput:
@@ -618,14 +603,17 @@ def _run(context: RunContext) -> ExperimentOutput:
         )
     tax_position = None
     if p.tax is not None:
-        tax_position = italian_tax_position(
-            history,
-            imported.transactions,
-            instruments,
-            regime=p.tax[0],
-            public_share=p.tax[1],
-            as_of=dates[-1],
-            to_base=to_base,
+        regime, settings = p.tax
+        tax_position = regime.report(
+            TaxInputs(
+                history=history,
+                transactions=imported.transactions,
+                instruments=instruments,
+                valuation=valuation,
+                to_base=to_base,
+                as_of=dates[-1],
+            ),
+            settings,
         )
     plan = None
     if p.projection is not None:
@@ -694,9 +682,8 @@ def _run(context: RunContext) -> ExperimentOutput:
     if tax_position is not None:
         tables |= _tax_tables(tax_position)
         scalars |= {
-            "tax_due": Tagged(float(tax_position.tax_due), "descriptive"),
-            "tax_withheld": Tagged(float(tax_position.tax_withheld), "descriptive"),
-            "losses_remaining": Tagged(float(tax_position.losses_remaining), "descriptive"),
+            name: Tagged(float(value), "descriptive")
+            for name, value in tax_position.scalars.items()
         }
     if risk_free is not None and risk_free_table is not None:
         tables["risk_free"] = Tagged(risk_free_table, "descriptive")

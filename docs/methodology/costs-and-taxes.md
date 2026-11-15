@@ -75,6 +75,14 @@ and the gap between gross and net compounds.
     four-year expiry, and the 48.08 % share of government bonds.
   - It then compares the result with the tax the broker withheld. A difference is shown,
     never absorbed. Its report section is titled "analytics, not tax advice".
+- **Tax regimes by country** ({py:class}`qrlab.tax.TaxRegime`, phase 9.1).
+  - Every country reads its own keys of `[parameters.tax]`, after `country`, and returns a
+    {py:class}`qrlab.tax.TaxReport`: sentences, typed tables, sources in each report
+    language, and the date its rules were checked.
+  - The CSV tables and the report section are written from that description alone. A new
+    country adds rules, not presentation code.
+  - Italy is the first country (`country = "it"`). Switzerland and a configurable model
+    follow in Level 9.
 - **Italian losses in projections and backtests** ({py:class}`qrlab.simulation.LossRules`,
   phase 8.6b), an optional field of {py:class}`qrlab.simulation.TaxModel`.
   - Gains on the assets named in `fund_assets` are capital income: taxed in full, never

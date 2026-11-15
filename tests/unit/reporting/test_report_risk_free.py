@@ -40,7 +40,7 @@ def test_tax_section_dichiarativo_with_a_flagged_fund_and_no_losses() -> None:
     from datetime import date
     from decimal import Decimal
 
-    from qrlab.tax import Category, Regime, TaxEvent, TaxPosition
+    from qrlab.tax import Category, Regime, TaxEvent, TaxPosition, italian_tax_report
     from support.portfolio import X
 
     event = TaxEvent(
@@ -48,7 +48,7 @@ def test_tax_section_dichiarativo_with_a_flagged_fund_and_no_losses() -> None:
         Decimal(0), Decimal(0), None, Decimal(0),
     )  # fmt: skip
     position = TaxPosition(date(2026, 3, 31), Regime.DICHIARATIVO, (event,), (), (X.code,))
-    page = render_html(toy_report(Language.EN, tax=position))
+    page = render_html(toy_report(Language.EN, tax=italian_tax_report(position)))
     assert "the tax shown is an estimate to declare" in page
     assert "Not computed: Example World Equity UCITS ETF" in page
     assert "Losses balance" not in page

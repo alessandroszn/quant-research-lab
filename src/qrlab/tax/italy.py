@@ -42,19 +42,34 @@ from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.master import Instrument, InstrumentType
 from qrlab.portfolio.ledger import LedgerHistory, RealisedGain, ToBase
 from qrlab.portfolio.transactions import Transaction, TransactionKind
+from qrlab.tax.regime import (
+    ColumnKind,
+    Holdings,
+    LabelRef,
+    Paragraph,
+    SourcesRef,
+    TaxColumn,
+    TaxInputs,
+    TaxReport,
+    TaxTable,
+)
 
 __all__ = [
+    "ITALY",
     "PUBLIC_BOND_REDUCTION",
     "RATE",
     "RULES_CHECKED_ON",
     "SOURCES",
     "SOURCES_IT",
     "Category",
+    "ItalianRegime",
+    "ItalianSettings",
     "LossLot",
     "Regime",
     "TaxEvent",
     "TaxPosition",
     "italian_tax_position",
+    "italian_tax_report",
 ]
 
 RATE = Decimal("0.26")
@@ -272,6 +287,165 @@ def italian_tax_position(
         losses=balance.result(as_of),
         flagged=tuple(sorted(set(flagged))),
     )
+
+
+# --------------------------------------------------------------------------- the common shape
+_LEFT, _RIGHT = "left", "right"
+_EVENT_COLUMNS = (
+    TaxColumn("date", "date", ColumnKind.DATE, _LEFT),
+    TaxColumn("isin", "holding", ColumnKind.HOLDING, _LEFT),
+    TaxColumn("category", "tax_category", ColumnKind.LABEL, _LEFT, prefix="tax_cat_"),
+    TaxColumn("result", "tax_result", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("public_share", "tax_public_share", ColumnKind.SHARE, _RIGHT),
+    TaxColumn("base", "tax_base", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("losses_used", "tax_offset", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("tax_due", "tax_due", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("tax_withheld", "tax_withheld", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("difference", "tax_difference", ColumnKind.MONEY, _RIGHT),
+)
+_TOTAL_COLUMNS = (
+    TaxColumn("item", "", ColumnKind.LABEL, _LEFT),
+    TaxColumn("value", "value", ColumnKind.MONEY, _RIGHT),
+)
+_LOSS_COLUMNS = (
+    TaxColumn("year", "tax_year", ColumnKind.YEAR, _LEFT),
+    TaxColumn("losses", "tax_amount", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("used", "tax_used", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("expired", "tax_expired", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("remaining", "tax_remaining", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("usable_until", "tax_usable_until", ColumnKind.DATE, _RIGHT),
+)
+
+
+def italian_tax_report(position: TaxPosition) -> TaxReport:
+    """Describe an Italian tax position in the common shape (:mod:`qrlab.tax.regime`).
+
+    The sentences, tables and scalars are those of the Italian section since phase 8.6a:
+    the events (``tax_events``), the totals, and the losses balance (``losses_balance``, shown
+    in the report only when there are lots).
+    """
+    paragraphs = [
+        Paragraph(
+            "tax_intro",
+            (
+                ("regime", LabelRef(f"tax_regime_{position.regime.value}")),
+                ("checked", RULES_CHECKED_ON),
+            ),
+        ),
+        Paragraph("tax_rules"),
+    ]
+    if position.regime is Regime.DICHIARATIVO:
+        paragraphs.append(Paragraph("tax_estimate"))
+    if position.flagged:
+        paragraphs.append(Paragraph("tax_flagged", (("names", Holdings(position.flagged)),)))
+    paragraphs.append(Paragraph("tax_sources", (("sources", SourcesRef()),)))
+    events = TaxTable(
+        "tax_events",
+        _EVENT_COLUMNS,
+        tuple(
+            (
+                e.trade_date,
+                e.isin,
+                e.category.value,
+                e.gain,
+                e.public_share,
+                e.base,
+                e.offset,
+                e.tax_due,
+                e.tax_withheld,
+                e.difference,
+            )
+            for e in position.events
+        ),
+        file="tax_events",
+        index="date",
+        note="tax_events_note",
+    )
+    totals = TaxTable(
+        "tax_totals",
+        _TOTAL_COLUMNS,
+        (
+            ("tax_due", position.tax_due),
+            ("tax_withheld", position.tax_withheld),
+            ("tax_losses_remaining", position.losses_remaining),
+        ),
+    )
+    losses = TaxTable(
+        "tax_losses",
+        _LOSS_COLUMNS,
+        tuple(
+            (lot.year, lot.amount, lot.used, lot.expired, lot.remaining, lot.expires)
+            for lot in position.losses
+        ),
+        file="losses_balance",
+        index="year",
+        shown_when_empty=False,
+    )
+    italian = SOURCES_IT if position.sources == SOURCES else position.sources
+    return TaxReport(
+        country="it",
+        as_of=position.as_of,
+        checked_on=RULES_CHECKED_ON,
+        sources={"en": position.sources, "it": italian},
+        paragraphs=tuple(paragraphs),
+        tables=(events, totals, losses),
+        scalars={
+            "tax_due": position.tax_due,
+            "tax_withheld": position.tax_withheld,
+            "losses_remaining": position.losses_remaining,
+        },
+    )
+
+
+@dataclass(frozen=True)
+class ItalianSettings:
+    """The Italian ``[parameters.tax]`` keys: the regime and the government-bond shares."""
+
+    regime: Regime
+    public_share: Mapping[Isin, Decimal]
+
+
+class ItalianRegime:
+    """Italy, for an individual's securities account (:func:`italian_tax_position`)."""
+
+    country = "it"
+    keys = frozenset({"regime", "public_share"})
+    optional_keys: frozenset[str] = frozenset()
+
+    def parse(self, table: Mapping[str, object]) -> ItalianSettings:
+        """Read ``regime`` (amministrato or dichiarativo) and ``public_share`` (ISIN = share)."""
+        options = {r.value for r in Regime}
+        value = table["regime"]
+        if not isinstance(value, str) or value not in options:
+            raise ValidationError(f"regime must be one of {sorted(options)}, got {value!r}")
+        shares = table["public_share"]
+        if not isinstance(shares, dict):
+            raise ValidationError("[parameters.tax] public_share must be a table of ISIN = share")
+        out = {}
+        for code, share in shares.items():
+            if type(share) not in (int, float) or not 0 <= share <= 1:
+                raise ValidationError(f"public_share of {code} must be a number in [0, 1]")
+            out[Isin(code)] = Decimal(repr(share))
+        return ItalianSettings(Regime(value), out)
+
+    def report(self, inputs: TaxInputs, settings: object) -> TaxReport:
+        """Return the Italian tax position in the common shape."""
+        if not isinstance(settings, ItalianSettings):
+            raise ValidationError(f"Italian settings expected, got {settings!r}")
+        position = italian_tax_position(
+            inputs.history,
+            inputs.transactions,
+            inputs.instruments,
+            regime=settings.regime,
+            public_share=settings.public_share,
+            as_of=inputs.as_of,
+            to_base=inputs.to_base,
+        )
+        return italian_tax_report(position)
+
+
+ITALY = ItalianRegime()
+"""Italy's :class:`~qrlab.tax.regime.TaxRegime`."""
 
 
 def _sale_of(gain: RealisedGain, sales: dict[tuple[object, ...], list[Transaction]]) -> Transaction:
