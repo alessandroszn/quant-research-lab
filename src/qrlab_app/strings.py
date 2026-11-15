@@ -23,7 +23,8 @@ _EN = {
     "language.en": "English",
     "language.it": "Italiano",
     "nav.home": "Home",
-    "nav.portfolio": "Portfolio",
+    "nav.portfolios": "Portfolios",
+    "nav.portfolio": "Portfolio report",
     "nav.risk": "Risk",
     "nav.scenarios": "Scenarios",
     "nav.projections": "Projections",
@@ -90,6 +91,45 @@ _EN = {
     "error.bad_name": "{name} is not a valid file name.",
     "error.exists": "{name} already exists.",
     "error.language": "Unsupported language: {code}.",
+    "error.import": "Cannot import {name}: {message}",
+    "portfolio.list": "Portfolios",
+    "portfolio.new": "New portfolio",
+    "portfolio.new_name": "Name of the new portfolio (a folder under portfolios/):",
+    "portfolio.transactions": "Transactions",
+    "portfolio.instruments": "Instruments",
+    "portfolio.add_row": "Add transaction",
+    "portfolio.kind": "Kind of the new transaction:",
+    "portfolio.add_instrument": "Add instrument",
+    "portfolio.remove": "Remove selected row",
+    "portfolio.start": "Starting position…",
+    "portfolio.start_date": "Start date (YYYY-MM-DD):",
+    "portfolio.start_added": (
+        "Added a transfer in per instrument and a deposit on {day}. Fill in the units, the "
+        "market price on that day, your original cost per unit and the cash."
+    ),
+    "portfolio.save": "Validate and save",
+    "portfolio.saved": "Valid and saved: {transactions} transactions, {instruments} instruments.",
+    "portfolio.problem": "{table}, row {row}: {error}",
+    "portfolio.problem_no_row": "{table}: {error}",
+    "portfolio.create_report": "Create report config",
+    "portfolio.report_name": "File name for the report config (without .toml):",
+    "portfolio.report_created": (
+        "{name} created with this portfolio's files. Fill in the price file, its mapping, the "
+        "checks and the parameters, then Validate and Run."
+    ),
+    "portfolio.unsaved": "Portfolio {name} has unsaved changes. Validate and save them?",
+    "portfolio.no_selection": "No portfolio is selected.",
+    "portfolio.bad_file": "Cannot read {name}: {error}",
+    "portfolio.no_transactions": "there are no transactions",
+    "portfolio.no_instruments": "Add the instruments first.",
+    "portfolio.unknown_isin": "ISIN {isin} is not in the instruments table",
+    "portfolio.duplicate_isin": "ISIN {isin} is listed twice",
+    "portfolio.bad_date": "{text} is not a date such as 2026-01-02.",
+    "portfolio.save_first": "Validate and save the portfolio first.",
+    "portfolio.library": "{error}",
+    "data.import": "Import a downloaded file…",
+    "data.dataset": "Dataset name for this file (for example prices-world):",
+    "data.imported": "{name} imported as {dataset}, unchanged, with its provenance.",
 }
 
 _IT = {
@@ -102,7 +142,8 @@ _IT = {
     "language.en": "English",
     "language.it": "Italiano",
     "nav.home": "Home",
-    "nav.portfolio": "Portafoglio",
+    "nav.portfolios": "Portafogli",
+    "nav.portfolio": "Report di portafoglio",
     "nav.risk": "Rischio",
     "nav.scenarios": "Scenari",
     "nav.projections": "Proiezioni",
@@ -174,6 +215,46 @@ _IT = {
     "error.bad_name": "{name} non è un nome di file valido.",
     "error.exists": "{name} esiste già.",
     "error.language": "Lingua non supportata: {code}.",
+    "error.import": "Impossibile importare {name}: {message}",
+    "portfolio.list": "Portafogli",
+    "portfolio.new": "Nuovo portafoglio",
+    "portfolio.new_name": "Nome del nuovo portafoglio (una cartella in portfolios/):",
+    "portfolio.transactions": "Transazioni",
+    "portfolio.instruments": "Strumenti",
+    "portfolio.add_row": "Aggiungi transazione",
+    "portfolio.kind": "Tipo della nuova transazione:",
+    "portfolio.add_instrument": "Aggiungi strumento",
+    "portfolio.remove": "Rimuovi la riga selezionata",
+    "portfolio.start": "Posizione di partenza…",
+    "portfolio.start_date": "Data di partenza (AAAA-MM-GG):",
+    "portfolio.start_added": (
+        "Aggiunti un trasferimento in entrata per strumento e un versamento il {day}. Inserisci "
+        "le quote, il prezzo di mercato di quel giorno, il tuo costo medio per quota e la "
+        "liquidità."
+    ),
+    "portfolio.save": "Valida e salva",
+    "portfolio.saved": "Valido e salvato: {transactions} transazioni, {instruments} strumenti.",
+    "portfolio.problem": "{table}, riga {row}: {error}",
+    "portfolio.problem_no_row": "{table}: {error}",
+    "portfolio.create_report": "Crea la config del report",
+    "portfolio.report_name": "Nome del file della config del report (senza .toml):",
+    "portfolio.report_created": (
+        "{name} creata con i file di questo portafoglio. Inserisci il file dei prezzi, il suo "
+        "mapping, i controlli e i parametri, poi Valida ed Esegui."
+    ),
+    "portfolio.unsaved": "Il portafoglio {name} ha modifiche non salvate. Validarle e salvarle?",
+    "portfolio.no_selection": "Nessun portafoglio selezionato.",
+    "portfolio.bad_file": "Impossibile leggere {name}: {error}",
+    "portfolio.no_transactions": "non ci sono transazioni",
+    "portfolio.no_instruments": "Aggiungi prima gli strumenti.",
+    "portfolio.unknown_isin": "l'ISIN {isin} non è nella tabella degli strumenti",
+    "portfolio.duplicate_isin": "l'ISIN {isin} compare due volte",
+    "portfolio.bad_date": "{text} non è una data come 2026-01-02.",
+    "portfolio.save_first": "Prima valida e salva il portafoglio.",
+    "portfolio.library": "{error}",
+    "data.import": "Importa un file scaricato…",
+    "data.dataset": "Nome del dataset per questo file (per esempio prezzi-world):",
+    "data.imported": "{name} importato come {dataset}, senza modifiche, con la sua provenienza.",
 }
 
 STRINGS: Mapping[str, Mapping[str, str]] = MappingProxyType(

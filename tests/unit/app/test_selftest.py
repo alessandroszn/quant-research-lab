@@ -66,7 +66,7 @@ def test_self_test_fails_when_nothing_is_tested(
     empty = tmp_path / "empty"
     empty.mkdir()
     assert self_test(empty, log=lines.append) == 1
-    assert lines == ["self-test: the workspace has no configs"]
+    assert lines == ["self-test: portfolios: []", "self-test: the workspace has no configs"]
     assert self_test(tmp_path / "missing", log=lines.append) == 1
     assert lines[-1].startswith("self-test: cannot open")
 
@@ -82,7 +82,7 @@ def test_self_test_fails_when_a_run_fails(
     monkeypatch.setattr(viewmodels, "run_experiment", boom)
     lines: list[str] = []
     assert self_test(_workspace(tmp_path), log=lines.append) == 1
-    assert "FAILED" in lines[0]
+    assert "FAILED" in lines[1]  # lines[0] lists the portfolios
 
 
 def test_command_line_usage(

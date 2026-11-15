@@ -230,6 +230,16 @@ class ExperimentScreen(QWidget):
                 self.configs.setCurrentItem(item)
         self._enable()
 
+    def open_config(self, path: Path) -> None:
+        """Show ``path`` in the editor (a config another screen created)."""
+        if not self.confirm_discard():
+            return
+        self.refresh()
+        self._show_text(self.model.select(path))
+        self.results.show_result(self.model.result)
+        self.message.setText("")
+        self.refresh()
+
     def reset(self) -> None:
         """Forget the selection and reload (another workspace was opened)."""
         self.model.clear()
@@ -417,18 +427,38 @@ class HistoryScreen(QWidget):
 
 
 class DataScreen(QWidget):
-    """Raw files with provenance, terms and age."""
+    """Raw files with provenance, terms and age; files downloaded by hand are imported here."""
 
-    def __init__(self, model: DataViewModel, language: str) -> None:
+    def __init__(self, model: DataViewModel, dialogs: Dialogs, language: str) -> None:
         """Build the screen."""
         super().__init__()
         self.model = model
+        self.dialogs = dialogs
         self.language = language
         self.table = QTableWidget()
         self.message = QLabel("")
+        self.message.setWordWrap(True)
+        self.import_button = QPushButton(tr("data.import", language))
+        self.import_button.clicked.connect(self._import)
         layout = QVBoxLayout(self)
         layout.addWidget(self.table)
+        layout.addWidget(self.import_button)
         layout.addWidget(self.message)
+
+    def _import(self) -> None:
+        path = self.dialogs.pick_file(tr("data.import", self.language))
+        dataset = None if path is None else self.dialogs.ask_text(tr("data.dataset", self.language))
+        if path is None or dataset is None:
+            return
+        try:
+            self.model.import_file(path, dataset)
+        except AppError as exc:
+            self.message.setText(exc.text(self.language))
+            return
+        self.refresh()
+        self.message.setText(
+            tr("data.imported", self.language, name=path.name, dataset=dataset.strip())
+        )
 
     def refresh(self) -> None:
         """Reload the raw store listing."""
@@ -437,7 +467,6 @@ class DataScreen(QWidget):
         except AppError as exc:
             self.message.setText(exc.text(self.language))
             return
-        self.message.setText("")
         lang = self.language
         rows = [
             (

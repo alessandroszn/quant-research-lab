@@ -33,11 +33,13 @@ from qrlab.portfolio.ledger import (
     ToBase,
     TradeCharge,
     TransferGain,
+    check_transactions,
     replay,
 )
 from qrlab.portfolio.native import (
     NATIVE_COLUMNS,
     NATIVE_MAPPING,
+    kind_columns,
     parse_native_csv,
     write_native_csv,
 )
@@ -84,9 +86,11 @@ __all__ = [
     "TwrResult",
     "Valuation",
     "XirrResult",
+    "check_transactions",
     "contribution_by_position",
     "currency_effect",
     "external_flows_by_date",
+    "kind_columns",
     "load_broker_mapping",
     "money_weighted_return",
     "parse_broker_csv",

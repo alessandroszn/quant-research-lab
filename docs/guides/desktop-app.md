@@ -9,12 +9,13 @@ Start it with `qrlab-app`, which needs the `app` extra, or install the Windows p
 
 ## Workspaces
 
-A workspace is a folder with three sub-folders:
+A workspace is a folder with four sub-folders:
 
 | Folder | Content |
 |---|---|
 | `configs/` | the experiment configs (TOML) |
 | `data/` | your files and the raw store; keep real data here |
+| `portfolios/` | one folder per portfolio described on the Portfolios screen |
 | `results/` | the outputs of every run, with their records |
 
 On the **Home** screen, open a workspace or create a new one; recent workspaces are listed
@@ -25,13 +26,14 @@ no logs outside `results/`.
 
 | Screen | Experiment kinds |
 |---|---|
-| Portfolio | `portfolio_report` |
+| Portfolios | describe a portfolio in two tables, then create its report config |
+| Portfolio report | `portfolio_report` |
 | Risk | `risk_report` |
 | Scenarios | `scenario_analysis` |
 | Projections | `projection` |
 | Optimiser | `optimisation` |
 | Backtests & studies | `backtest` and the four studies |
-| Data | the raw store: source, dataset, download date, age, size, hash and terms of each file |
+| Data | the raw store: source, dataset, download date, age, size, hash and terms of each file; *Import a downloaded file* |
 | History | every run, newest first, with status, configurations tried and errors |
 | Settings | language, recent workspaces, version information and the settings file |
 
@@ -45,12 +47,47 @@ Each analysis screen has three columns:
   - The scalars and figures are shown below the tables.
   - *Open report* and *Open folder* open them in the system's browser and file manager.
 
+## Describing a portfolio (Portfolios)
+
+A portfolio is a folder `portfolios/<name>/` with `transactions.csv`, the native qrlab file,
+and `instruments.toml`. No broker export is needed. The screen has two tables:
+
+- **Instruments:** one row per fund, with ISIN, name, type, asset class, currency, the date of
+  the facts and, where known, domicile, replication, distribution, TER, benchmark, hedging,
+  inception, fund size and source. The facts come from the fund's KID or factsheet.
+  `unknown` and `none` mean what they mean in the TOML file.
+- **Transactions:** one row per transaction, its kind picked from a list. Only the cells its
+  kind uses can be edited; the others are greyed out.
+- **Starting position:** for what you hold today without its history. It adds a deposit and
+  one transfer in per instrument on a start date. You fill in:
+  - the units;
+  - the market price on that day, which is what performance starts from;
+  - your original cost per unit, which gains and taxes use;
+  - the cash.
+
+*Validate and save* reads both tables exactly as the report will
+({py:mod}`qrlab.experiments.portfolios`).
+
+- **A problem** names its table, its row and the library's message, and nothing is written.
+- **When both tables are valid,** both files are written through the library's writers, with
+  the rows sorted by date.
+
+*Create report config* writes a `portfolio_report` config with the portfolio's files and
+`transactions_format = "native"`, and opens it on the Portfolio report screen. There you fill
+in the price file, its mapping, the checks and the parameters, then Validate and Run.
+
+**Prices and issuer files** (holdings, NAV history) are downloaded by you from the issuer's
+website. *Import a downloaded file*, on the Data screen, copies one into the raw store,
+unchanged, with its provenance. The app never downloads them itself (see
+{doc}`data-sources`).
+
 ## Things to know
 
 - **One run at a time, and runs cannot be cancelled.** The window stays responsive and shows
   the elapsed time. Closing the app during a run is refused.
-- **Unsaved edits are never lost silently.** Changing config, opening another workspace,
-  changing language or closing the window first asks *Save / Discard / Cancel*.
+- **Unsaved edits are never lost silently.** Changing config or portfolio, opening another
+  workspace, changing language or closing the window first asks *Save / Discard / Cancel*. A
+  portfolio that does not validate is not saved: the app stays on it and shows the problem.
 - **Re-running a config** replaces its outputs after asking. The trial ledger keeps every run.
 - **Language:** English or Italian. Numbers and dates on screen follow it; files on disk never
   change. The runner's own messages and identifiers (kinds, files, tables, columns) stay as

@@ -26,9 +26,15 @@ from qrlab.core.money import Currency, Money
 from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Provenance
 from qrlab.portfolio.broker_import import BrokerImport, BrokerMapping, parse_broker_csv
-from qrlab.portfolio.transactions import Transaction, TransactionKind
+from qrlab.portfolio.transactions import Transaction, TransactionKind, fields_required
 
-__all__ = ["NATIVE_COLUMNS", "NATIVE_MAPPING", "parse_native_csv", "write_native_csv"]
+__all__ = [
+    "NATIVE_COLUMNS",
+    "NATIVE_MAPPING",
+    "kind_columns",
+    "parse_native_csv",
+    "write_native_csv",
+]
 
 NATIVE_COLUMNS = (
     "id", "trade_date", "kind", "account", "isin", "quantity", "price", "price_currency",
@@ -53,6 +59,28 @@ NATIVE_MAPPING = BrokerMapping(
 """The :class:`~qrlab.portfolio.broker_import.BrokerMapping` of the native layout."""
 
 _REQUIRED_CELLS = ("fees", "fees_currency", "taxes", "taxes_currency")
+_ALWAYS = ("id", "trade_date", "kind", "account", *_REQUIRED_CELLS, "note")
+_FIELD_COLUMNS = {
+    "isin": ("isin",),
+    "quantity": ("quantity",),
+    "price": ("price", "price_currency"),
+    "amount": ("amount", "amount_currency"),
+    "fx_counter": ("fx_counter", "fx_counter_currency"),
+}
+
+
+def kind_columns(kind: TransactionKind) -> tuple[str, ...]:
+    """Return the native columns a transaction of ``kind`` uses, in file order.
+
+    The others must be empty. ``cost`` (with ``cost_currency``) is the optional original cost
+    of a transfer in.
+    """
+    used = set(_ALWAYS)
+    for name in fields_required(kind):
+        used |= set(_FIELD_COLUMNS[name])
+    if kind is TransactionKind.TRANSFER_IN:
+        used |= {"cost", "cost_currency"}
+    return tuple(c for c in NATIVE_COLUMNS if c in used)
 
 
 def parse_native_csv(content: bytes, provenance: Provenance) -> BrokerImport:

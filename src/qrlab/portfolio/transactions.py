@@ -160,6 +160,15 @@ class Transaction:
                 raise ValidationError(f"{self.id}: cost must be in the price currency")
 
 
+def fields_required(kind: TransactionKind) -> tuple[str, ...]:
+    """Return the optional fields a ``kind`` requires (the others must be ``None``).
+
+    The fields are among ``isin``, ``quantity``, ``price``, ``amount`` and ``fx_counter``;
+    ``cost`` is never required.
+    """
+    return tuple(name for name, required in _RULES[kind].items() if required)
+
+
 def _positive_decimal(value: object) -> bool:
     return isinstance(value, Decimal) and value.is_finite() and value > 0
 

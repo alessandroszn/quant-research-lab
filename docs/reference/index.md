@@ -15,6 +15,7 @@ qrlab.core
 qrlab.data
 qrlab.experiments
 qrlab.experiments.kinds
+qrlab.experiments.portfolios
 qrlab.experiments.workspace
 qrlab.instruments
 qrlab.lookthrough

@@ -12,14 +12,17 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from PySide6.QtCore import QCoreApplication, QModelIndex, QSettings, Qt, QThreadPool
-from PySide6.QtWidgets import QApplication, QTableWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QTableWidget
 
 from qrlab.data.provenance import Provenance
 from qrlab.data.store import RawStore
 from qrlab.experiments import RunResult
 from qrlab.experiments.kinds import KINDS
+from qrlab.instruments import INSTRUMENT_FIELDS
+from qrlab.portfolio import NATIVE_COLUMNS
 from qrlab_app.app import main as app_main
 from qrlab_app.main_window import ANALYSIS_SCREENS, AppShell, MainWindow
+from qrlab_app.portfolio_screen import KIND_COLUMN
 from qrlab_app.screens import ExperimentScreen
 from qrlab_app.viewmodels import ResultView, SettingsViewModel, TableView
 from qrlab_app.widgets import Dialogs, FrameModel, QtSettingsStore, ResultsPanel, RunWorker
@@ -41,6 +44,7 @@ class FakeUser:
         self.asked_save: list[str] = []
         self.informed: list[str] = []
         self.opened: list[Path] = []
+        self.file: Path | None = None
 
     def dialogs(self) -> Dialogs:
         def ask_choice(prompt: str, options: Sequence[str]) -> str | None:
@@ -62,6 +66,7 @@ class FakeUser:
             ask_save=ask_save,
             inform=self.informed.append,
             open_path=self.opened.append,
+            pick_file=lambda title: self.file,
         )
 
 
@@ -131,7 +136,7 @@ def test_window_screens_and_a_full_run(qapp: QApplication, tmp_path: Path) -> No
     user = FakeUser(root)
     pool = QThreadPool()
     window = _window(user, pool)
-    assert window.navigation.count() == 4 + len(ANALYSIS_SCREENS)
+    assert window.navigation.count() == 5 + len(ANALYSIS_SCREENS)  # Home, Portfolios, Data, …
     # Before a workspace is open every screen says so.
     portfolio = window.screen_for("portfolio_report")
     projections = window.screen_for("projection")
@@ -613,4 +618,185 @@ def test_the_full_portfolio_example_runs_in_the_app(qapp: QApplication, tmp_path
     tabs = [portfolio.results.tabs.tabText(i) for i in range(portfolio.results.tabs.count())]
     assert "exposures [descriptive]" in tabs
     assert portfolio.results.report_button.isEnabled()
+    window.close()
+
+
+# --------------------------------------------------------------------------- Portfolio screen
+def _type(table: QTableWidget, row: int, column: int, text: str) -> None:
+    """Type into a cell as a user would (the itemChanged signal reaches the view model)."""
+    item = table.item(row, column)
+    assert item is not None
+    assert item.flags() & Qt.ItemFlag.ItemIsEditable, (row, column)
+    item.setText(text)
+
+
+def test_a_portfolio_built_on_the_screen(qapp: QApplication, tmp_path: Path) -> None:
+    """The 8.8a starting position typed into the tables, saved, then a report config made."""
+    root = _workspace(tmp_path)
+    user = FakeUser(root)
+    window = _window(user, QThreadPool())
+    window.home.open_button.click()
+    screen = window.portfolios
+    window.navigation.setCurrentRow(1)
+    assert window.stack.currentWidget() is screen
+    assert not screen.save_button.isEnabled()
+    user.texts = ["mine"]
+    screen.new_button.click()
+    assert [screen.portfolios.item(i).text() for i in range(screen.portfolios.count())] == ["mine"]
+    assert screen.save_button.isEnabled()
+
+    screen.add_instrument_button.click()
+    fields = {
+        "isin": "IE0000000012",
+        "name": "Example World Equity UCITS ETF",
+        "instrument_type": "etf",
+        "asset_class": "equity",
+        "currency": "EUR",
+        "as_of": "2026-01-02",
+        "source": "synthetic example",
+    }
+    for name, text in fields.items():
+        _type(screen.instruments, 0, INSTRUMENT_FIELDS.index(name), text)
+    user.texts = ["2026-01-02"]
+    screen.start_button.click()
+    assert screen.message.text().startswith("Added a transfer in per instrument")
+    assert screen.transactions.rowCount() == 2
+    column = NATIVE_COLUMNS.index
+    amount = screen.transactions.item(1, column("amount"))
+    assert amount is not None
+    assert not amount.flags() & Qt.ItemFlag.ItemIsEditable  # a transfer in has no amount
+    _type(screen.transactions, 0, column("amount"), "1000")
+    _type(screen.transactions, 1, column("quantity"), "100")
+    _type(screen.transactions, 1, column("price"), "50")
+
+    screen.save_button.click()  # the cost is optional, but the deposit date is set: valid
+    assert screen.message.text() == "Valid and saved: 2 transactions, 1 instruments."
+    _type(screen.transactions, 1, column("quantity"), "-5")
+    screen.save_button.click()
+    assert screen.message.text().startswith("Transactions, row 2: line 3: negative quantity")
+    assert screen.transactions.currentRow() == 1
+    _type(screen.transactions, 1, column("quantity"), "100")
+    _type(screen.transactions, 1, column("cost"), "40")
+    screen.save_button.click()
+    assert screen.message.text().startswith("Valid and saved")
+
+    user.choice = "sell"
+    screen.add_button.click()
+    box = screen.transactions.cellWidget(2, KIND_COLUMN)
+    assert isinstance(box, QComboBox)
+    box.setCurrentText("buy")
+    assert screen.model.transactions[2]["kind"] == "buy"
+    screen.transactions.setCurrentCell(2, 0)
+    screen.remove_button.click()
+    assert screen.transactions.rowCount() == 2
+    screen.tabs.setCurrentWidget(screen.instruments)
+    screen.instruments.setCurrentCell(-1, -1)
+    screen.remove_button.click()  # nothing selected: nothing removed
+    assert screen.instruments.rowCount() == 1
+
+    user.texts = ["mine-report"]
+    screen.report_button.click()
+    report = window.screen_for("portfolio_report")
+    assert window.stack.currentWidget() is report
+    assert report.model.selected == root / "configs" / "mine-report.toml"
+    assert 'transactions_format = "native"' in report.editor.toPlainText()
+    user.texts = ["mine-report"]
+    screen.report_button.click()
+    assert screen.message.text() == "mine-report.toml already exists."
+
+    # A report config with unsaved edits is not replaced by a new one without asking.
+    report.editor.setPlainText(report.editor.toPlainText() + "\n# my note\n")
+    user.save_answer = None
+    user.texts = ["other-report"]
+    screen.report_button.click()
+    assert report.model.selected == root / "configs" / "mine-report.toml"
+    assert (root / "configs" / "other-report.toml").is_file()
+
+    # Removing an instrument row.
+    screen.tabs.setCurrentWidget(screen.instruments)
+    screen.instruments.setCurrentCell(0, 0)
+    screen.remove_button.click()
+    assert screen.instruments.rowCount() == 0
+    window.close()
+
+
+def test_portfolio_screen_guards(qapp: QApplication, tmp_path: Path) -> None:
+    root = _workspace(tmp_path)
+    user = FakeUser(root)
+    window = _window(user, QThreadPool())
+    screen = window.portfolios
+    screen.refresh()
+    assert screen.message.text() == "Open a workspace first (Home)."
+    window.home.open_button.click()
+    assert screen._save() is False  # no portfolio: a defensive path the buttons never reach
+    assert screen.message.text() == "No portfolio is selected."
+    user.texts = ["a/b"]
+    screen.new_button.click()
+    assert screen.message.text() == "'a/b' is not a valid file name."
+    user.texts = ["first", "second"]
+    screen.new_button.click()
+    screen.new_button.click()
+    user.texts = [None]
+    screen.start_button.click()  # cancelled
+    user.texts = ["2026-01-02"]
+    screen.start_button.click()
+    assert screen.message.text() == "Add the instruments first."
+    user.choice = None
+    screen.add_button.click()  # cancelled
+    user.texts = [None]
+    screen.report_button.click()  # cancelled
+    user.texts = ["r"]
+    screen.report_button.click()
+    assert screen.message.text() == "Validate and save the portfolio first."
+    screen.save_button.click()
+    assert screen.message.text() == "Transactions: there are no transactions"
+
+    # Unsaved edits: cancel keeps them, discard drops them, save that fails stays.
+    screen.add_instrument_button.click()
+    user.save_answer = None
+    screen.portfolios.itemClicked.emit(screen.portfolios.item(0))
+    assert screen.model.selected == "second"
+    user.save_answer = "save"
+    screen.portfolios.itemClicked.emit(screen.portfolios.item(0))
+    assert screen.model.selected == "second"
+    assert screen.message.text().startswith("Instruments, row 1:")
+    user.save_answer = "discard"
+    screen.portfolios.itemClicked.emit(screen.portfolios.item(0))
+    assert screen.model.selected == "first"
+    screen.portfolios.itemClicked.emit(screen.portfolios.item(0))  # same one: nothing to do
+    (root / "portfolios" / "second" / "transactions.csv").write_text("x\n", encoding="utf-8")
+    screen.portfolios.itemClicked.emit(screen.portfolios.item(1))
+    assert screen.message.text().startswith("Cannot read second:")
+    user.texts = [None]
+    screen.new_button.click()  # cancelled
+    screen.add_instrument_button.click()
+    user.save_answer = None
+    user.texts = ["third"]
+    screen.new_button.click()  # unsaved edits, cancelled: no new portfolio
+    assert "third" not in screen.model.names
+    window.close()
+
+
+def test_the_data_screen_imports_a_downloaded_file(qapp: QApplication, tmp_path: Path) -> None:
+    root = _workspace(tmp_path)
+    user = FakeUser(root)
+    window = _window(user, QThreadPool())
+    window.home.open_button.click()
+    download = tmp_path / "holdings.csv"
+    download.write_bytes(b"Ticker,Name\nAAPL,APPLE\n")
+    screen = window.data
+    screen.import_button.click()  # no file picked: nothing happens
+    user.file = download
+    user.texts = [None]
+    screen.import_button.click()  # no dataset name: nothing happens
+    assert screen.table.rowCount() == 1
+    user.texts = ["holdings-world"]
+    screen.import_button.click()
+    assert screen.table.rowCount() == 2
+    assert screen.message.text() == (
+        "holdings.csv imported as holdings-world, unchanged, with its provenance."
+    )
+    user.texts = ["../up"]
+    screen.import_button.click()
+    assert screen.message.text() == "'../up' is not a valid file name."
     window.close()

@@ -12,6 +12,7 @@ from typing import Protocol
 import pandas as pd
 
 from qrlab.experiments import RunResult, load_config, run_experiment, validate_experiment
+from qrlab.experiments.portfolios import import_downloaded_file
 from qrlab.experiments.registry import ExperimentKind
 from qrlab.experiments.workspace import (
     ConfigEntry,
@@ -37,6 +38,7 @@ __all__ = [
     "SettingsViewModel",
     "TableView",
     "WorkspaceViewModel",
+    "check_file_name",
     "load_result",
 ]
 
@@ -60,6 +62,14 @@ class AppError(Exception):
     def text(self, language: str) -> str:
         """Return the message in ``language``."""
         return tr(self.key, language, **self.values)
+
+
+def check_file_name(text: str) -> str:
+    """Return ``text`` stripped if it can be a file or folder name, else raise AppError."""
+    name = text.strip()
+    if not name or any(c in name for c in '/\\:*?"<>|') or name.startswith("."):
+        raise AppError("error.bad_name", name=repr(text))
+    return name
 
 
 @dataclass(frozen=True)
@@ -288,10 +298,7 @@ class ExperimentViewModel:
         return self.selected
 
     def _new_path(self, file_name: str) -> Path:
-        name = file_name.strip()
-        if not name or any(c in name for c in '/\\:*?"<>|') or name.startswith("."):
-            raise AppError("error.bad_name", name=repr(file_name))
-        path = self.workspace.require() / "configs" / f"{name}.toml"
+        path = self.workspace.require() / "configs" / f"{check_file_name(file_name)}.toml"
         if path.exists():
             raise AppError("error.exists", name=path.name)
         return path
@@ -331,6 +338,21 @@ class DataViewModel:
         """Read the raw store again."""
         self.files = list_raw_files(self.workspace.require(), now=self.now())
         return self.files
+
+    def import_file(self, path: Path, dataset: str) -> Path:
+        """Copy a file downloaded by hand into the raw store, unchanged, with its provenance.
+
+        The source is ``user`` and the dataset the name given; the file keeps its bytes, and
+        only its name is recorded (``qrlab.experiments.portfolios.import_downloaded_file``).
+        """
+        root = self.workspace.require()
+        name = check_file_name(dataset)
+        try:
+            stored = import_downloaded_file(root, Path(path), dataset=name, now=self.now)
+        except Exception as exc:  # import_local_file raises QrlabError or OSError
+            raise AppError("error.import", name=Path(path).name, message=str(exc)) from exc
+        self.refresh()
+        return stored
 
 
 # ------------------------------------------------------------------------------ settings

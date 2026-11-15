@@ -192,8 +192,8 @@ qrlab.experiments.kinds.KINDS  constant mappingproxy
 qrlab.experiments.workspace.ConfigEntry  class(path: 'Path', name: 'str | None', kind: 'str | None', valid: 'bool', error: 'str | None') -> None
 qrlab.experiments.workspace.RawFileEntry  class(path: 'Path', source: 'str', dataset: 'str', url: 'str', retrieved_at: 'datetime', size_bytes: 'int', sha256: 'str', terms: 'str', latest: 'bool', age_days: 'int') -> None
 qrlab.experiments.workspace.RunEntry  class(output_dir: 'Path', name: 'str', kind: 'str', status: 'str', started: 'str', finished: 'str', config_sha256: 'str', configurations_tried: 'int', error: 'str | None') -> None
-qrlab.experiments.workspace.WORKSPACE_FOLDERS  constant tuple = ['configs', 'data', 'results']
-qrlab.experiments.workspace.config_template  function(kind: 'ExperimentKind') -> 'str'
+qrlab.experiments.workspace.WORKSPACE_FOLDERS  constant tuple = ['configs', 'data', 'portfolios', 'results']
+qrlab.experiments.workspace.config_template  function(kind: 'ExperimentKind', *, inputs: 'Mapping[str, str] | None' = None, parameters: 'Mapping[str, str] | None' = None) -> 'str'
 qrlab.experiments.workspace.create_workspace  function(root: 'Path') -> 'Path'
 qrlab.experiments.workspace.list_configs  function(root: 'Path', *, kinds: 'Mapping[str, ExperimentKind]') -> 'list[ConfigEntry]'
 qrlab.experiments.workspace.list_raw_files  function(root: 'Path', *, now: 'datetime') -> 'list[RawFileEntry]'
@@ -223,6 +223,7 @@ qrlab.instruments.HoldingsFileFormat  enum
 qrlab.instruments.HoldingsFileFormat.CSV  member = 'csv'
 qrlab.instruments.HoldingsFileFormat.XLSX  member = 'xlsx'
 qrlab.instruments.HoldingsSnapshot  class(fund: 'Isin', as_of: 'date', holdings: 'pd.DataFrame', provenance: 'Provenance', weight_basis: 'str', sector_taxonomy: 'str | None', notes: 'tuple[str, ...]') -> None
+qrlab.instruments.INSTRUMENT_FIELDS  constant tuple = ['isin', 'name', 'instrument_type', 'asset_class', 'currency', 'as_of', 'domicile', 'replication', 'distribution', 'ter', 'benchmark', 'hedged_to', 'inception', 'fund_size', 'source']
 qrlab.instruments.Instrument  class(isin: 'Isin', name: 'str', instrument_type: 'InstrumentType', asset_class: 'AssetClass', currency: 'Currency', as_of: 'date', domicile: 'str | None', replication: 'Replication | None', distribution: 'Distribution | None', ter: 'Decimal | None', benchmark: 'str | None', hedged_to: 'Currency | None', inception: 'date | None', fund_size: 'Money | None', source: 'str') -> None
 qrlab.instruments.Instrument.is_fund  property
 qrlab.instruments.Instrument.ter_percent  property
@@ -253,6 +254,8 @@ qrlab.instruments.WeightUnit.PERCENT  member = 'percent'
 qrlab.instruments.WeightUnit.DECIMAL  member = 'decimal'
 qrlab.instruments.country_code  function(name: 'str') -> 'str'
 qrlab.instruments.holdings_issues  function(snapshot: 'HoldingsSnapshot', *, on: 'date', max_age_days: 'int', weight_tolerance: 'float') -> 'list[Issue]'
+qrlab.instruments.instrument_fields  function(instrument: 'Instrument') -> 'dict[str, str]'
+qrlab.instruments.instrument_from_fields  function(fields: 'Mapping[str, str]') -> 'Instrument'
 qrlab.instruments.is_valid_isin  function(code: 'str') -> 'bool'
 qrlab.instruments.load_holdings_mapping  function(path: 'Path') -> 'HoldingsCsvMapping'
 qrlab.instruments.load_instruments  function(path: 'Path') -> 'list[Instrument]'
@@ -262,6 +265,7 @@ qrlab.instruments.normalised_weights  function(snapshot: 'HoldingsSnapshot') -> 
 qrlab.instruments.parse_holdings_csv  function(content: 'bytes', provenance: 'Provenance', mapping: 'HoldingsCsvMapping', *, fund: 'Isin', as_of: 'date', weight_basis: 'str', sector_taxonomy: 'str | None') -> 'HoldingsSnapshot'
 qrlab.instruments.parse_holdings_file  function(content: 'bytes', provenance: 'Provenance', mapping: 'HoldingsCsvMapping', *, fund: 'Isin', as_of: 'date', weight_basis: 'str', sector_taxonomy: 'str | None') -> 'HoldingsSnapshot'
 qrlab.instruments.validate_country  function(code: 'object') -> 'str'
+qrlab.instruments.write_instruments_toml  function(instruments: 'Sequence[Instrument]') -> 'str'
 qrlab.lookthrough.CASH  constant str = 'cash'
 qrlab.lookthrough.Dimension  enum
 qrlab.lookthrough.Dimension.COUNTRY  member = 'country'
@@ -408,9 +412,11 @@ qrlab.portfolio.Valuation.series  method() -> 'pd.Series'
 qrlab.portfolio.XirrResult  class(rate: 'float', sign_changes: 'int', candidates: 'tuple[float, ...]', label: 'str' = 'MWR (XIRR, ACT/365)') -> None
 qrlab.portfolio.XirrResult.label  attribute str = 'MWR (XIRR, ACT/365)'
 qrlab.portfolio.XirrResult.unique_root_guaranteed  property
+qrlab.portfolio.check_transactions  function(transactions: 'Iterable[Transaction]', *, allow_negative_cash: 'bool' = False) -> 'None'
 qrlab.portfolio.contribution_by_position  function(history: 'LedgerHistory', valuation: 'Valuation', to_base: 'ToBase', *, start: 'date | None', end: 'date') -> 'dict[tuple[str, Isin], Decimal]'
 qrlab.portfolio.currency_effect  function(*, local_return: 'float', fx_return: 'float') -> 'CurrencyEffect'
 qrlab.portfolio.external_flows_by_date  function(history: 'LedgerHistory') -> 'dict[date, Decimal]'
+qrlab.portfolio.kind_columns  function(kind: 'TransactionKind') -> 'tuple[str, ...]'
 qrlab.portfolio.load_broker_mapping  function(path: 'Path') -> 'BrokerMapping'
 qrlab.portfolio.money_weighted_return  function(history: 'LedgerHistory', valuation: 'Valuation', *, end: 'date') -> 'XirrResult'
 qrlab.portfolio.parse_broker_csv  function(content: 'bytes', provenance: 'Provenance', mapping: 'BrokerMapping') -> 'BrokerImport'

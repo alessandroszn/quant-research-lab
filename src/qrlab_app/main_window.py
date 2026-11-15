@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from datetime import datetime
+from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QThreadPool
 from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import QHBoxLayout, QListWidget, QMainWindow, QStackedWidget, QWidget
 
 from qrlab.experiments.registry import ExperimentKind
+from qrlab_app.portfolio import PortfolioViewModel
+from qrlab_app.portfolio_screen import PortfolioScreen
 from qrlab_app.screens import (
     DataScreen,
     ExperimentScreen,
@@ -99,6 +102,12 @@ class MainWindow(QMainWindow):
             can_leave=lambda: self.confirm_leave("screen.busy"),
             on_change=self.workspace_opened,
         )
+        self.portfolios = PortfolioScreen(
+            PortfolioViewModel(self.workspace, kinds=kinds, now=now),
+            dialogs,
+            language,
+            on_report=self.open_report,
+        )
         self.analysis = [
             ExperimentScreen(
                 ExperimentViewModel(self.workspace, kinds=kinds, kind_names=names),
@@ -108,7 +117,7 @@ class MainWindow(QMainWindow):
             )
             for _, names in ANALYSIS_SCREENS
         ]
-        self.data = DataScreen(DataViewModel(self.workspace, now=now), language)
+        self.data = DataScreen(DataViewModel(self.workspace, now=now), dialogs, language)
         self.history = HistoryScreen(HistoryViewModel(self.workspace), dialogs, language)
         self.settings_screen = SettingsScreen(
             settings,
@@ -117,7 +126,10 @@ class MainWindow(QMainWindow):
             on_language=self.change_language,
             on_recent_change=self.home.refresh_recent,
         )
-        pages: list[tuple[str, QWidget]] = [("nav.home", self.home)]
+        pages: list[tuple[str, QWidget]] = [
+            ("nav.home", self.home),
+            ("nav.portfolios", self.portfolios),
+        ]
         pages += [
             (key, screen) for (key, _), screen in zip(ANALYSIS_SCREENS, self.analysis, strict=True)
         ]
@@ -128,6 +140,7 @@ class MainWindow(QMainWindow):
         ]
         self._refreshers: list[Callable[[], None]] = [  # one per page, in navigation order
             self.home.refresh_recent,
+            self.portfolios.refresh,
             *(screen.refresh for screen in self.analysis),
             self.data.refresh,
             self.history.refresh,
@@ -160,6 +173,12 @@ class MainWindow(QMainWindow):
                 return screen
         raise KeyError(kind)
 
+    def open_report(self, path: Path) -> None:
+        """Show a report config created on the Portfolio screen, on the report's screen."""
+        screen = self.screen_for("portfolio_report")
+        screen.open_config(path)
+        self.navigation.setCurrentRow(self.stack.indexOf(screen))
+
     def busy(self) -> bool:
         """Whether a run is in progress on any screen."""
         return any(screen.model.status == "running" for screen in self.analysis)
@@ -169,12 +188,15 @@ class MainWindow(QMainWindow):
         if self.busy():
             self.dialogs.inform(tr(busy_key, self.language))
             return False
-        return all(screen.confirm_discard() for screen in self.analysis)
+        return self.portfolios.confirm_discard() and all(
+            screen.confirm_discard() for screen in self.analysis
+        )
 
     def workspace_opened(self) -> None:
         """Reset every screen to the workspace just opened."""
         for screen in self.analysis:
             screen.reset()
+        self.portfolios.reset()
         self.home.show_workspace()
         self.data.refresh()
         self.history.refresh()

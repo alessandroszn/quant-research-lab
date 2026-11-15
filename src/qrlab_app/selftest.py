@@ -53,6 +53,7 @@ def _automatic_dialogs(log: Callable[[str], None]) -> Dialogs:
         ask_save=lambda question: "discard",  # the self-test never edits a config
         inform=log,
         open_path=lambda path: None,
+        pick_file=lambda title: None,
     )
 
 
@@ -94,6 +95,7 @@ def self_test(root: Path, *, log: Callable[[str], None] = print) -> int:
         log(f"self-test: cannot open {root}: {window.home.message.text()}")
         window.close()
         return 1
+    log(f"self-test: portfolios: {window.portfolios.model.names}")
     ran = failed = 0
     for screen in window.analysis:
         for entry in list(screen.model.entries):
