@@ -1,4 +1,7 @@
 # Synthetic USD price file mapping: one file and one mapping per currency.
+file_format = "csv"
+skip_rows = 0
+value_affixes = []
 date_column = "Data"
 date_format = "%d/%m/%Y"
 delimiter = ";"

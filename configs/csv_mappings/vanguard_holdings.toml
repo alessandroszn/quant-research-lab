@@ -1,0 +1,31 @@
+# Mapping for the holdings export of a Vanguard UCITS ETF (phase 8.2b).
+#
+# The file: the "Download" button under "Holdings details" on the fund's page of a Vanguard
+# Europe website, downloaded by you for your own analysis (Vanguard's terms allow viewing,
+# storing and downloading for personal, non-commercial use; see docs/guides/data-sources.md).
+# Keep it under data/ (git-ignored): it is never committed or redistributed.
+#
+# Layout seen on 2026-11-15 (FTSE All-World UCITS ETF): sheet "Holdings details", six preamble
+# rows, the header, one row per holding, a blank row and a disclaimer. Every number is text, the
+# weight with a percent sign ("4.7436%"). There is no ISIN column, so holdings are keyed by name.
+# The weights add up to a little under 100 %: cash and derivatives are omitted.
+#
+# In the report config, the fund's [parameters.holdings.<ISIN>] states the date of the file
+# ("As at ..." in its preamble), weight_basis = "market value" and the sector taxonomy.
+
+file_format = "xlsx"
+sheet = "Holdings details"
+skip_rows = 6
+decimal_separator = "."
+thousands_separator = ","
+value_affixes = ["%"]
+weight_unit = "percent"
+missing_tokens = [""]
+asset_class = "equity"          # the file has no asset-class column; these are equity funds
+country_format = "iso_alpha2"   # "Region" holds ISO 3166-1 alpha-2 codes
+
+[columns]
+name = "Holding name"
+weight = "% of market value"
+country = "Region"
+sector = "Sector"

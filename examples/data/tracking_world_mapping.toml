@@ -1,5 +1,8 @@
 # Synthetic tracking file mapping: exactly two columns, the fund (instrument id = its ISIN)
 # and its index. The fund series must be NAV or total return, the index total return.
+file_format = "csv"
+skip_rows = 0
+value_affixes = []
 date_column = "Data"
 date_format = "%d/%m/%Y"
 delimiter = ";"

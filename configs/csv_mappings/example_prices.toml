@@ -3,6 +3,9 @@
 # Copy this file, adapt it to your broker's export and keep the real CSV under data/ (git-ignored).
 # Every field is required: formats and separators are never guessed.
 
+file_format = "csv"          # "csv", or "xlsx" with sheet = "..." instead of delimiter and encoding
+skip_rows = 0                # lines before the header (an issuer's preamble)
+value_affixes = []           # symbols next to numbers to remove, e.g. ["$"] or ["€"]
 date_column = "Data"
 date_format = "%d/%m/%Y"
 delimiter = ";"

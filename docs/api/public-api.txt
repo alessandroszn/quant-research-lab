@@ -115,13 +115,16 @@ qrlab.core.validate_series  function(obj: 'pd.Series', *, nan_policy: 'NanPolicy
 qrlab.core.wealth_index  function(returns: '_T', *, kind: 'ReturnKind', initial: 'float') -> '_T'
 qrlab.core.weekday_calendar  function() -> 'BusinessCalendar'
 qrlab.data.ColumnSpec  class(instrument: 'str', price_type: 'PriceType') -> None
-qrlab.data.CsvMapping  class(date_column: 'str', date_format: 'str', delimiter: 'str', decimal_separator: 'str', thousands_separator: 'str | None', encoding: 'str', currency: 'Currency', frequency: 'Frequency', columns: 'Mapping[str, ColumnSpec]') -> None
+qrlab.data.CsvMapping  class(date_column: 'str', date_format: 'str', delimiter: 'str | None', decimal_separator: 'str', thousands_separator: 'str | None', encoding: 'str | None', currency: 'Currency', frequency: 'Frequency', columns: 'Mapping[str, ColumnSpec]', file_format: 'FileFormat', sheet: 'str | None', skip_rows: 'int', value_affixes: 'tuple[str, ...]') -> None
 qrlab.data.DataNotFoundError  exception(inherited)
 qrlab.data.Dataset  class(data: 'pd.DataFrame', provenance: 'Provenance', frequency: 'Frequency', unit: 'Unit', return_kind: 'ReturnKind | None', currency: 'Currency | None', availability: 'str', notes: 'tuple[str, ...]' = <factory>, available_from: 'pd.Series | None' = None, status: 'pd.Series | None' = None) -> None
 qrlab.data.ECB_SERIES  constant mappingproxy
 qrlab.data.FetchError  exception(inherited)
 qrlab.data.Fetcher  class(*args, **kwargs)
 qrlab.data.Fetcher.fetch  method(url: 'str') -> 'bytes'
+qrlab.data.FileFormat  enum
+qrlab.data.FileFormat.CSV  member = 'csv'
+qrlab.data.FileFormat.XLSX  member = 'xlsx'
 qrlab.data.IntegrityError  exception(inherited)
 qrlab.data.KEN_FRENCH_DATASETS  constant mappingproxy
 qrlab.data.OSAP_FILES  constant mappingproxy
@@ -166,6 +169,7 @@ qrlab.data.parse_long_short_returns  function(content: 'bytes', provenance: 'Pro
 qrlab.data.parse_price_csv  function(content: 'bytes', provenance: 'Provenance', mapping: 'CsvMapping') -> 'PriceData'
 qrlab.data.parse_signal_doc  function(content: 'bytes', provenance: 'Provenance') -> 'pd.DataFrame'
 qrlab.data.parse_yield_curve  function(content: 'bytes', provenance: 'Provenance') -> 'Dataset'
+qrlab.data.read_xlsx_rows  function(content: 'bytes', *, sheet: 'str', skip_rows: 'int') -> 'list[list[object]]'
 qrlab.experiments.ExperimentConfig  class(path: 'Path', name: 'str', kind: 'str', hypothesis: 'str', seed: 'int | None', inputs: 'Mapping[str, Path]', given_inputs: 'Mapping[str, str]', parameters: 'Mapping[str, object]', output_dir: 'Path', raw: 'Mapping[str, object]', hash: 'str', input_groups: 'frozenset[str]' = frozenset()) -> None
 qrlab.experiments.ExperimentConfig.input_groups  attribute frozenset = []
 qrlab.experiments.ExperimentKind  class(name: 'str', description: 'str', inputs: 'tuple[str, ...]', needs_seed: 'bool', parameters: 'tuple[str, ...]', parse: 'Callable[[Mapping[str, object]], object]', run: 'Callable[[RunContext], ExperimentOutput]', optional_inputs: 'tuple[str, ...]' = (), input_groups: 'tuple[str, ...]' = (), optional_parameters: 'tuple[str, ...]' = (), check_inputs: 'Callable[[object, frozenset[str]], None] | None' = None) -> None
@@ -218,7 +222,7 @@ qrlab.instruments.Distribution.ACCUMULATING  member = 'accumulating'
 qrlab.instruments.Distribution.DISTRIBUTING  member = 'distributing'
 qrlab.instruments.FUND_TYPES  constant frozenset
 qrlab.instruments.HOLDING_COLUMNS  constant tuple = ['name', 'isin', 'weight', 'country', 'sector', 'currency', 'asset_class']
-qrlab.instruments.HoldingsCsvMapping  class(skip_rows: 'int', delimiter: 'str | None', decimal_separator: 'str', thousands_separator: 'str | None', encoding: 'str | None', weight_unit: 'WeightUnit', missing_tokens: 'tuple[str, ...]', columns: 'Mapping[str, str]', asset_class: 'AssetClass | None', asset_class_values: 'Mapping[str, AssetClass]', file_format: 'HoldingsFileFormat', sheet: 'str | None', country_format: 'CountryFormat', country_values: 'Mapping[str, str | None]') -> None
+qrlab.instruments.HoldingsCsvMapping  class(skip_rows: 'int', delimiter: 'str | None', decimal_separator: 'str', thousands_separator: 'str | None', encoding: 'str | None', weight_unit: 'WeightUnit', missing_tokens: 'tuple[str, ...]', columns: 'Mapping[str, str]', asset_class: 'AssetClass | None', asset_class_values: 'Mapping[str, AssetClass]', file_format: 'HoldingsFileFormat', sheet: 'str | None', country_format: 'CountryFormat', country_values: 'Mapping[str, str | None]', value_affixes: 'tuple[str, ...]') -> None
 qrlab.instruments.HoldingsFileFormat  enum
 qrlab.instruments.HoldingsFileFormat.CSV  member = 'csv'
 qrlab.instruments.HoldingsFileFormat.XLSX  member = 'xlsx'

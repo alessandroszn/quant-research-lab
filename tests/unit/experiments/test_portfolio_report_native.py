@@ -121,6 +121,9 @@ def test_the_format_is_explicit(tmp_path: Path, parameters: str, mapping: bool, 
 
 
 PRICES_MAPPING = """\
+file_format = "csv"
+skip_rows = 0
+value_affixes = []
 date_column = "date"
 date_format = "%Y-%m-%d"
 delimiter = ","
