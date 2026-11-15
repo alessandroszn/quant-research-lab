@@ -24,6 +24,8 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Total-return series for distributing funds | 8.7 | A total-return file per fund, used by the diversification checks and the report's risk, so that a distributing fund's returns include its distributions. |
 | Reconciliation with a broker export | 8.1, 8.8 | The old 8.1: run the report on a broker export and reconcile value, cash and realised gains with the broker's statements, once such an export exists. |
 | Price fetcher for a licensed API | 8.8 | Automatic fund prices from an API with the user's own key, with its terms recorded; no free source with clear terms was found. |
+| Swiss treaty relief and more | 9.2 | Relief for foreign withholding tax (DA-1) and the US additional withholding; real-estate funds (LIFD art. 20 cpv. 1 lett. e); pillar 3a; reports in German and French; reading the ESTV price list (ICTax) automatically, after its terms are checked. |
+| Income tax in the projection kind | 9.2 | `income_tax_rate` and `taxable_yield` in the standalone `projection` kind, as in the report's projection. |
 | Loss rules in configs | 8.6b | `[parameters]` keys for `qrlab.simulation.LossRules` in the backtest, projection and report kinds; today the rules are a library option only. |
 | Italian taxes on income and wealth | 8.6 | Recompute dividend and coupon taxes (with foreign withholding and treaties); stamp duty and IVAFE; foreign currency as redditi diversi. |
 | Benchmark series in the portfolio report | 8.5 | The relative checks (beta, tracking error against a benchmark) need a benchmark input; with it, beta on excess returns of the €STR. |

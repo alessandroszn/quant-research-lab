@@ -19,6 +19,7 @@ from enum import Enum
 from typing import Protocol
 
 from qrlab.core.errors import ValidationError
+from qrlab.core.money import Currency
 from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.master import Instrument
 from qrlab.portfolio.ledger import LedgerHistory, ToBase
@@ -53,8 +54,9 @@ class ColumnKind(Enum):
     HOLDING = "holding"  # an ISIN: as is in the CSV, the holding's name in the report
     LABEL = "label"  # a code: as is in the CSV, the label ``prefix + code`` in the report
     TEXT = "text"  # text, as is
-    MONEY = "money"  # a Decimal amount (None: "not available"); a float in the CSV
+    MONEY = "money"  # a Decimal amount in the base currency; a float in the CSV
     SHARE = "share"  # a Decimal fraction, shown as a percentage; a float in the CSV
+    NUMBER = "number"  # a Decimal, shown with its own decimals (units, a per-unit amount)
 
 
 Cell = Decimal | date | int | str | None
@@ -65,6 +67,7 @@ class TaxColumn:
     """One column: its CSV name, its report label key, its kind and its alignment.
 
     ``label`` may be empty (no header). ``prefix`` applies to :attr:`ColumnKind.LABEL` only.
+    ``none_label`` is the label key shown for an empty cell (``None``); ``""`` leaves it blank.
     """
 
     key: str
@@ -72,6 +75,7 @@ class TaxColumn:
     kind: ColumnKind
     align: str
     prefix: str = ""
+    none_label: str = "not_available"
 
     def __post_init__(self) -> None:
         """Validate the kind and the alignment."""
@@ -185,12 +189,14 @@ class TaxRegime(Protocol):
 
     ``keys`` are its required ``[parameters.tax]`` keys besides ``country`` and
     ``optional_keys`` the others; :meth:`parse` turns the table into the country's settings,
-    which :meth:`report` then uses.
+    which :meth:`report` then uses. ``base_currency`` is the report's base currency the
+    country needs (CHF for Switzerland), or ``None`` for any.
     """
 
     country: str
     keys: frozenset[str]
     optional_keys: frozenset[str]
+    base_currency: Currency | None
 
     def parse(self, table: Mapping[str, object]) -> object:
         """Read and check the country's keys (the key names are already checked)."""

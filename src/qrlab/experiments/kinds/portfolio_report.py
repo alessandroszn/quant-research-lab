@@ -78,7 +78,14 @@ and scalars (:class:`qrlab.tax.TaxReport`). Italy (``country = "it"``): ``regime
 (``amministrato``/``dichiarativo``) and ``public_share`` (a table: ISIN -> share of Italian and
 white-list government bonds, required for every fund and bond sold; 0 for an equity fund);
 it writes ``tax_events.csv``, ``losses_balance.csv`` and the scalars ``tax_due``,
-``tax_withheld`` and ``losses_remaining``. See :mod:`qrlab.tax.italy`.
+``tax_withheld`` and ``losses_remaining``. See :mod:`qrlab.tax.italy`. Switzerland
+(``country = "ch"``, phase 9.2, base currency CHF): ``marginal_rate``, ``wealth_tax_rate``,
+``net_income`` (year = amount), ``debt_financed`` and ``reported_income`` (ISIN = list of
+``{ date, per_unit, currency }`` from the ESTV price list); it writes ``ch_years.csv``,
+``ch_safe_haven.csv`` and ``ch_income.csv``. See :mod:`qrlab.tax.switzerland`.
+
+The projection may add ``income_tax_rate`` and ``taxable_yield`` (both or neither, phase
+9.2): a yearly tax of their product on value.
 
 Valuation dates are the dates of all price files from the first transaction on. The report is
 descriptive.
@@ -256,6 +263,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         optional=set(_OPTIONAL_PARAMETERS),
         where="[parameters]",
     )
+    _check_tax_base(parameters)
     targets = parameters["target_weights"]
     if not isinstance(targets, dict) or not all(type(v) in (int, float) for v in targets.values()):
         raise ValidationError("target_weights must be a table of numbers (empty for none)")
@@ -299,6 +307,20 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
             for isin, spec in _per_fund(parameters, "tracking", {"index_hedged_to"}).items()
         },
     )
+
+
+def _check_tax_base(parameters: Mapping[str, object]) -> None:
+    """Refuse a base currency the chosen country cannot use (e.g. EUR with Swiss taxes)."""
+    spec = parameters.get("tax")
+    if not isinstance(spec, dict) or "country" not in spec:
+        return
+    needed = regime_for(spec["country"]).base_currency
+    base = parameters["base_currency"]
+    if needed is not None and base != needed.code:
+        raise ValidationError(
+            f'[parameters.tax] country = "{spec["country"]}" needs base_currency = '
+            f'"{needed.code}", not {base!r}'
+        )
 
 
 def _parse_tax(parameters: Mapping[str, object]) -> tuple[TaxRegime, object] | None:
@@ -520,7 +542,7 @@ def _csv_cell(cell: object, kind: ColumnKind) -> object:
     """Write a cell as the CSV holds it: amounts and shares as floats, the rest as they are."""
     if cell is None:
         return None
-    if kind in (ColumnKind.MONEY, ColumnKind.SHARE):
+    if kind in (ColumnKind.MONEY, ColumnKind.SHARE, ColumnKind.NUMBER):
         return float(cell)  # type: ignore[arg-type]
     return cell
 

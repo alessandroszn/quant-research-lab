@@ -79,6 +79,7 @@ from qrlab.tax.regime import (
     LabelRef,
     ParagraphValue,
     SourcesRef,
+    TaxColumn,
     TaxReport,
     TaxTable,
 )
@@ -873,19 +874,17 @@ class _Builder:
             self.t(table.title),
             tuple(self.t(c.label) if c.label else "" for c in table.columns),
             tuple(
-                tuple(
-                    self._tax_cell(cell, c.kind, c.prefix)
-                    for cell, c in zip(row, table.columns, strict=True)
-                )
+                tuple(self._tax_cell(cell, c) for cell, c in zip(row, table.columns, strict=True))
                 for row in table.rows
             ),
             tuple(c.align for c in table.columns),
             () if table.note is None else (self.t(table.note),),
         )
 
-    def _tax_cell(self, cell: Cell, kind: ColumnKind, prefix: str) -> str:
+    def _tax_cell(self, cell: Cell, column: TaxColumn) -> str:
+        kind, prefix = column.kind, column.prefix
         if cell is None:
-            return self.t("not_available")
+            return self.t(column.none_label) if column.none_label else ""
         if kind is ColumnKind.DATE and isinstance(cell, date):
             return self.day(cell)
         if kind is ColumnKind.HOLDING:
@@ -896,6 +895,10 @@ class _Builder:
             return self.money(cell)
         if kind is ColumnKind.SHARE and isinstance(cell, Decimal):
             return self.pct(float(cell))
+        if kind is ColumnKind.NUMBER and isinstance(cell, Decimal):
+            exponent = cell.as_tuple().exponent
+            decimals = max(0, -exponent) if isinstance(exponent, int) else 0
+            return format_number(cell, decimals, style=self.style)
         return str(cell)
 
     def _lookthrough(self) -> Section:

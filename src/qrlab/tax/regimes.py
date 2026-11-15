@@ -8,10 +8,13 @@ from types import MappingProxyType
 from qrlab.core.errors import ValidationError
 from qrlab.tax.italy import ITALY
 from qrlab.tax.regime import TaxRegime
+from qrlab.tax.switzerland import SWITZERLAND
 
 __all__ = ["REGIMES", "regime_for"]
 
-REGIMES: Mapping[str, TaxRegime] = MappingProxyType({ITALY.country: ITALY})
+REGIMES: Mapping[str, TaxRegime] = MappingProxyType(
+    {ITALY.country: ITALY, SWITZERLAND.country: SWITZERLAND}
+)
 """Country code (ISO 3166-1 alpha-2, lower case) to its tax rules."""
 
 

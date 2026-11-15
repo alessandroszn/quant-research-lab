@@ -27,5 +27,8 @@ qrlab.risk
 qrlab.scenarios
 qrlab.simulation
 qrlab.stats
+qrlab.tax
+qrlab.tax.italy
+qrlab.tax.switzerland
 qrlab.validation
 ```

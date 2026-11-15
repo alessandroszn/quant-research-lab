@@ -1,4 +1,4 @@
-"""Tax analytics of a securities account (phases 8.6 and 9.1): analytics, not tax advice.
+"""Tax analytics of a securities account (phases 8.6, 9.1, 9.2): analytics, not tax advice.
 
 Every country is a :class:`~qrlab.tax.regime.TaxRegime` returning a
 :class:`~qrlab.tax.regime.TaxReport`; :data:`REGIMES` lists them by country code.
@@ -29,10 +29,12 @@ from qrlab.tax.regime import (
     TaxTable,
 )
 from qrlab.tax.regimes import REGIMES, regime_for
+from qrlab.tax.switzerland import SWITZERLAND, SwissRegime, SwissSettings, swiss_tax_model
 
 __all__ = [
     "ITALY",
     "REGIMES",
+    "SWITZERLAND",
     "Category",
     "ColumnKind",
     "Holdings",
@@ -43,6 +45,8 @@ __all__ = [
     "Paragraph",
     "Regime",
     "SourcesRef",
+    "SwissRegime",
+    "SwissSettings",
     "TaxColumn",
     "TaxEvent",
     "TaxInputs",
@@ -53,4 +57,5 @@ __all__ = [
     "italian_tax_position",
     "italian_tax_report",
     "regime_for",
+    "swiss_tax_model",
 ]

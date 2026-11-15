@@ -344,3 +344,27 @@ def test_ter_cost_with_cash_counts_cash_at_zero(tmp_path: Path) -> None:
     assert record["status"] == "success", record["error"]
     cost = record["scalars"]["projection_annual_cost"]["value"]  # type: ignore[index]
     assert cost == pytest.approx(0.0020 * 10_000 / 10_500)
+
+
+# ------------------------------------------------------------------- income tax (phase 9.2)
+def test_a_yearly_income_tax_by_hand(tmp_path: Path) -> None:
+    """30 % on a 2 % taxable yield is 0.6 % of value a year, 0.05 % a month after returns.
+
+    Each month: (value + 100) x 1.005 x (1 - 0.0005); twelve months from 10,000.
+    """
+    projection = DETERMINISTIC.replace(
+        "wealth_tax = 0.0\n", "wealth_tax = 0.0\nincome_tax_rate = 0.3\ntaxable_yield = 0.02\n"
+    )
+    record, out = _run(_setup(tmp_path, projection=projection))
+    assert record["status"] == "success", record["error"]
+    growth = 1.005 * (1 - 0.3 * 0.02 / 12)
+    expected = 10_000 * growth**12 + 100 * sum(growth**k for k in range(1, 13))
+    terminal = pd.read_csv(out / "terminal.csv", index_col=0)
+    assert terminal["nominal"].tolist() == pytest.approx([expected] * 3, abs=0.005)
+    assert expected < 11_856.50  # the plain case's terminal value, without the tax
+
+
+def test_income_tax_keys_go_together(tmp_path: Path) -> None:
+    half = DETERMINISTIC.replace("wealth_tax = 0.0\n", "wealth_tax = 0.0\nincome_tax_rate = 0.3\n")
+    with pytest.raises(ValidationError, match="income_tax_rate and taxable_yield go together"):
+        validate_experiment(_setup(tmp_path, projection=half), kinds=KINDS)

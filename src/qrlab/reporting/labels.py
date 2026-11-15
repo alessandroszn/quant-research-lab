@@ -74,6 +74,79 @@ _EN = {
     "tax_expired": "Expired",
     "tax_remaining": "Remaining",
     "tax_usable_until": "Usable until",
+    # --- Switzerland (phase 9.2) ----------------------------------------------------------
+    "ch_intro": (
+        "Private investor resident in Switzerland. Rules as checked on {checked}. Taxes are "
+        "estimates at the rates you stated, not an assessment."
+    ),
+    "ch_gains_rule": (
+        "Gains on private wealth are not taxed, unless the investor counts as a professional "
+        "securities trader."
+    ),
+    "ch_safe_haven_rule": (
+        "The ESTV Circular 36 criteria are checked for each year. When all five are met, "
+        "professional trading is excluded; otherwise it cannot be excluded, and the tax office "
+        "judges the whole case."
+    ),
+    "ch_first_year": (
+        "{year}: the volume is compared with the account's first valuation, as there is none "
+        "before."
+    ),
+    "ch_income_rule": (
+        "Dividends and interest are income at their gross amount. An accumulating fund's "
+        "reinvested income is taxed every year, at its yearly closing, from the price-list "
+        "amount per unit you gave."
+    ),
+    "ch_withholding_rule": (
+        "The 35 % Swiss withholding tax on Swiss instruments is refunded when the income is "
+        "declared. Tax withheld abroad, or on interest without an instrument, is listed but "
+        "not classified."
+    ),
+    "ch_wealth_rule": (
+        "Wealth is the account's value on the last valuation of each year; the ESTV price "
+        "list's year-end prices may differ slightly."
+    ),
+    "ch_settings": "Rates you stated",
+    "ch_marginal_rate": "Marginal income-tax rate",
+    "ch_wealth_tax_rate": "Wealth-tax rate",
+    "ch_years": "Tax position by year",
+    "ch_gains": "Realised gains",
+    "ch_income": "Taxable income",
+    "ch_income_tax": "Income tax (estimate)",
+    "ch_refundable": "Withholding tax refundable",
+    "ch_wealth": "Wealth at year end",
+    "ch_wealth_tax": "Wealth tax (estimate)",
+    "ch_year_open": "year not ended",
+    "ch_safe_haven": "Circular 36",
+    "ch_conclusion_met": "safe haven met",
+    "ch_conclusion_not_excluded": "professional trading not excluded",
+    "ch_conclusion_incomplete": "incomplete (inputs missing)",
+    "ch_criterion": "Criterion",
+    "ch_criterion_holding": "Holding period of the units sold, at least 6 months",
+    "ch_criterion_volume": "Purchases and sales, at most 5 x the value at the start",
+    "ch_criterion_gains": "Realised gains, below 50 % of net income",
+    "ch_criterion_debt": "Not financed by debt",
+    "ch_criterion_derivatives": "Derivatives only to hedge",
+    "ch_limit": "Limit",
+    "ch_detail": "Shortest holding",
+    "ch_result": "Result",
+    "ch_result_met": "met",
+    "ch_result_not_met": "not met",
+    "ch_result_not_checked": "not checked (input missing)",
+    "ch_safe_haven_note": (
+        "Holding periods are taken first in, first out. A debt-financed account needs your "
+        "interest expense, which qrlab does not have."
+    ),
+    "ch_income_items": "Income",
+    "ch_income_note": "Amounts in CHF, converted on each date.",
+    "ch_income_kind": "Kind",
+    "ch_income_dividend": "dividend",
+    "ch_income_interest": "interest",
+    "ch_income_reported_income": "fund income (price list)",
+    "ch_cash": "cash",
+    "ch_units": "Units",
+    "ch_per_unit": "Per unit",
+    "ch_gross": "Gross",
     "not_annualised": "Not annualised: the period is shorter than one year.",
     "positions": "Positions",
     "account": "Account",
@@ -391,6 +464,79 @@ _IT = {
     "tax_expired": "Scadute",
     "tax_remaining": "Residue",
     "tax_usable_until": "Utilizzabili fino al",
+    # --- Svizzera (fase 9.2) --------------------------------------------------------------
+    "ch_intro": (
+        "Investitore privato residente in Svizzera. Regole verificate al {checked}. Le imposte "
+        "sono stime alle aliquote che hai indicato, non una tassazione."
+    ),
+    "ch_gains_rule": (
+        "Gli utili di capitale sulla sostanza privata non sono imponibili, salvo che "
+        "l'investitore sia considerato un commerciante professionale di titoli."
+    ),
+    "ch_safe_haven_rule": (
+        "I criteri della circolare AFC n. 36 sono verificati anno per anno. Se sono tutti e "
+        "cinque rispettati, il commercio professionale è escluso; altrimenti non può essere "
+        "escluso, e l'autorità fiscale valuta il caso nel suo insieme."
+    ),
+    "ch_first_year": (
+        "{year}: il volume è confrontato con la prima valutazione del conto, perché non ce "
+        "n'è una precedente."
+    ),
+    "ch_income_rule": (
+        "Dividendi e interessi sono reddito per il loro importo lordo. Il reddito reinvestito "
+        "di un fondo ad accumulazione è tassato ogni anno, alla chiusura dell'esercizio, "
+        "secondo l'importo per quota del listino dei corsi che hai indicato."
+    ),
+    "ch_withholding_rule": (
+        "L'imposta preventiva svizzera del 35 % sugli strumenti svizzeri è rimborsata se il "
+        "reddito è dichiarato. Le imposte trattenute all'estero, o sugli interessi senza "
+        "strumento, sono elencate ma non classificate."
+    ),
+    "ch_wealth_rule": (
+        "La sostanza è il valore del conto all'ultima valutazione di ogni anno; i corsi di "
+        "fine anno del listino AFC possono differire leggermente."
+    ),
+    "ch_settings": "Aliquote che hai indicato",
+    "ch_marginal_rate": "Aliquota marginale sul reddito",
+    "ch_wealth_tax_rate": "Aliquota dell'imposta sulla sostanza",
+    "ch_years": "Posizione fiscale per anno",
+    "ch_gains": "Utili realizzati",
+    "ch_income": "Reddito imponibile",
+    "ch_income_tax": "Imposta sul reddito (stima)",
+    "ch_refundable": "Imposta preventiva rimborsabile",
+    "ch_wealth": "Sostanza a fine anno",
+    "ch_wealth_tax": "Imposta sulla sostanza (stima)",
+    "ch_year_open": "anno non concluso",
+    "ch_safe_haven": "Circolare 36",
+    "ch_conclusion_met": "porto sicuro rispettato",
+    "ch_conclusion_not_excluded": "commercio professionale non escluso",
+    "ch_conclusion_incomplete": "incompleto (dati mancanti)",
+    "ch_criterion": "Criterio",
+    "ch_criterion_holding": "Durata di possesso dei titoli venduti, almeno 6 mesi",
+    "ch_criterion_volume": "Acquisti e vendite, al massimo 5 volte il valore iniziale",
+    "ch_criterion_gains": "Utili realizzati, sotto il 50 % del reddito netto",
+    "ch_criterion_debt": "Nessun finanziamento con debiti",
+    "ch_criterion_derivatives": "Derivati solo a copertura",
+    "ch_limit": "Limite",
+    "ch_detail": "Possesso più breve",
+    "ch_result": "Esito",
+    "ch_result_met": "rispettato",
+    "ch_result_not_met": "non rispettato",
+    "ch_result_not_checked": "non verificato (dato mancante)",
+    "ch_safe_haven_note": (
+        "Le durate di possesso seguono il primo entrato, primo uscito. Un conto finanziato con "
+        "debiti richiede i tuoi interessi passivi, che qrlab non conosce."
+    ),
+    "ch_income_items": "Redditi",
+    "ch_income_note": "Importi in CHF, convertiti a ogni data.",
+    "ch_income_kind": "Tipo",
+    "ch_income_dividend": "dividendo",
+    "ch_income_interest": "interesse",
+    "ch_income_reported_income": "reddito del fondo (listino)",
+    "ch_cash": "liquidità",
+    "ch_units": "Quote",
+    "ch_per_unit": "Per quota",
+    "ch_gross": "Lordo",
     "not_annualised": "Non annualizzato: il periodo è inferiore a un anno.",
     "positions": "Posizioni",
     "account": "Conto",
