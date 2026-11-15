@@ -21,6 +21,7 @@ from qrlab.reporting.html import render_html
 from qrlab.tax import (
     ITALY,
     REGIMES,
+    SWITZERLAND,
     ColumnKind,
     Holdings,
     LabelRef,
@@ -140,9 +141,9 @@ def test_the_shape_is_checked() -> None:
 
 
 def test_the_countries() -> None:
-    assert dict(REGIMES) == {"it": ITALY}
+    assert dict(REGIMES) == {"it": ITALY, "ch": SWITZERLAND}
     assert regime_for("it") is ITALY
-    with pytest.raises(ValidationError, match="country must be one of \\['it'\\], got 'ch'"):
-        regime_for("ch")
+    with pytest.raises(ValidationError, match="country must be one of \\['ch', 'it'\\], got 'fr'"):
+        regime_for("fr")
     with pytest.raises(ValidationError, match="Italian settings expected"):
         ITALY.report(None, object())  # type: ignore[arg-type]

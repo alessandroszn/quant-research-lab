@@ -506,7 +506,9 @@ qrlab.simulation.SensitivityRow  class(key: 'str', label: 'str', p_goal: 'float'
 qrlab.simulation.SimulatedReturns  class(returns: 'np.ndarray', assets: 'tuple[str, ...]', engine: 'str', params: 'dict[str, float]' = <factory>) -> None
 qrlab.simulation.SimulatedReturns.n_paths  property
 qrlab.simulation.SimulatedReturns.n_periods  property
-qrlab.simulation.TaxModel  class(capital_gains_rate: 'float', wealth_tax_rate: 'float', losses: 'LossRules | None' = None) -> None
+qrlab.simulation.TaxModel  class(capital_gains_rate: 'float', wealth_tax_rate: 'float', losses: 'LossRules | None' = None, income_tax_rate: 'float' = 0.0, taxable_yield: 'float' = 0.0) -> None
+qrlab.simulation.TaxModel.income_tax_rate  attribute float = 0.0
+qrlab.simulation.TaxModel.taxable_yield  attribute float = 0.0
 qrlab.simulation.bootstrap_returns  function(history: 'pd.DataFrame', *, kind: 'ReturnKind', missing: 'NanPolicy', mean_block_length: 'float', n_paths: 'int', n_periods: 'int', rng: 'np.random.Generator', max_cells: 'int') -> 'SimulatedReturns'
 qrlab.simulation.log_moments  function(returns: 'pd.DataFrame', *, kind: 'ReturnKind', missing: 'NanPolicy') -> 'LogMoments'
 qrlab.simulation.normal_returns  function(moments: 'LogMoments', *, n_paths: 'int', n_periods: 'int', rng: 'np.random.Generator', max_cells: 'int') -> 'SimulatedReturns'
@@ -560,6 +562,7 @@ qrlab.tax.ColumnKind.LABEL  member = 'label'
 qrlab.tax.ColumnKind.TEXT  member = 'text'
 qrlab.tax.ColumnKind.MONEY  member = 'money'
 qrlab.tax.ColumnKind.SHARE  member = 'share'
+qrlab.tax.ColumnKind.NUMBER  member = 'number'
 qrlab.tax.Holdings  class(isins: 'tuple[str, ...]') -> None
 qrlab.tax.ITALY  constant ItalianRegime
 qrlab.tax.ItalianRegime  class(inherited)
@@ -579,8 +582,18 @@ qrlab.tax.REGIMES  constant mappingproxy
 qrlab.tax.Regime  enum
 qrlab.tax.Regime.AMMINISTRATO  member = 'amministrato'
 qrlab.tax.Regime.DICHIARATIVO  member = 'dichiarativo'
+qrlab.tax.SWITZERLAND  constant SwissRegime
 qrlab.tax.SourcesRef  class() -> None
-qrlab.tax.TaxColumn  class(key: 'str', label: 'str', kind: 'ColumnKind', align: 'str', prefix: 'str' = '') -> None
+qrlab.tax.SwissRegime  class(inherited)
+qrlab.tax.SwissRegime.base_currency  attribute Currency
+qrlab.tax.SwissRegime.country  attribute str = 'ch'
+qrlab.tax.SwissRegime.keys  attribute frozenset = ['debt_financed', 'marginal_rate', 'net_income', 'reported_income', 'wealth_tax_rate']
+qrlab.tax.SwissRegime.optional_keys  attribute frozenset = []
+qrlab.tax.SwissRegime.parse  method(table: 'Mapping[str, object]') -> 'SwissSettings'
+qrlab.tax.SwissRegime.report  method(inputs: 'TaxInputs', settings: 'object') -> 'TaxReport'
+qrlab.tax.SwissSettings  class(marginal_rate: 'Decimal', wealth_tax_rate: 'Decimal', net_income: 'Mapping[int, Decimal]', debt_financed: 'bool', reported_income: 'Mapping[Isin, tuple[ReportedIncome, ...]]') -> None
+qrlab.tax.TaxColumn  class(key: 'str', label: 'str', kind: 'ColumnKind', align: 'str', prefix: 'str' = '', none_label: 'str' = 'not_available') -> None
+qrlab.tax.TaxColumn.none_label  attribute str = 'not_available'
 qrlab.tax.TaxColumn.prefix  attribute str = ''
 qrlab.tax.TaxEvent  class(trade_date: 'date', account: 'str', isin: 'str', category: 'Category', gain: 'Decimal', public_share: 'Decimal', base: 'Decimal', offset: 'Decimal', tax_due: 'Decimal | None', tax_withheld: 'Decimal') -> None
 qrlab.tax.TaxEvent.difference  property
@@ -600,6 +613,7 @@ qrlab.tax.TaxTable.shown_when_empty  attribute bool = True
 qrlab.tax.italian_tax_position  function(history: 'LedgerHistory', transactions: 'Sequence[Transaction]', instruments: 'Mapping[Isin, Instrument]', *, regime: 'Regime', public_share: 'Mapping[Isin, Decimal]', as_of: 'date', to_base: 'ToBase') -> 'TaxPosition'
 qrlab.tax.italian_tax_report  function(position: 'TaxPosition') -> 'TaxReport'
 qrlab.tax.regime_for  function(country: 'object') -> 'TaxRegime'
+qrlab.tax.swiss_tax_model  function(*, wealth_tax_rate: 'float', income_tax_rate: 'float', taxable_yield: 'float') -> 'TaxModel'
 qrlab.validation.Split  class(train: 'np.ndarray', test: 'np.ndarray', train_start: 'date', train_end: 'date', test_start: 'date', test_end: 'date', purged: 'int', last_label_end: 'date') -> None
 qrlab.validation.Splits  class(index: 'pd.DatetimeIndex', splits: 'tuple[Split, ...]', kind: 'str', params: 'dict[str, int]', unused: 'int') -> None
 qrlab.validation.expanding_splits  function(index: 'pd.DatetimeIndex', *, min_train: 'int', test_size: 'int', step: 'int', embargo: 'int', label_ends: 'pd.Series | None') -> 'Splits'

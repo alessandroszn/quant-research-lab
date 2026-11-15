@@ -38,6 +38,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 
 from qrlab.core.errors import ValidationError
+from qrlab.core.money import Currency
 from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.master import Instrument, InstrumentType
 from qrlab.portfolio.ledger import LedgerHistory, RealisedGain, ToBase
@@ -411,6 +412,7 @@ class ItalianRegime:
     country = "it"
     keys = frozenset({"regime", "public_share"})
     optional_keys: frozenset[str] = frozenset()
+    base_currency: Currency | None = None
 
     def parse(self, table: Mapping[str, object]) -> ItalianSettings:
         """Read ``regime`` (amministrato or dichiarativo) and ``public_share`` (ISIN = share)."""

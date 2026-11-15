@@ -8,6 +8,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **Swiss tax analytics of a private investor** (phase 9.2), `country = "ch"` in
+  `[parameters.tax]`, which needs `base_currency = "CHF"`. They come from
+  `qrlab.tax.switzerland`, with the rules checked on 2026-11-15 against LIFD, LAID, LIP,
+  ESTV Circulars 25 and 36 and BGE 151 II 418.
+  - **Gains.** Realised gains are tax-free as private wealth. The five ESTV Circular 36
+    criteria are checked per year:
+    - the holding period, first in, first out;
+    - the volume against 5 times the value at the start;
+    - the gains against 50 % of the net income you state;
+    - debt financing;
+    - derivatives.
+
+    The conclusion is "safe haven met", "professional trading not excluded" or "incomplete".
+  - **Income:** dividends and interest gross, plus accumulating funds' yearly income from
+    the ESTV price-list values you give, with the tax estimated at your marginal rate.
+  - **Withholding tax:** the 35 % Swiss withholding tax is shown as refundable.
+  - **Wealth:** the year-end wealth, with the tax at your cantonal rate.
+  - **Outputs:** `ch_years.csv`, `ch_safe_haven.csv`, `ch_income.csv`, and the scalars of the
+    latest complete year.
+- **A yearly income tax in projections** (phase 9.2). `TaxModel` gains `income_tax_rate` and
+  `taxable_yield`, whose product is paid each year as a fraction of value. The report's
+  `[parameters.projection]` takes both keys or neither. `qrlab.tax.swiss_tax_model` is a
+  preset with no gains tax.
+- **The tax shape** (9.1) gains the `NUMBER` column kind and a per-column `none_label`.
+  `TaxRegime` declares the `base_currency` it needs, checked when the config is validated.
 - **Tax regimes as a common shape** (phase 9.1), so that countries can be added beside Italy.
   - `qrlab.tax.TaxRegime` is the interface of a country. It reads its own keys of
     `[parameters.tax]` and returns a `qrlab.tax.TaxReport`.

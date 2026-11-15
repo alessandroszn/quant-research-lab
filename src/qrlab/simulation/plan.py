@@ -89,15 +89,22 @@ class TaxModel:
 
     ``losses`` (phase 8.6b): ``None`` ignores realised losses, as before; a
     :class:`~qrlab.simulation.losses.LossRules` carries them the Italian way.
+
+    ``income_tax_rate`` and ``taxable_yield`` (phase 9.2): a yearly tax on the income the
+    holdings yield, ``income_tax_rate x taxable_yield`` of value, paid each period like the
+    wealth tax. It is exact for accumulating funds, whose reinvested income is taxed every
+    year (Switzerland), and an approximation for distributing ones. Both 0: no such tax.
     """
 
     capital_gains_rate: float
     wealth_tax_rate: float
     losses: LossRules | None = None
+    income_tax_rate: float = 0.0
+    taxable_yield: float = 0.0
 
     def __post_init__(self) -> None:
         """Validate the rates."""
-        for name in ("capital_gains_rate", "wealth_tax_rate"):
+        for name in ("capital_gains_rate", "wealth_tax_rate", "income_tax_rate", "taxable_yield"):
             value = getattr(self, name)
             if type(value) not in (int, float) or not 0.0 <= value < 1.0:
                 raise ValidationError(f"{name} must be in [0, 1)")
@@ -213,7 +220,10 @@ def project(plan: Plan, returns: SimulatedReturns) -> Projection:
     nominal = np.empty((paths, periods + 1))
     nominal[:, 0] = state.holdings.sum(axis=1)
     drag = 1.0 - plan.annual_cost / plan.periods_per_year
-    wealth_tax = plan.taxes.wealth_tax_rate / plan.periods_per_year
+    taxes = plan.taxes
+    wealth_tax = (
+        taxes.wealth_tax_rate + taxes.income_tax_rate * taxes.taxable_yield
+    ) / plan.periods_per_year
     for t in range(periods):
         index = (1.0 + plan.inflation) ** (t / plan.periods_per_year)
         state.year = t // plan.periods_per_year

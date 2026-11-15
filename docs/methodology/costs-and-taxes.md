@@ -81,8 +81,21 @@ and the gap between gross and net compounds.
     language, and the date its rules were checked.
   - The CSV tables and the report section are written from that description alone. A new
     country adds rules, not presentation code.
-  - Italy is the first country (`country = "it"`). Switzerland and a configurable model
-    follow in Level 9.
+  - Italy is the first country (`country = "it"`).
+- **Switzerland, private investor** ({py:mod}`qrlab.tax.switzerland`, phase 9.2,
+  `country = "ch"`).
+  - **Gains are tax-free,** and the five ESTV Circular 36 criteria are checked every year.
+    The holding period is taken first in, first out, the most cautious reading under average
+    cost.
+  - **The report never says "professional trader".** It says whether the safe haven is met,
+    and that the tax office judges the whole case.
+  - **Estimates use your rates.** Income and wealth taxes are estimated at the rates you
+    state, and the report labels them as estimates.
+  - **Accumulating funds:** their yearly income comes from the ESTV price-list values you
+    give.
+- **A yearly income tax in projections** (`TaxModel.income_tax_rate × taxable_yield`, phase
+  9.2) is paid each year like the wealth tax. It is exact for accumulating funds and an
+  approximation for distributing ones, because projections use total returns.
 - **Italian losses in projections and backtests** ({py:class}`qrlab.simulation.LossRules`,
   phase 8.6b), an optional field of {py:class}`qrlab.simulation.TaxModel`.
   - Gains on the assets named in `fund_assets` are capital income: taxed in full, never
@@ -112,6 +125,13 @@ and the gap between gross and net compounds.
   `test_rebalancing_carries_a_share_loss_by_hand`,
   `test_a_withdrawal_beyond_the_carried_losses_by_hand`,
   `test_backtest_carries_the_share_loss_by_hand`, and the two funds-only byte-identity tests.
+- `tests/unit/tax/test_switzerland.py`:
+  - `test_the_years_by_hand`: income 2,200, tax 660, wealth 245,780, tax 737.34;
+  - `test_the_safe_haven_check_by_hand`;
+  - `test_shortest_holding_is_first_in_first_out`;
+  - `test_splits_and_transfers_out_in_the_holding_period`.
+- `tests/unit/simulation/test_income_tax.py`: `test_two_years_by_hand` (1,000, 994,
+  988.036).
 - `tests/unit/simulation/test_outcomes.py`: `test_after_tax_and_nominal_terminal_values`,
   `test_sensitivity_with_common_random_numbers` (costs ±0.5 point rows).
 - `tests/unit/checks/test_checks_concentration_costs_data.py`: `test_weighted_ter_hand_example`,

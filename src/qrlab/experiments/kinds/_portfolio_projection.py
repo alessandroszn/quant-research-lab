@@ -54,6 +54,7 @@ class ProjectionSpec:
     inflation: float
     capital_gains_tax: float
     wealth_tax: float
+    income_tax: tuple[float, float] | None  # (income_tax_rate, taxable_yield), phase 9.2
     flows: tuple[Flow, ...]
     assets: Mapping[str, tuple[float, float]]  # ISIN code or "cash" -> (mean, volatility)
     correlations: Mapping[frozenset[str], float]
@@ -69,7 +70,7 @@ def parse_projection(parameters: Mapping[str, object]) -> ProjectionSpec | None:
     require_keys(
         spec,
         required=_KEYS,
-        optional={"cash", "correlations"},
+        optional={"cash", "correlations", "income_tax_rate", "taxable_yield"},
         where="[parameters.projection]",
     )
     engine, dof = parse_engine(spec)
@@ -89,6 +90,11 @@ def parse_projection(parameters: Mapping[str, object]) -> ProjectionSpec | None:
     if "cash" in spec:
         assets[CASH] = _moments(spec, "cash")
     rebalance = whole(spec, "rebalance_every", minimum=0)
+    income_keys = {"income_tax_rate", "taxable_yield"} & set(spec)
+    if len(income_keys) == 1:
+        raise ValidationError(
+            "[parameters.projection] income_tax_rate and taxable_yield go together (phase 9.2)"
+        )
     return ProjectionSpec(
         seed=seed,
         engine=engine,
@@ -105,6 +111,9 @@ def parse_projection(parameters: Mapping[str, object]) -> ProjectionSpec | None:
         inflation=number(spec, "inflation"),
         capital_gains_tax=number(spec, "capital_gains_tax"),
         wealth_tax=number(spec, "wealth_tax"),
+        income_tax=(number(spec, "income_tax_rate"), number(spec, "taxable_yield"))
+        if income_keys
+        else None,
         flows=parse_flows(spec["flows"]),
         assets=assets,
         correlations=_correlations(spec.get("correlations", {})),
@@ -192,7 +201,12 @@ def project_portfolio(
         rebalance_every=spec.rebalance_every,
         annual_cost=cost,
         inflation=spec.inflation,
-        taxes=TaxModel(spec.capital_gains_tax, spec.wealth_tax),
+        taxes=TaxModel(
+            spec.capital_gains_tax,
+            spec.wealth_tax,
+            income_tax_rate=0.0 if spec.income_tax is None else spec.income_tax[0],
+            taxable_yield=0.0 if spec.income_tax is None else spec.income_tax[1],
+        ),
     )
     run = run_plan(
         moments=LogMoments(mean, covariance, 0),
