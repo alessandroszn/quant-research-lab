@@ -1,7 +1,8 @@
 """Read-only queries on a workspace folder, shared by the desktop app and the CLI.
 
 A workspace is a folder with ``configs/`` (experiment TOML files), ``data/`` (git-ignored: user
-files and the raw store under ``data/raw``) and ``results/`` (run outputs with ``record.json``).
+files and the raw store under ``data/raw``), ``portfolios/`` (one folder per portfolio described
+in the app, phase 8.8) and ``results/`` (run outputs with ``record.json``).
 Nothing here computes or changes anything: it lists configs with their validation status, the
 runs that were recorded, and the raw files with their provenance.
 """
@@ -15,7 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from qrlab.core.errors import QrlabError
+from qrlab.core.errors import QrlabError, ValidationError
 from qrlab.data.store import RawStore
 from qrlab.experiments.config import load_config
 from qrlab.experiments.registry import ExperimentKind
@@ -33,7 +34,7 @@ __all__ = [
     "list_runs",
 ]
 
-WORKSPACE_FOLDERS = ("configs", "data", "results")
+WORKSPACE_FOLDERS = ("configs", "data", "portfolios", "results")
 
 _CONFIG_ERRORS = (QrlabError, tomllib.TOMLDecodeError, OSError, ValueError, KeyError, TypeError)
 
@@ -81,7 +82,7 @@ class RawFileEntry:
 
 
 def create_workspace(root: Path) -> Path:
-    """Create ``configs/``, ``data/`` and ``results/`` under ``root`` (existing ones are kept)."""
+    """Create the :data:`WORKSPACE_FOLDERS` under ``root`` (existing ones are kept)."""
     folder = Path(root)
     if folder.exists() and not folder.is_dir():
         raise QrlabError(f"{folder} is a file, not a folder")
@@ -171,8 +172,40 @@ def list_raw_files(root: Path, *, now: datetime) -> list[RawFileEntry]:
     return entries
 
 
-def config_template(kind: ExperimentKind) -> str:
-    """Return a skeleton config for ``kind``: every required key, values left to fill in."""
+def config_template(
+    kind: ExperimentKind,
+    *,
+    inputs: Mapping[str, str] | None = None,
+    parameters: Mapping[str, str] | None = None,
+) -> str:
+    """Return a skeleton config for ``kind``: every required key, values left to fill in.
+
+    ``inputs`` (paths, relative to the config) and ``parameters`` (TOML values, e.g.
+    ``'"native"'``) are written filled in instead (phase 8.8); their names must be the kind's.
+    """
+    given_inputs = dict(inputs or {})
+    given = dict(parameters or {})
+    unknown = sorted(set(given_inputs) - set(kind.inputs) - set(kind.optional_inputs))
+    if unknown:
+        raise ValidationError(f"unknown inputs {unknown} for {kind.name}")
+    unknown = sorted(set(given) - set(kind.parameters) - set(kind.optional_parameters))
+    if unknown:
+        raise ValidationError(f"unknown parameters {unknown} for {kind.name}")
+
+    def input_line(name: str, optional: bool) -> str:
+        if name in given_inputs:
+            return f"{name} = {json.dumps(given_inputs[name])}"
+        return (
+            f'# {name} = "../data/FILL-IN"  # optional'
+            if optional
+            else (f'{name} = "../data/FILL-IN"')
+        )
+
+    def parameter_line(name: str, optional: bool) -> str:
+        if name in given:
+            return f"{name} = {given[name]}"
+        return f"# {name} = FILL-IN" + ("  # optional" if optional else "")
+
     lines = [
         f"# New {kind.name} experiment: {kind.description}.",
         "# Fill in every value, then Validate. Paths are relative to this file.",
@@ -185,8 +218,8 @@ def config_template(kind: ExperimentKind) -> str:
     if kind.needs_seed:
         lines.append("seed = 1")
     lines += ["", "[inputs]"]
-    lines += [f'{name} = "../data/FILL-IN"' for name in kind.inputs]
-    lines += [f'# {name} = "../data/FILL-IN"  # optional' for name in kind.optional_inputs]
+    lines += [input_line(name, False) for name in kind.inputs]
+    lines += [input_line(name, True) for name in kind.optional_inputs]
     for group in kind.input_groups:
         lines += [
             "",
@@ -194,7 +227,7 @@ def config_template(kind: ExperimentKind) -> str:
             '# KEY = "../data/FILL-IN"',
         ]
     lines += ["", "[parameters]"]
-    lines += [f"# {name} = FILL-IN" for name in kind.parameters]
-    lines += [f"# {name} = FILL-IN  # optional" for name in kind.optional_parameters]
+    lines += [parameter_line(name, False) for name in kind.parameters]
+    lines += [parameter_line(name, True) for name in kind.optional_parameters]
     lines += ["", "[output]", 'directory = "../results/my-experiment"', ""]
     return "\n".join(lines)

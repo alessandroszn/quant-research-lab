@@ -8,6 +8,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **A Portfolios screen in the desktop app** (phase 8.8b). It describes a portfolio in two
+  tables, transactions and instruments, without a broker export.
+  - **Editing.** Each transaction's kind is picked from a list, and only the cells it uses can
+    be edited. A *Starting position* helper adds a deposit and one transfer in per instrument.
+  - **Validate and save.** It reads the rows as the report will and points at the row with a
+    problem. It writes nothing until both tables are valid.
+  - **Create report config.** It writes a `portfolio_report` config with the portfolio's files
+    and opens it.
+  - **Data screen.** *Import a downloaded file* copies a file into the raw store, unchanged,
+    with its provenance.
+  - **No financial logic in the app.** Everything it calls is in the library:
+    - `qrlab.experiments.portfolios`: `read_portfolio`, `check_portfolio`, `write_portfolio`
+      and `import_downloaded_file`;
+    - `qrlab.instruments`: `INSTRUMENT_FIELDS`, `instrument_from_fields`, `instrument_fields`
+      and `write_instruments_toml`;
+    - `qrlab.portfolio`: `kind_columns` and `check_transactions`, the replay rules that need
+      no rates;
+    - `config_template` with `inputs` and `parameters` filled in.
 - A native transactions file (phase 8.8a), so that a portfolio can be described without a
   broker export: `qrlab.portfolio.native`, with `NATIVE_COLUMNS`, `NATIVE_MAPPING`,
   `parse_native_csv` and `write_native_csv`.
@@ -86,6 +104,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- **Workspaces have a fourth folder, `portfolios/`** (phase 8.8b). It is created when a
+  workspace is opened. The app's *Portfolio* screen is now called *Portfolio report*.
+- **`Dialogs` has a new field, `pick_file`** (desktop app).
 - **`portfolio_report` configs need `transactions_format`** (phase 8.8a). Add
   `transactions_format = "mapped"` to `[parameters]` of an existing config;
   `transactions_mapping` is now an optional input, refused with `"native"`. A missing key

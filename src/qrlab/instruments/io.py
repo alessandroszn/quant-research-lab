@@ -11,6 +11,7 @@ from __future__ import annotations
 import codecs
 import csv
 import io
+import json
 import tomllib
 import zipfile
 from collections.abc import Mapping, Sequence
@@ -41,15 +42,19 @@ from qrlab.instruments.master import (
 )
 
 __all__ = [
+    "INSTRUMENT_FIELDS",
     "CountryFormat",
     "HoldingsCsvMapping",
     "HoldingsFileFormat",
     "WeightUnit",
+    "instrument_fields",
+    "instrument_from_fields",
     "load_holdings_mapping",
     "load_instruments",
     "load_issuer_map",
     "parse_holdings_csv",
     "parse_holdings_file",
+    "write_instruments_toml",
 ]
 
 _E = TypeVar("_E", bound=Enum)
@@ -62,6 +67,12 @@ _INSTRUMENT_KEYS = frozenset(
     }
 )  # fmt: skip
 _DELIMITERS = frozenset({",", ";", "\t", "|"})
+INSTRUMENT_FIELDS = (
+    "isin", "name", "instrument_type", "asset_class", "currency", "as_of", "domicile",
+    "replication", "distribution", "ter", "benchmark", "hedged_to", "inception", "fund_size",
+    "source",
+)  # fmt: skip
+"""An instrument as text fields (phase 8.8): the ISIN, then the TOML keys in file order."""
 
 
 # --------------------------------------------------------------------------- master data
@@ -101,6 +112,90 @@ def _instrument(code: str, table: Mapping[str, Any]) -> Instrument:
         fund_size=_fund_size(table["fund_size"], code),
         source=table["source"],
     )
+
+
+def instrument_from_fields(fields: Mapping[str, str]) -> Instrument:
+    """Read an instrument from text fields, with the rules of :func:`load_instruments`.
+
+    The fields are :data:`INSTRUMENT_FIELDS`, all text, as a person types them: dates as
+    ``2026-01-02`` (``inception`` may be ``"unknown"``), ``ter`` as a decimal fraction
+    (``0.0020``), and ``fund_size`` as ``"unknown"`` or an amount and a currency
+    (``1500000000 EUR``). ``"unknown"`` and ``"none"`` mean what they mean in the TOML file.
+    """
+    code = fields.get("isin", "")
+    _check_keys(fields, set(INSTRUMENT_FIELDS), code or "instrument")
+    table: dict[str, object] = {k: v for k, v in fields.items() if k != "isin"}
+    for name in ("as_of", "inception"):
+        text = fields[name]
+        if name == "inception" and text == _UNKNOWN:
+            continue
+        try:
+            table[name] = date.fromisoformat(text)
+        except ValueError:
+            raise ValidationError(f"{code}: {name} must be a date such as 2026-10-01") from None
+    size = fields["fund_size"]
+    if size != _UNKNOWN:
+        parts = size.split()
+        if len(parts) != 2:
+            raise ValidationError(
+                f'{code}: fund_size must be "unknown" or an amount and a currency, "1500000000 EUR"'
+            )
+        table["fund_size"] = {"amount": parts[0], "currency": parts[1]}
+    return _instrument(code, table)
+
+
+def instrument_fields(instrument: Instrument) -> dict[str, str]:
+    """Return an instrument as text fields, the inverse of :func:`instrument_from_fields`."""
+    size = instrument.fund_size
+    return {
+        "isin": instrument.isin.code,
+        "name": instrument.name,
+        "instrument_type": instrument.instrument_type.value,
+        "asset_class": instrument.asset_class.value,
+        "currency": instrument.currency.code,
+        "as_of": instrument.as_of.isoformat(),
+        "domicile": _known(instrument.domicile),
+        "replication": _UNKNOWN if instrument.replication is None else instrument.replication.value,
+        "distribution": (
+            _UNKNOWN if instrument.distribution is None else instrument.distribution.value
+        ),
+        "ter": _UNKNOWN if instrument.ter is None else format(instrument.ter, "f"),
+        "benchmark": _known(instrument.benchmark),
+        "hedged_to": "none" if instrument.hedged_to is None else instrument.hedged_to.code,
+        "inception": _UNKNOWN if instrument.inception is None else instrument.inception.isoformat(),
+        "fund_size": _UNKNOWN
+        if size is None
+        else f"{format(size.amount, 'f')} {size.currency.code}",
+        "source": instrument.source,
+    }
+
+
+def write_instruments_toml(instruments: Sequence[Instrument]) -> str:
+    """Write instruments as the TOML file :func:`load_instruments` reads, in the given order."""
+    blocks = []
+    for instrument in instruments:
+        fields = instrument_fields(instrument)
+        lines = [f"[{fields.pop('isin')}]"]
+        for name, text in fields.items():
+            if name == "as_of" or (name == "inception" and text != _UNKNOWN):
+                value = text
+            elif name == "fund_size" and text != _UNKNOWN:
+                amount, currency = text.split()
+                value = f"{{ amount = {_quoted(amount)}, currency = {_quoted(currency)} }}"
+            else:
+                value = _quoted(text)
+            lines.append(f"{name} = {value}")
+        blocks.append("\n".join(lines) + "\n")
+    return "\n".join(blocks)
+
+
+def _known(value: str | None) -> str:
+    return _UNKNOWN if value is None else value
+
+
+def _quoted(text: str) -> str:
+    """Return a TOML basic string (JSON's escapes are valid TOML escapes)."""
+    return json.dumps(text, ensure_ascii=False)
 
 
 # --------------------------------------------------------------------------- holdings

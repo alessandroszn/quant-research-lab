@@ -23,15 +23,19 @@ from qrlab.instruments.holdings import (
 )
 from qrlab.instruments.identifiers import COUNTRIES, Isin, is_valid_isin, validate_country
 from qrlab.instruments.io import (
+    INSTRUMENT_FIELDS,
     CountryFormat,
     HoldingsCsvMapping,
     HoldingsFileFormat,
     WeightUnit,
+    instrument_fields,
+    instrument_from_fields,
     load_holdings_mapping,
     load_instruments,
     load_issuer_map,
     parse_holdings_csv,
     parse_holdings_file,
+    write_instruments_toml,
 )
 from qrlab.instruments.master import (
     FUND_TYPES,
@@ -52,6 +56,7 @@ __all__ = [
     "COUNTRY_NAMES",
     "FUND_TYPES",
     "HOLDING_COLUMNS",
+    "INSTRUMENT_FIELDS",
     "MAX_TER",
     "AssetClass",
     "CountryFormat",
@@ -68,6 +73,8 @@ __all__ = [
     "WeightUnit",
     "country_code",
     "holdings_issues",
+    "instrument_fields",
+    "instrument_from_fields",
     "is_valid_isin",
     "load_holdings_mapping",
     "load_instruments",
@@ -77,4 +84,5 @@ __all__ = [
     "parse_holdings_csv",
     "parse_holdings_file",
     "validate_country",
+    "write_instruments_toml",
 ]

@@ -45,6 +45,7 @@ __all__ = [
     "ToBase",
     "TradeCharge",
     "TransferGain",
+    "check_transactions",
     "replay",
 ]
 
@@ -218,6 +219,26 @@ def replay(
         Allow negative cash balances (margin). Off by default: negative cash raises.
     """
     return _Replayer(base, to_base, allow_negative_cash).run(list(transactions))
+
+
+def check_transactions(
+    transactions: Iterable[Transaction], *, allow_negative_cash: bool = False
+) -> None:
+    """Check the rules of :func:`replay` that need no prices or rates (phase 8.8).
+
+    Unique ids, date order, units held before a sale or transfer out, income and splits only
+    on positions held, and cash per currency never negative. Amounts in a base currency are not
+    computed, so no FX rate is needed; a failure raises as :func:`replay` does.
+    """
+    _Replayer(_CHECK_BASE, _same_amount, allow_negative_cash).run(list(transactions))
+
+
+_CHECK_BASE = Currency("EUR")
+
+
+def _same_amount(amount: Money, on: date) -> Money:
+    """Relabel an amount for :func:`check_transactions`: its base amounts are never used."""
+    return Money(amount.amount, _CHECK_BASE)
 
 
 class _Replayer:

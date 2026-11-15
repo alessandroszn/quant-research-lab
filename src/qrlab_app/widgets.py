@@ -249,6 +249,7 @@ class Dialogs:
     ask_save: Callable[[str], str | None]
     inform: Callable[[str], None]
     open_path: Callable[[Path], None]
+    pick_file: Callable[[str], Path | None]
 
 
 def default_dialogs(parent: QWidget | None) -> Dialogs:  # pragma: no cover - needs a user
@@ -283,4 +284,10 @@ def default_dialogs(parent: QWidget | None) -> Dialogs:  # pragma: no cover - ne
     def open_path(path: Path) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
-    return Dialogs(pick_folder, ask_text, ask_choice, confirm, ask_save, inform, open_path)
+    def pick_file(title: str) -> Path | None:
+        file, _ = QFileDialog.getOpenFileName(parent, title)
+        return Path(file) if file else None
+
+    return Dialogs(
+        pick_folder, ask_text, ask_choice, confirm, ask_save, inform, open_path, pick_file
+    )
