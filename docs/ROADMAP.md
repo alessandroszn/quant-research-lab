@@ -57,6 +57,7 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 | 6 Product | desktop app, `.exe` and installer, docs, release | **M6 v1.0** | 110–150 |
 | 7 Gap closing | `periods_per_year` check, output notices, returns price type, currencies and look-through in the report kind | — (done) | 15–20 |
 | 8 Real portfolio | first real run, issuer holdings, risk, projection, risk-free rate, Italian tax, Italian report | **M8 Real portfolio** | 38–58 |
+| 9 Tax regimes | a common shape for tax regimes, Switzerland, a configurable model, Germany (optional) | **M9 Tax regimes** | 26–70 |
 
 Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 is reached at M6; after
 it, each Level 8 phase is a `v1.N.0`, published in the weekly batches.
@@ -381,6 +382,29 @@ any code. Real files stay in `data/`; everything published is synthetic.
 - Market data come from public sources, downloaded by qrlab only where their terms allow it.
 
 **M8 — the report of a real portfolio, reconciled with the broker.**
+
+## Level 9 — Tax regimes beyond Italy → M9
+
+Plan: `docs/design/level-9-plan.md`. Each phase has its own design note, approved before any
+code, and checks its rules against the law in force, with sources.
+
+### 9.1 Tax regimes as a common shape (8–12 h)
+- One interface and one result shape for every country; Italy moves behind it unchanged.
+- `[parameters.tax] country = "..."` in the report kind; `TaxModel` presets per country.
+
+### 9.2 Switzerland, private investor (12–18 h)
+- Gains tax-free, with the ESTV safe-haven criteria checked; income at a stated marginal rate;
+  accumulating funds' yearly income; 35 % withholding tax as refundable; cantonal wealth tax.
+
+### 9.3 A configurable model for other countries (6–10 h)
+- Rates, loss offset and carry, exempt holding period and wealth tax, all stated; labelled as
+  a simplified model, not a country's law.
+
+### 9.4 Germany (20–30 h, optional)
+- Abgeltungsteuer, Teilfreistellung, Vorabpauschale, Sparer-Pauschbetrag, loss pots and FIFO
+  cost basis.
+
+**M9 — the tax position of a portfolio in Italy, Switzerland or a configured country.**
 
 ---
 
