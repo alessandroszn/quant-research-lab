@@ -93,6 +93,13 @@ and the gap between gross and net compounds.
     state, and the report labels them as estimates.
   - **Accumulating funds:** their yearly income comes from the ESTV price-list values you
     give.
+- **A configurable model for other countries** ({py:mod}`qrlab.tax.custom`, phase 9.3,
+  `country = "custom"`).
+  - You state the rates and rules. They are applied per calendar year in a fixed, stated
+    order: average-cost results, the exempt part by holding period (first in, first out),
+    losses, the allowance, then the rates.
+  - The section title and the run's notice call it "a simplified model you configured, not a
+    country's law".
 - **A yearly income tax in projections** (`TaxModel.income_tax_rate × taxable_yield`, phase
   9.2) is paid each year like the wealth tax. It is exact for accumulating funds and an
   approximation for distributing ones, because projections use total returns.
@@ -130,6 +137,10 @@ and the gap between gross and net compounds.
   - `test_the_safe_haven_check_by_hand`;
   - `test_shortest_holding_is_first_in_first_out`;
   - `test_splits_and_transfers_out_in_the_holding_period`.
+- `tests/unit/tax/test_custom.py`:
+  - `test_the_example_by_hand`: 3,000 − 1,000 carried − 1,000 allowance, so the tax is 200;
+  - `test_losses_ignored` and `test_losses_netted_but_not_carried` (400);
+  - `test_a_partly_exempt_sale` (2/3 exempt).
 - `tests/unit/simulation/test_income_tax.py`: `test_two_years_by_hand` (1,000, 994,
   988.036).
 - `tests/unit/simulation/test_outcomes.py`: `test_after_tax_and_nominal_terminal_values`,

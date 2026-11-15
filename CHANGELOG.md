@@ -8,6 +8,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **A configurable tax model for other countries** (phase 9.3), `country = "custom"` in
+  `[parameters.tax]`, from `qrlab.tax.custom`.
+  - **What you state:**
+    - the gains and income rates;
+    - losses ignored, or netted and carried N years;
+    - an exemption after N months of holding;
+    - a yearly gains allowance;
+    - a wealth-tax rate;
+    - a description.
+  - **How it is applied,** per calendar year and in a stated order:
+    1. each sale at average cost;
+    2. the exempt part, with units matched first in, first out;
+    3. losses;
+    4. the allowance;
+    5. the rates.
+
+    Tax withheld on income is shown, not credited.
+  - **Labelled as yours.** The section, its title and the run's notice say "a simplified
+    model you configured, not a country's law".
+  - **Outputs:** `custom_years.csv`, `custom_losses.csv` (with netted losses), and the
+    scalars of the latest complete year.
+  - **Projections:** a `custom_tax_model` preset.
+- **Shared first-in, first-out lots** (`qrlab.tax.lots`), now used by Switzerland and the
+  configurable model. `TaxReport.notice` adds a sentence to the run's notice.
 - **Swiss tax analytics of a private investor** (phase 9.2), `country = "ch"` in
   `[parameters.tax]`, which needs `base_currency = "CHF"`. They come from
   `qrlab.tax.switzerland`, with the rules checked on 2026-11-15 against LIFD, LAID, LIP,

@@ -161,11 +161,11 @@ def test_a_missing_public_share_fails_the_run(tmp_path: Path) -> None:
         ('\n[parameters.tax]\ncountry = "it"\nregime = "amministrato"\n', "public_share"),
         (
             '\n[parameters.tax]\nregime = "amministrato"\npublic_share = {}\n',
-            "needs country, one of \\['ch', 'it'\\]",
+            "needs country, one of \\['ch', 'custom', 'it'\\]",
         ),
         (
             '\n[parameters.tax]\ncountry = "fr"\nregime = "amministrato"\npublic_share = {}\n',
-            "country must be one of \\['ch', 'it'\\], got 'fr'",
+            "country must be one of \\['ch', 'custom', 'it'\\], got 'fr'",
         ),
         (
             '\n[parameters.tax]\ncountry = "it"\nregime = "amministrato"\npublic_share = {}\n'

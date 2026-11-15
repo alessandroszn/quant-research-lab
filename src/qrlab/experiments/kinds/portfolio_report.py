@@ -82,7 +82,12 @@ it writes ``tax_events.csv``, ``losses_balance.csv`` and the scalars ``tax_due``
 (``country = "ch"``, phase 9.2, base currency CHF): ``marginal_rate``, ``wealth_tax_rate``,
 ``net_income`` (year = amount), ``debt_financed`` and ``reported_income`` (ISIN = list of
 ``{ date, per_unit, currency }`` from the ESTV price list); it writes ``ch_years.csv``,
-``ch_safe_haven.csv`` and ``ch_income.csv``. See :mod:`qrlab.tax.switzerland`.
+``ch_safe_haven.csv`` and ``ch_income.csv``. See :mod:`qrlab.tax.switzerland`. The
+configurable model (``country = "custom"``, phase 9.3, any base currency): ``description``,
+``gains_rate``, ``income_rate``, ``losses`` (``ignored``/``netted``), ``loss_carry_years``,
+``exempt_after_months``, ``gains_allowance`` and ``wealth_tax_rate``; it writes
+``custom_years.csv`` and, with netted losses, ``custom_losses.csv``, and adds a sentence to
+the notice. See :mod:`qrlab.tax.custom`.
 
 The projection may add ``income_tax_rate`` and ``taxable_yield`` (both or neither, phase
 9.2): a yearly tax of their product on value.
@@ -703,6 +708,8 @@ def _run(context: RunContext) -> ExperimentOutput:
     figures = {}
     if tax_position is not None:
         tables |= _tax_tables(tax_position)
+        if tax_position.notice is not None:
+            caveats.append(tax_position.notice)
         scalars |= {
             name: Tagged(float(value), "descriptive")
             for name, value in tax_position.scalars.items()

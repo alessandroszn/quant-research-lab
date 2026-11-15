@@ -28,7 +28,9 @@ qrlab.scenarios
 qrlab.simulation
 qrlab.stats
 qrlab.tax
+qrlab.tax.custom
 qrlab.tax.italy
+qrlab.tax.lots
 qrlab.tax.switzerland
 qrlab.validation
 ```

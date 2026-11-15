@@ -36,8 +36,6 @@ the cent (half up).
 
 from __future__ import annotations
 
-import calendar
-from collections import deque
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -48,6 +46,7 @@ from qrlab.core.money import Currency, Money
 from qrlab.instruments.identifiers import Isin
 from qrlab.portfolio.transactions import Transaction, TransactionKind
 from qrlab.simulation.plan import TaxModel
+from qrlab.tax.lots import add_months, fifo_sales
 from qrlab.tax.regime import (
     Cell,
     ColumnKind,
@@ -131,49 +130,16 @@ class SaleHolding:
         return self.sold >= add_months(self.acquired, _HOLDING_MONTHS)
 
 
-@dataclass
-class _Lot:
-    day: date
-    units: Decimal
-
-
-def add_months(day: date, months: int) -> date:
-    """Return ``day`` plus calendar ``months`` (the 31st becomes the month's last day)."""
-    index = day.month - 1 + months
-    year, month = day.year + index // 12, index % 12 + 1
-    return date(year, month, min(day.day, calendar.monthrange(year, month)[1]))
-
-
 def shortest_holdings(transactions: Iterable[Transaction]) -> tuple[SaleHolding, ...]:
     """Return every sale with the latest acquisition date of the units it sold.
 
-    Units are taken first in, first out per account and instrument: purchases and transfers
-    in add lots, sales and transfers out remove the oldest first, and a split scales them.
+    Units are taken first in, first out per account and instrument
+    (:func:`qrlab.tax.lots.fifo_sales`).
     """
-    lots: dict[tuple[str, str], deque[_Lot]] = {}
-    out = []
-    for t in transactions:
-        if t.isin is None or t.quantity is None:
-            continue
-        queue = lots.setdefault((t.account, t.isin.code), deque())
-        if t.kind in (_K.BUY, _K.TRANSFER_IN):
-            queue.append(_Lot(t.trade_date, t.quantity))
-        elif t.kind is _K.SPLIT:
-            for lot in queue:
-                lot.units *= t.quantity
-        else:  # with a quantity and an instrument, only sales and transfers out are left
-            needed, latest = t.quantity, date.min
-            while needed > 0 and queue:
-                lot = queue[0]
-                take = min(lot.units, needed)
-                latest = max(latest, lot.day)
-                lot.units -= take
-                needed -= take
-                if lot.units == 0:
-                    queue.popleft()
-            if t.kind is _K.SELL:
-                out.append(SaleHolding(t.trade_date, t.isin.code, latest))
-    return tuple(out)
+    return tuple(
+        SaleHolding(sale.sold, sale.isin, sale.latest_acquisition)
+        for sale in fifo_sales(transactions)
+    )
 
 
 class SwissRegime:
