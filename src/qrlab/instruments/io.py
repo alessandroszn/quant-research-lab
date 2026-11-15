@@ -13,7 +13,6 @@ import csv
 import io
 import json
 import tomllib
-import zipfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -22,13 +21,13 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, TypeVar
 
-import openpyxl
 import pandas as pd
 
 from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency, Money
 from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Provenance
+from qrlab.data.sheets import check_affixes, read_xlsx_rows
 from qrlab.data.user_csv import parse_number
 from qrlab.instruments.countries import country_code
 from qrlab.instruments.holdings import HOLDING_COLUMNS, HoldingsSnapshot
@@ -255,6 +254,9 @@ class HoldingsCsvMapping:
     country_values
         The file's own wording mapped to a code, or to ``None`` for "no country" (e.g. a
         supranational issuer or a cash line). Checked before the codes or the built-in names.
+    value_affixes
+        Symbols written next to weights and removed before reading them, e.g. ``("%",)``
+        (phase 8.2b); any other character still raises.
 
     Notes
     -----
@@ -276,9 +278,11 @@ class HoldingsCsvMapping:
     sheet: str | None
     country_format: CountryFormat
     country_values: Mapping[str, str | None]
+    value_affixes: tuple[str, ...]
 
     def __post_init__(self) -> None:
         """Validate the mapping as a whole."""
+        check_affixes(self.value_affixes)
         if not isinstance(self.file_format, HoldingsFileFormat):
             raise ValidationError(
                 f"file_format must be a HoldingsFileFormat, got {self.file_format!r}"
@@ -401,6 +405,8 @@ def parse_holdings_file(
     if ignored:
         notes.append(f"Ignored columns: {ignored}.")
     notes.append(f"Cells equal to {list(mapping.missing_tokens)} treated as unknown.")
+    if mapping.value_affixes:
+        notes.append(f"Symbols removed from numbers: {list(mapping.value_affixes)}.")
     return HoldingsSnapshot(
         fund=fund,
         as_of=as_of,
@@ -454,32 +460,8 @@ def _csv_rows(content: bytes, mapping: HoldingsCsvMapping) -> list[list[object]]
 
 
 def _xlsx_rows(content: bytes, mapping: HoldingsCsvMapping) -> list[list[object]]:
-    """Return the header and the rows after the preamble of one sheet of an xlsx workbook.
-
-    Rows are trimmed to the header's width when the cells beyond it are empty; a non-empty
-    cell beyond it keeps the row longer, so that the field count check reports it.
-    """
-    try:
-        book = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
-    except (zipfile.BadZipFile, OSError, KeyError, ValueError) as exc:
-        raise ParseError("content is not a valid xlsx workbook") from exc
-    try:
-        if mapping.sheet not in book.sheetnames:
-            raise ParseError(f"no sheet {mapping.sheet!r} in the workbook: {book.sheetnames}")
-        rows = [list[object](row) for row in book[str(mapping.sheet)].iter_rows(values_only=True)]
-    finally:
-        book.close()
-    if len(rows) <= mapping.skip_rows:
-        raise ParseError(f"file has no header after skipping {mapping.skip_rows} line(s)")
-    body = rows[mapping.skip_rows :]
-    width = _filled_width(body[0])
-    return [row[: max(width, _filled_width(row))] for row in body]
-
-
-def _filled_width(row: Sequence[object]) -> int:
-    """Return the position after the last non-empty cell."""
-    filled = [i for i, cell in enumerate(row) if _text(cell).strip()]
-    return filled[-1] + 1 if filled else 0
+    """Return the header and the rows after the preamble (:func:`qrlab.data.read_xlsx_rows`)."""
+    return read_xlsx_rows(content, sheet=str(mapping.sheet), skip_rows=mapping.skip_rows)
 
 
 def _text(value: object) -> str:
@@ -508,6 +490,7 @@ def _holding(
             decimal_separator=mapping.decimal_separator,
             thousands_separator=mapping.thousands_separator,
             line=line,
+            affixes=mapping.value_affixes,
         )
     if mapping.weight_unit is WeightUnit.PERCENT:
         weight /= 100.0
@@ -553,7 +536,7 @@ def load_holdings_mapping(path: Path) -> HoldingsCsvMapping:
     file_format = _enum(HoldingsFileFormat, raw["file_format"], "file_format", where)
     expected = {
         "file_format", "skip_rows", "decimal_separator", "thousands_separator", "weight_unit",
-        "missing_tokens", "asset_class", "columns", "country_format",
+        "missing_tokens", "asset_class", "columns", "country_format", "value_affixes",
     }  # fmt: skip
     expected |= {"delimiter", "encoding"} if file_format is HoldingsFileFormat.CSV else {"sheet"}
     optional = {"asset_class_values", "country_values"}
@@ -582,6 +565,7 @@ def load_holdings_mapping(path: Path) -> HoldingsCsvMapping:
         sheet=raw.get("sheet"),
         country_format=_enum(CountryFormat, raw["country_format"], "country_format", where),
         country_values=countries,
+        value_affixes=check_affixes(raw["value_affixes"]),
     )
 
 

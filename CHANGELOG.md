@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **Vanguard files as published** (phase 8.2b), read with three committed mappings:
+  `vanguard_holdings.toml`, `vanguard_prices_market_eur.toml` and
+  `vanguard_prices_nav_usd.toml`. The mappings follow the exports of a Vanguard Europe fund
+  page, read on 2026-11-15.
+  - **Price files can be xlsx with a preamble.** `CsvMapping` gains `file_format`, `sheet`
+    and `skip_rows`, and `qrlab.data.FileFormat` and `qrlab.data.read_xlsx_rows` are shared
+    with the holdings parser.
+  - **Symbols next to numbers** (`%`, `$`, `€`) are removed only where a mapping declares
+    them, in `value_affixes`; any other character still raises.
+  - **Dates may use `%b`,** English month abbreviations read the same on every machine.
+  - **iShares:** no mapping. The terms of its Italian website require BlackRock's approval
+    for any copy of data. The decision is in `docs/guides/data-sources.md`.
 - **A Portfolios screen in the desktop app** (phase 8.8b). It describes a portfolio in two
   tables, transactions and instruments, without a broker export.
   - **Editing.** Each transaction's kind is picked from a list, and only the cells it uses can
@@ -104,6 +116,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- **Price and holdings mappings need new keys** (phase 8.2b):
+  - price mappings: `file_format`, `skip_rows` and `value_affixes`, plus `sheet` for xlsx
+    (where `delimiter` and `encoding` are then left out);
+  - holdings mappings: `value_affixes`.
+
+  Add `file_format = "csv"`, `skip_rows = 0` and `value_affixes = []` to an existing price
+  mapping, and `value_affixes = []` to a holdings mapping. A missing key raises with its name.
 - **Workspaces have a fourth folder, `portfolios/`** (phase 8.8b). It is created when a
   workspace is opened. The app's *Portfolio* screen is now called *Portfolio report*.
 - **`Dialogs` has a new field, `pick_file`** (desktop app).

@@ -46,6 +46,9 @@ Synthetic file: the weights deliberately sum to 99 % to show the unexplained buc
 NAV = ("50,00", "55,00", "52,00", "54,00")
 INDEX = ("1000,00", "1100,30", "1040,50", "1080,90")
 TRACKING_MAPPING = """\
+file_format = "csv"
+skip_rows = 0
+value_affixes = []
 date_column = "Data"
 date_format = "%d/%m/%Y"
 delimiter = ";"

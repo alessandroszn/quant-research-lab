@@ -28,6 +28,7 @@ from qrlab.core import Currency, Frequency, ReturnKind, excess_returns, prices_t
 from qrlab.data import (
     ColumnSpec,
     CsvMapping,
+    FileFormat,
     PriceType,
     RawStore,
     import_local_file,
@@ -94,6 +95,10 @@ def main() -> None:
                 "Fondo": ColumnSpec("SYNTHETIC_FUND", PriceType.TOTAL_RETURN),
                 "Indice": ColumnSpec("SYNTHETIC_INDEX", PriceType.TOTAL_RETURN),
             },
+            file_format=FileFormat.CSV,
+            sheet=None,
+            skip_rows=0,
+            value_affixes=(),
         )
         prices = parse_price_csv(store.read(stored), stored.provenance, mapping).dataset
 

@@ -8,6 +8,7 @@ decimal_separator = "."
 thousands_separator = ","        # "" means no thousands separator
 encoding = "utf-8"
 weight_unit = "percent"          # "percent" (12.5 = 12.5 %) or "decimal" (0.125)
+value_affixes = []              # symbols next to weights to remove, e.g. ["%"]
 missing_tokens = ["", "-"]       # cells meaning "unknown"
 asset_class = "column"           # "column" to read it from the file, or a fixed class like "equity"
 country_format = "iso_alpha2"    # "iso_alpha2" (US) or "name" (United States)

@@ -1,0 +1,28 @@
+# Mapping for the price history export of a Vanguard UCITS ETF: the market price in EUR
+# (phase 8.2b). Use it for a fund you hold on an EUR exchange; the same file's NAV in USD has
+# its own mapping, vanguard_prices_nav_usd.toml.
+#
+# The file: "Download ... prices" under "Prices and distribution" on the fund's page of a
+# Vanguard Europe website, downloaded by you for your own analysis; keep it under data/.
+#
+# Layout seen on 2026-11-15: sheet "Historical Prices", eight preamble rows (with the inception
+# and listing dates), the header "Date, NAV (USD), Market price (EUR)", one row per day, newest
+# first. Dates are "13 Nov 2026"; prices are text with a currency sign ("€169.8740"). The
+# market price is empty before the listing date: those days stay NaN.
+#
+# REPLACE the instrument below (a made-up ISIN) with your fund's ISIN, as in instruments.toml.
+
+file_format = "xlsx"
+sheet = "Historical Prices"
+skip_rows = 8
+date_column = "Date"
+date_format = "%d %b %Y"
+decimal_separator = "."
+thousands_separator = ","
+value_affixes = ["€"]
+currency = "EUR"
+frequency = "daily"
+
+[columns."Market price (EUR)"]
+instrument = "IE0000000012"
+price_type = "price"

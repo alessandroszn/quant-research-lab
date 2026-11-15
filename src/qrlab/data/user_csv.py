@@ -17,9 +17,9 @@ import hashlib
 import io
 import re
 import tomllib
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -32,6 +32,7 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency
 from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Dataset, Provenance, Unit
+from qrlab.data.sheets import FileFormat, check_affixes, read_xlsx_rows, strip_affixes
 from qrlab.data.store import RawStore, StoredFile
 
 __all__ = [
@@ -50,6 +51,14 @@ _INSTRUMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
 _DELIMITERS = frozenset({",", ";", "\t", "|"})
 _DECIMALS = frozenset({".", ","})
 _THOUSANDS = frozenset({".", ",", " ", "'"})
+_MONTHS = {
+    name: f"{number:02d}"
+    for number, name in enumerate(
+        ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+        start=1,
+    )
+}
+_WORD = re.compile(r"[A-Za-z]+")
 
 
 class PriceType(Enum):
@@ -92,14 +101,15 @@ class CsvMapping:
         Header of the date column.
     date_format
         :func:`datetime.strptime` format, e.g. ``"%d/%m/%Y"``; must contain day, month, year.
+        ``%b`` is an English month abbreviation (Jan-Dec), read the same on every machine.
     delimiter
-        Field separator: ``,``, ``;``, tab or ``|``.
+        Field separator: ``,``, ``;``, tab or ``|``; ``None`` for an xlsx file.
     decimal_separator
         ``.`` or ``,``.
     thousands_separator
         ``.``, ``,``, space, apostrophe or ``None``; must differ from the decimal separator.
     encoding
-        Text encoding, e.g. ``"utf-8"``, ``"utf-8-sig"`` or ``"cp1252"``.
+        Text encoding, e.g. ``"utf-8"``, ``"utf-8-sig"`` or ``"cp1252"``; ``None`` for xlsx.
     currency
         Currency of every mapped column (use one file and mapping per currency).
     frequency
@@ -107,26 +117,49 @@ class CsvMapping:
     columns
         Header of each price column mapped to its :class:`ColumnSpec`. Unmapped columns are
         ignored and listed in the dataset notes.
+    file_format
+        CSV or xlsx (phase 8.2b).
+    sheet
+        Name of the sheet to read in an xlsx file; ``None`` for a CSV file.
+    skip_rows
+        Lines (rows of the sheet) before the header, such as an issuer's preamble.
+    value_affixes
+        Symbols written next to numbers and removed before reading them, e.g. ``("$",)``; any
+        other character still raises.
     """
 
     date_column: str
     date_format: str
-    delimiter: str
+    delimiter: str | None
     decimal_separator: str
     thousands_separator: str | None
-    encoding: str
+    encoding: str | None
     currency: Currency
     frequency: Frequency
     columns: Mapping[str, ColumnSpec]
+    file_format: FileFormat
+    sheet: str | None
+    skip_rows: int
+    value_affixes: tuple[str, ...]
 
     def __post_init__(self) -> None:
         """Validate the mapping as a whole."""
-        if self.delimiter not in _DELIMITERS:
-            raise ValidationError(f"delimiter {self.delimiter!r} not in {sorted(_DELIMITERS)}")
+        if not isinstance(self.file_format, FileFormat):
+            raise ValidationError(f"file_format must be a FileFormat, got {self.file_format!r}")
+        if type(self.skip_rows) is not int or self.skip_rows < 0:
+            raise ValidationError(f"skip_rows must be a non-negative int, got {self.skip_rows!r}")
+        check_affixes(self.value_affixes)
         if self.decimal_separator not in _DECIMALS:
             raise ValidationError(
                 f"decimal_separator must be '.' or ',', got {self.decimal_separator!r}"
             )
+        if self.file_format is FileFormat.XLSX:
+            if not isinstance(self.sheet, str) or self.delimiter is not None or self.encoding:
+                raise ValidationError("an xlsx mapping needs a sheet and no delimiter or encoding")
+        else:
+            if self.sheet is not None:
+                raise ValidationError("a CSV mapping has no sheet")
+            self._check_csv()
         if self.thousands_separator is not None:
             if self.thousands_separator not in _THOUSANDS:
                 raise ValidationError(
@@ -134,23 +167,31 @@ class CsvMapping:
                 )
             if self.thousands_separator == self.decimal_separator:
                 raise ValidationError("decimal and thousands separators must differ")
-        # A thousands separator equal to the delimiter is fine when numbers are quoted
-        # ("1,234.50"); an unquoted one changes the field count and is rejected per row.
-        if self.delimiter == self.decimal_separator:
-            raise ValidationError("delimiter must differ from the decimal separator")
-        if not all(token in self.date_format for token in ("%d", "%m")) or not (
-            "%Y" in self.date_format or "%y" in self.date_format
+        if (
+            "%d" not in self.date_format
+            or not ("%m" in self.date_format or "%b" in self.date_format)
+            or not ("%Y" in self.date_format or "%y" in self.date_format)
         ):
-            raise ValidationError(f"date_format {self.date_format!r} needs %d, %m and %Y or %y")
-        try:
-            codecs.lookup(self.encoding)
-        except LookupError:
-            raise ValidationError(f"unknown encoding {self.encoding!r}") from None
+            raise ValidationError(
+                f"date_format {self.date_format!r} needs %d, %m or %b, and %Y or %y"
+            )
         if not self.columns:
             raise ValidationError("at least one price column must be mapped")
         instruments = [spec.instrument for spec in self.columns.values()]
         if len(set(instruments)) != len(instruments):
             raise ValidationError("instrument identifiers must be unique")
+
+    def _check_csv(self) -> None:
+        if self.delimiter not in _DELIMITERS:
+            raise ValidationError(f"delimiter {self.delimiter!r} not in {sorted(_DELIMITERS)}")
+        # A thousands separator equal to the delimiter is fine when numbers are quoted
+        # ("1,234.50"); an unquoted one changes the field count and is rejected per row.
+        if self.delimiter == self.decimal_separator:
+            raise ValidationError("delimiter must differ from the decimal separator")
+        try:
+            codecs.lookup(str(self.encoding))
+        except LookupError:
+            raise ValidationError(f"unknown encoding {self.encoding!r}") from None
 
 
 @dataclass(frozen=True)
@@ -162,19 +203,14 @@ class PriceData:
 
 
 def parse_price_csv(content: bytes, provenance: Provenance, mapping: CsvMapping) -> PriceData:
-    """Parse a user price file into a dataset of prices, one column per instrument.
+    """Parse a user price file, CSV or xlsx as its mapping declares, one column per instrument.
 
-    Empty cells are missing values (NaN) and are not filled. Dates must be strictly increasing
-    or strictly decreasing; a decreasing file is reversed and the reversal is noted.
+    The ``skip_rows`` lines before the header are ignored. Empty cells are missing values (NaN)
+    and are not filled. Dates must be strictly increasing or strictly decreasing; a decreasing
+    file is reversed and the reversal is noted.
     """
-    try:
-        text = content.decode(mapping.encoding)
-    except UnicodeDecodeError as exc:
-        raise ParseError(f"cannot decode the file with encoding {mapping.encoding!r}") from exc
-    rows = [row for row in csv.reader(io.StringIO(text), delimiter=mapping.delimiter) if row]
-    if not rows:
-        raise ParseError("file has no header")
-    header = [cell.strip() for cell in rows[0]]
+    numbered = _price_rows(content, mapping)
+    header = [_cell(value).strip() for value in numbered[0][1]]
     for required in (mapping.date_column, *mapping.columns):
         if required not in header:
             raise ParseError(f"column {required!r} not found in header {header}")
@@ -183,10 +219,10 @@ def parse_price_csv(content: bytes, provenance: Provenance, mapping: CsvMapping)
 
     dates: list[pd.Timestamp] = []
     values: list[list[float]] = []
-    for line, row in enumerate(rows[1:], start=2):
+    for line, row in numbered[1:]:
         if len(row) != len(header):
             raise ParseError(f"line {line}: expected {len(header)} fields, got {len(row)}")
-        dates.append(_parse_date(row[date_position].strip(), mapping.date_format, line))
+        dates.append(_row_date(row[date_position], mapping.date_format, line))
         values.append(
             [_parse_price(row[positions[name]], mapping, line) for name in mapping.columns]
         )
@@ -219,6 +255,10 @@ def parse_price_csv(content: bytes, provenance: Provenance, mapping: CsvMapping)
     if ignored:
         notes.append(f"Ignored columns: {ignored}.")
     notes.append("Empty cells kept as NaN; no forward fill.")
+    if mapping.file_format is FileFormat.XLSX:
+        notes.append(f"Read sheet {mapping.sheet!r} of an xlsx workbook.")
+    if mapping.value_affixes:
+        notes.append(f"Symbols removed from numbers: {list(mapping.value_affixes)}.")
     dataset = Dataset(
         data=frame,
         provenance=provenance,
@@ -240,10 +280,17 @@ def load_csv_mapping(path: Path) -> CsvMapping:
     """
     with Path(path).open("rb") as handle:
         raw = tomllib.load(handle)
+    if "file_format" not in raw:
+        raise ValidationError(f"{path}: missing keys ['file_format']")
+    try:
+        file_format = FileFormat(raw["file_format"])
+    except ValueError:
+        raise ValidationError(f"{path}: unknown file_format {raw['file_format']!r}") from None
     expected = {
-        "date_column", "date_format", "delimiter", "decimal_separator", "thousands_separator",
-        "encoding", "currency", "frequency", "columns",
+        "file_format", "skip_rows", "value_affixes", "date_column", "date_format",
+        "decimal_separator", "thousands_separator", "currency", "frequency", "columns",
     }  # fmt: skip
+    expected |= {"delimiter", "encoding"} if file_format is FileFormat.CSV else {"sheet"}
     _check_keys(raw, expected, str(path))
     columns: dict[str, ColumnSpec] = {}
     for name, spec in raw["columns"].items():
@@ -262,13 +309,17 @@ def load_csv_mapping(path: Path) -> CsvMapping:
     return CsvMapping(
         date_column=raw["date_column"],
         date_format=raw["date_format"],
-        delimiter=raw["delimiter"],
+        delimiter=raw.get("delimiter"),
         decimal_separator=raw["decimal_separator"],
         thousands_separator=raw["thousands_separator"] or None,
-        encoding=raw["encoding"],
+        encoding=raw.get("encoding"),
         currency=Currency(raw["currency"]),
         frequency=frequency,
         columns=columns,
+        file_format=file_format,
+        sheet=raw.get("sheet"),
+        skip_rows=raw["skip_rows"],
+        value_affixes=check_affixes(raw["value_affixes"]),
     )
 
 
@@ -302,15 +353,62 @@ def import_local_file(
 
 
 # --------------------------------------------------------------------------- helpers
+def _price_rows(content: bytes, mapping: CsvMapping) -> list[tuple[int, list[object]]]:
+    """Return the header and the non-empty rows after the preamble, with their line numbers."""
+    if mapping.file_format is FileFormat.XLSX:
+        body = read_xlsx_rows(content, sheet=str(mapping.sheet), skip_rows=mapping.skip_rows)
+    else:
+        try:
+            text = content.decode(str(mapping.encoding))
+        except UnicodeDecodeError as exc:
+            raise ParseError(f"cannot decode the file with encoding {mapping.encoding!r}") from exc
+        lines = list(csv.reader(io.StringIO(text), delimiter=str(mapping.delimiter)))
+        if len(lines) <= mapping.skip_rows:
+            raise ParseError(f"file has no header after skipping {mapping.skip_rows} line(s)")
+        body = [list[object](row) for row in lines[mapping.skip_rows :]]
+    rows = [
+        (line, row)
+        for line, row in enumerate(body, start=mapping.skip_rows + 1)
+        if any(_cell(value).strip() for value in row)
+    ]
+    if not rows:
+        raise ParseError("file has no header")
+    return rows
+
+
+def _cell(value: object) -> str:
+    """Return a cell as text (``None`` is empty)."""
+    return "" if value is None else str(value)
+
+
+def _row_date(value: object, fmt: str, line: int) -> pd.Timestamp:
+    """Read a date cell: a date of an xlsx sheet as it is, text with the declared format."""
+    if isinstance(value, date):
+        return pd.Timestamp(value).normalize()
+    return _parse_date(_cell(value).strip(), fmt, line)
+
+
 def _parse_date(text: str, fmt: str, line: int) -> pd.Timestamp:
+    shown = text
+    if "%b" in fmt:  # English month abbreviations, whatever the machine's language
+        match = _WORD.search(text)
+        if match is None or match.group() not in _MONTHS:
+            raise ParseError(f"line {line}: invalid date {shown!r} for format {fmt!r}")
+        text = text[: match.start()] + _MONTHS[match.group()] + text[match.end() :]
+        fmt = fmt.replace("%b", "%m")
     try:
         return pd.Timestamp(datetime.strptime(text, fmt))
     except ValueError:
-        raise ParseError(f"line {line}: invalid date {text!r} for format {fmt!r}") from None
+        raise ParseError(f"line {line}: invalid date {shown!r} for format {fmt!r}") from None
 
 
 def parse_number(
-    raw: str, *, decimal_separator: str, thousands_separator: str | None, line: int
+    raw: str,
+    *,
+    decimal_separator: str,
+    thousands_separator: str | None,
+    line: int,
+    affixes: Sequence[str] = (),
 ) -> float:
     """Parse one number written with declared separators; an empty cell is NaN.
 
@@ -326,8 +424,12 @@ def parse_number(
         As declared in the mapping.
     line
         Line number used in error messages.
+    affixes
+        Declared symbols removed at the start or the end (``$``, ``%`` ...; phase 8.2b).
     """
-    text = _normalised(raw, decimal_separator, thousands_separator, line)
+    text = _normalised(
+        strip_affixes(raw, affixes, line), decimal_separator, thousands_separator, line
+    )
     return float("nan") if text is None else float(text)
 
 
@@ -362,13 +464,17 @@ def _normalised(raw: str, decimal: str, thousands: str | None, line: int) -> str
     return normalised
 
 
-def _parse_price(raw: str, mapping: CsvMapping, line: int) -> float:
-    value = parse_number(
-        raw,
-        decimal_separator=mapping.decimal_separator,
-        thousands_separator=mapping.thousands_separator,
-        line=line,
-    )
+def _parse_price(raw: object, mapping: CsvMapping, line: int) -> float:
+    if isinstance(raw, int | float) and not isinstance(raw, bool):
+        value = float(raw)  # a numeric cell of an xlsx sheet
+    else:
+        value = parse_number(
+            _cell(raw),
+            decimal_separator=mapping.decimal_separator,
+            thousands_separator=mapping.thousands_separator,
+            line=line,
+            affixes=mapping.value_affixes,
+        )
     if value <= 0:
         raise ParseError(f"line {line}: prices must be positive, got {value}")
     return value

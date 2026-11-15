@@ -81,6 +81,18 @@ website. *Import a downloaded file*, on the Data screen, copies one into the raw
 unchanged, with its provenance. The app never downloads them itself (see
 {doc}`data-sources`).
 
+**A Vanguard fund, step by step.**
+
+1. **Download** the two exports from the fund's page on a Vanguard Europe website:
+   - *Download* under *Holdings details*;
+   - *Download … prices* under *Prices and distribution*.
+2. **Copy the price mappings** `configs/csv_mappings/vanguard_prices_market_eur.toml` (and,
+   if you want the NAV, `vanguard_prices_nav_usd.toml`) into your workspace. Replace the
+   made-up ISIN with your fund's.
+3. **In the report config,** use `vanguard_holdings.toml` as the fund's `holdings_mapping`,
+   with `as_of` set to the date in the file's preamble ("As at …"). The price mapping goes in
+   `prices_mapping`.
+
 ## Things to know
 
 - **One run at a time, and runs cannot be cancelled.** The window stays responsive and shows

@@ -129,6 +129,7 @@ def test_save_writes_both_files_and_the_report_runs(tmp_path: Path) -> None:
         "date,IE0000000012\n2026-01-02,50\n2026-01-30,55\n", encoding="utf-8"
     )
     (data / "prices.toml").write_text(
+        'file_format = "csv"\nskip_rows = 0\nvalue_affixes = []\n'
         'date_column = "date"\ndate_format = "%Y-%m-%d"\ndelimiter = ","\n'
         'decimal_separator = "."\nthousands_separator = ""\nencoding = "utf-8"\n'
         'currency = "EUR"\nfrequency = "monthly"\n\n[columns."IE0000000012"]\n'

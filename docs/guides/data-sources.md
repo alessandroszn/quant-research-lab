@@ -38,13 +38,21 @@ Your files are read only through explicit mappings, so nothing about their forma
   ({py:func}`qrlab.instruments.parse_holdings_file`);
 - issuer maps (`isin,issuer`), through {py:func}`qrlab.instruments.load_issuer_map`.
 
-**Issuer files** (holdings and NAV history from iShares, Vanguard and others) are downloaded by
-you, for your own analysis, from the issuer's website. A first look at the terms, on
-2026-11-15, found that the websites allow personal, non-commercial use, and that BlackRock's
-US iShares terms forbid robots and automated copying. qrlab therefore never downloads them. qrlab has no code that downloads them, and they are
-never redistributed: they stay in `data/`, and tests use synthetic files with the same
-layout. The terms of each issuer's website are reviewed in full before a mapping file for its
-layout is added to `configs/csv_mappings/`.
+**Issuer files** (holdings and price history) are downloaded by you, for your own analysis, from
+the issuer's website.
+
+- **qrlab never downloads them** and has no code that does.
+- **They are never redistributed.** They stay in `data/`, and the tests use synthetic files
+  with the same layout.
+- **Terms first.** The terms of each issuer's website are read in full before a mapping for
+  its layout is added to `configs/csv_mappings/`.
+
+The decisions, read on 2026-11-15:
+
+| Issuer | Terms | Decision |
+|---|---|---|
+| Vanguard (Europe) | The Irish/Dutch and Swiss websites give a licence "to view, store, download and print" pages for personal, informational and non-commercial use; repeated automated access is forbidden. | Mappings for the holdings and price-history exports (phase 8.2b): `vanguard_holdings.toml`, `vanguard_prices_market_eur.toml`, `vanguard_prices_nav_usd.toml`. |
+| iShares (BlackRock), Italian website | The website is for "personal and internal use", but any copy of information or data needs BlackRock's prior approval, and copying and distribution are forbidden. Downloading for personal use is not expressly allowed. | **No mapping** until the terms are clarified with BlackRock. A file you download yourself can still be read with a mapping you write. |
 
 **Exchange prices** (Borsa Italiana, Xetra): no free history download with clear terms was
 found, so none is added. A fund's prices come from its issuer's NAV history, downloaded by

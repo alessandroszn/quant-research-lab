@@ -55,6 +55,9 @@ fund_size = "unknown"
 source = "synthetic example"
 """
 MAPPING = """\
+file_format = "csv"
+skip_rows = 0
+value_affixes = []
 date_column = "Data"
 date_format = "%d/%m/%Y"
 delimiter = ";"

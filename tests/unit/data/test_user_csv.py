@@ -22,6 +22,7 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency
 from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Provenance, Unit
+from qrlab.data.sheets import FileFormat
 from qrlab.data.store import RawStore
 from qrlab.data.user_csv import (
     ColumnSpec,
@@ -56,6 +57,10 @@ def _mapping(**changes: object) -> CsvMapping:
             "Chiusura ETF A": ColumnSpec("EXAMPLE_ETF_A", PriceType.PRICE),
             "NAV ETF B": ColumnSpec("EXAMPLE_ETF_B", PriceType.NAV),
         },
+        file_format=FileFormat.CSV,
+        sheet=None,
+        skip_rows=0,
+        value_affixes=(),
     )
     return replace(base, **changes)  # type: ignore[arg-type]
 
