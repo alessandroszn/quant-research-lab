@@ -550,6 +550,7 @@ qrlab.stats.ols  function(y: 'pd.Series', x: 'pd.DataFrame', *, add_intercept: '
 qrlab.stats.rolling_ols  function(y: 'pd.Series', x: 'pd.DataFrame', *, window: 'int', add_intercept: 'bool', cov_type: 'CovType', hac_lags: 'int | None') -> 'RollingResult'
 qrlab.stats.stationary_bootstrap  function(data: 'pd.Series | pd.DataFrame', statistic: 'Callable[[np.ndarray], float]', *, mean_block_length: 'float', n_resamples: 'int', confidence: 'float', rng: 'np.random.Generator') -> 'BootstrapResult'
 qrlab.stats.stationary_bootstrap_indices  function(n: 'int', *, mean_block_length: 'float', n_resamples: 'int', rng: 'np.random.Generator') -> 'np.ndarray'
+qrlab.tax.CUSTOM  constant CustomRegime
 qrlab.tax.Category  enum
 qrlab.tax.Category.CAPITAL_INCOME  member = 'redditi_di_capitale'
 qrlab.tax.Category.OTHER_INCOME  member = 'redditi_diversi'
@@ -563,6 +564,13 @@ qrlab.tax.ColumnKind.TEXT  member = 'text'
 qrlab.tax.ColumnKind.MONEY  member = 'money'
 qrlab.tax.ColumnKind.SHARE  member = 'share'
 qrlab.tax.ColumnKind.NUMBER  member = 'number'
+qrlab.tax.CustomRegime  class(inherited)
+qrlab.tax.CustomRegime.country  attribute str = 'custom'
+qrlab.tax.CustomRegime.keys  attribute frozenset = ['description', 'exempt_after_months', 'gains_allowance', 'gains_rate', 'income_rate', 'loss_carry_years', 'losses', 'wealth_tax_rate']
+qrlab.tax.CustomRegime.optional_keys  attribute frozenset = []
+qrlab.tax.CustomRegime.parse  method(table: 'Mapping[str, object]') -> 'CustomSettings'
+qrlab.tax.CustomRegime.report  method(inputs: 'TaxInputs', settings: 'object') -> 'TaxReport'
+qrlab.tax.CustomSettings  class(description: 'str', gains_rate: 'Decimal', income_rate: 'Decimal', losses: 'str', loss_carry_years: 'int', exempt_after_months: 'int', gains_allowance: 'Decimal', wealth_tax_rate: 'Decimal') -> None
 qrlab.tax.Holdings  class(isins: 'tuple[str, ...]') -> None
 qrlab.tax.ITALY  constant ItalianRegime
 qrlab.tax.ItalianRegime  class(inherited)
@@ -606,10 +614,11 @@ qrlab.tax.TaxPosition.tax_withheld  property
 qrlab.tax.TaxRegime  class(*args, **kwargs)
 qrlab.tax.TaxRegime.parse  method(table: 'Mapping[str, object]') -> 'object'
 qrlab.tax.TaxRegime.report  method(inputs: 'TaxInputs', settings: 'object') -> 'TaxReport'
-qrlab.tax.TaxReport  class(country: 'str', as_of: 'date', checked_on: 'date', sources: 'Mapping[str, tuple[str, ...]]', paragraphs: 'tuple[Paragraph, ...]', tables: 'tuple[TaxTable, ...]', scalars: 'Mapping[str, Decimal]' = <factory>, title: 'str' = 'tax_title') -> None
+qrlab.tax.TaxReport  class(country: 'str', as_of: 'date', checked_on: 'date', sources: 'Mapping[str, tuple[str, ...]]', paragraphs: 'tuple[Paragraph, ...]', tables: 'tuple[TaxTable, ...]', scalars: 'Mapping[str, Decimal]' = <factory>, title: 'str' = 'tax_title', notice: 'str | None' = None) -> None
 qrlab.tax.TaxReport.title  attribute str = 'tax_title'
 qrlab.tax.TaxTable  class(title: 'str', columns: 'tuple[TaxColumn, ...]', rows: 'tuple[tuple[Cell, ...], ...]', file: 'str | None' = None, index: 'str | None' = None, note: 'str | None' = None, shown_when_empty: 'bool' = True) -> None
 qrlab.tax.TaxTable.shown_when_empty  attribute bool = True
+qrlab.tax.custom_tax_model  function(settings: 'CustomSettings', *, taxable_yield: 'float') -> 'TaxModel'
 qrlab.tax.italian_tax_position  function(history: 'LedgerHistory', transactions: 'Sequence[Transaction]', instruments: 'Mapping[Isin, Instrument]', *, regime: 'Regime', public_share: 'Mapping[Isin, Decimal]', as_of: 'date', to_base: 'ToBase') -> 'TaxPosition'
 qrlab.tax.italian_tax_report  function(position: 'TaxPosition') -> 'TaxReport'
 qrlab.tax.regime_for  function(country: 'object') -> 'TaxRegime'

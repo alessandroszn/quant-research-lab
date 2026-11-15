@@ -147,6 +147,46 @@ _EN = {
     "ch_units": "Units",
     "ch_per_unit": "Per unit",
     "ch_gross": "Gross",
+    # --- the configurable model (phase 9.3) -----------------------------------------------
+    "custom_title": "Tax estimate: a simplified model you configured, not a country's law",
+    "custom_intro": (
+        "Model: {description}. The rules are the ones you stated; no country's law is "
+        "applied. Taxes are estimates."
+    ),
+    "custom_order": (
+        "Per calendar year: each sale's result at average cost; the exempt part by holding "
+        "period; losses; the allowance; then the rates."
+    ),
+    "custom_losses_netted": (
+        "Losses are netted with the year's gains; a net loss can be used in the {years} "
+        "following year(s), oldest first."
+    ),
+    "custom_losses_ignored": "Losses are ignored: each gain is taxed alone.",
+    "custom_exempt": (
+        "Gains on units held at least {months} months are exempt; the units sold are matched "
+        "first in, first out, an approximation next to the average cost."
+    ),
+    "custom_no_exempt": "No gain is exempt by holding period.",
+    "custom_withheld": (
+        "Tax withheld on income is shown next to the income tax, not credited: whether it "
+        "can be depends on the country and the treaty."
+    ),
+    "custom_gains_rate": "Gains-tax rate",
+    "custom_income_rate": "Income-tax rate",
+    "custom_wealth_tax_rate": "Wealth-tax rate",
+    "custom_allowance": "Yearly gains allowance",
+    "custom_settings": "Rates you stated",
+    "custom_amounts": "Amounts you stated",
+    "custom_years": "Taxes by year (estimates)",
+    "custom_years_note": "Your rules, applied as stated; not a country's law.",
+    "custom_result": "Realised result",
+    "custom_exempt_amount": "Exempt by holding",
+    "custom_taxable_gains": "Taxable gains",
+    "custom_taxable_losses": "Taxable losses",
+    "custom_losses_used": "Losses used",
+    "custom_allowance_used": "Allowance used",
+    "custom_taxable": "Taxable after losses and allowance",
+    "custom_gains_tax": "Gains tax",
     "not_annualised": "Not annualised: the period is shorter than one year.",
     "positions": "Positions",
     "account": "Account",
@@ -537,6 +577,48 @@ _IT = {
     "ch_units": "Quote",
     "ch_per_unit": "Per quota",
     "ch_gross": "Lordo",
+    # --- il modello configurabile (fase 9.3) --------------------------------------------
+    "custom_title": (
+        "Stima delle imposte: un modello semplificato che hai configurato, non la legge di un paese"
+    ),
+    "custom_intro": (
+        "Modello: {description}. Le regole sono quelle che hai indicato; non si applica la "
+        "legge di alcun paese. Le imposte sono stime."
+    ),
+    "custom_order": (
+        "Per anno solare: il risultato di ogni vendita al costo medio; la parte esente per "
+        "durata di possesso; le perdite; la franchigia; poi le aliquote."
+    ),
+    "custom_losses_netted": (
+        "Le perdite si compensano con gli utili dell'anno; una perdita netta si può usare "
+        "nei {years} anni successivi, dalla più vecchia."
+    ),
+    "custom_losses_ignored": "Le perdite sono ignorate: ogni utile è tassato da solo.",
+    "custom_exempt": (
+        "Gli utili sulle quote possedute da almeno {months} mesi sono esenti; le quote vendute "
+        "seguono il primo entrato, primo uscito, un'approssimazione accanto al costo medio."
+    ),
+    "custom_no_exempt": "Nessun utile è esente per durata di possesso.",
+    "custom_withheld": (
+        "L'imposta trattenuta sui redditi è mostrata accanto all'imposta sui redditi, non "
+        "scalata: se lo sia dipende dal paese e dal trattato."
+    ),
+    "custom_gains_rate": "Aliquota sugli utili",
+    "custom_income_rate": "Aliquota sui redditi",
+    "custom_wealth_tax_rate": "Aliquota sul patrimonio",
+    "custom_allowance": "Franchigia annua sugli utili",
+    "custom_settings": "Aliquote che hai indicato",
+    "custom_amounts": "Importi che hai indicato",
+    "custom_years": "Imposte per anno (stime)",
+    "custom_years_note": "Le tue regole, applicate come indicato; non la legge di un paese.",
+    "custom_result": "Risultato realizzato",
+    "custom_exempt_amount": "Esente per possesso",
+    "custom_taxable_gains": "Utili imponibili",
+    "custom_taxable_losses": "Perdite imponibili",
+    "custom_losses_used": "Perdite usate",
+    "custom_allowance_used": "Franchigia usata",
+    "custom_taxable": "Imponibile dopo perdite e franchigia",
+    "custom_gains_tax": "Imposta sugli utili",
     "not_annualised": "Non annualizzato: il periodo è inferiore a un anno.",
     "positions": "Posizioni",
     "account": "Conto",

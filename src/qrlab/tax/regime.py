@@ -150,7 +150,8 @@ class TaxReport:
 
     ``sources`` gives the rules' sources in every language of :data:`LANGUAGES`;
     ``checked_on`` is the date the rules were checked against the law in force. ``scalars``
-    are the run record's numbers.
+    are the run record's numbers; ``notice``, when given, is added to the run's notice (in
+    English, like every notice).
     """
 
     country: str
@@ -161,6 +162,7 @@ class TaxReport:
     tables: tuple[TaxTable, ...]
     scalars: Mapping[str, Decimal] = field(default_factory=dict)
     title: str = "tax_title"
+    notice: str | None = None
 
     def __post_init__(self) -> None:
         """Require the sources in every report language and unique CSV names."""
