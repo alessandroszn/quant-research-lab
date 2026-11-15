@@ -72,7 +72,16 @@ from qrlab.scenarios.definitions import HistoricalScenario
 from qrlab.scenarios.summary import RiskSummary
 from qrlab.simulation.outcomes import ProjectionResult
 from qrlab.simulation.plan import Flow
-from qrlab.tax.italy import RULES_CHECKED_ON, SOURCES, SOURCES_IT, Regime, TaxPosition
+from qrlab.tax.regime import (
+    Cell,
+    ColumnKind,
+    Holdings,
+    LabelRef,
+    ParagraphValue,
+    SourcesRef,
+    TaxReport,
+    TaxTable,
+)
 
 __all__ = ["RiskFreeSummary", "build_portfolio_report"]
 
@@ -123,7 +132,7 @@ def build_portfolio_report(
     risk: RiskSummary | None,
     projection: ProjectionResult | None,
     risk_free: RiskFreeSummary | None,
-    tax: TaxPosition | None,
+    tax: TaxReport | None,
 ) -> Report:
     """Build the portfolio report.
 
@@ -169,8 +178,9 @@ def build_portfolio_report(
         A risk-free series over the TWR periods and the Sharpe ratio it gives, or ``None``:
         the summary then shows no Sharpe ratio.
     tax
-        The Italian tax position of the account (:func:`qrlab.tax.italian_tax_position`), or
-        ``None``: the report then has no tax section.
+        A country's tax analytics of the account (:class:`qrlab.tax.TaxReport`, e.g. from
+        :func:`qrlab.tax.italian_tax_report`), or ``None``: the report then has no tax
+        section. The section is rendered from the report's description alone (phase 9.1).
     """
     if generated_at.utcoffset() is None:
         raise ValidationError("generated_at must be timezone-aware")
@@ -208,7 +218,7 @@ class _Builder:
         risk: RiskSummary | None,
         projection: ProjectionResult | None,
         risk_free: RiskFreeSummary | None,
-        tax: TaxPosition | None,
+        tax: TaxReport | None,
     ) -> None:
         self.risk_free = risk_free
         self.tax = tax
@@ -834,98 +844,59 @@ class _Builder:
             return f"{self.t('cash')} {holding.removeprefix('cash ')}"
         return holding
 
-    def _tax(self, position: TaxPosition) -> Section:
-        paragraphs = [
-            self.t(
-                "tax_intro",
-                regime=self.t(f"tax_regime_{position.regime.value}"),
-                checked=self.day(RULES_CHECKED_ON),
-            ),
-            self.t("tax_rules"),
-        ]
-        if position.regime is Regime.DICHIARATIVO:
-            paragraphs.append(self.t("tax_estimate"))
-        if position.flagged:
-            names = ", ".join(self._name_of(code) for code in position.flagged)
-            paragraphs.append(self.t("tax_flagged", names=names))
-        sources = position.sources
-        if self.language is Language.IT and sources == SOURCES:
-            sources = SOURCES_IT
-        paragraphs.append(self.t("tax_sources", sources="; ".join(sources)))
-        events = tuple(
-            (
-                self.day(e.trade_date),
-                self._name_of(e.isin),
-                self.t(f"tax_cat_{e.category.value}"),
-                self.money(e.gain),
-                self.pct(float(e.public_share)),
-                self.money(e.base),
-                self.money(e.offset),
-                self.t("not_available") if e.tax_due is None else self.money(e.tax_due),
-                self.money(e.tax_withheld),
-                self.money(e.difference),
-            )
-            for e in position.events
+    def _tax(self, report: TaxReport) -> Section:
+        """Render a country's tax analytics from its description (:mod:`qrlab.tax.regime`)."""
+        paragraphs = tuple(
+            self.t(p.key, **{name: self._tax_value(value, report) for name, value in p.args})
+            for p in report.paragraphs
         )
-        tables = [
-            Table(
-                self.t("tax_events"),
-                (
-                    self.t("date"),
-                    self.t("holding"),
-                    self.t("tax_category"),
-                    self.t("tax_result"),
-                    self.t("tax_public_share"),
-                    self.t("tax_base"),
-                    self.t("tax_offset"),
-                    self.t("tax_due"),
-                    self.t("tax_withheld"),
-                    self.t("tax_difference"),
-                ),
-                events,
-                ("left", "left", "left", *("right",) * 7),
-                (self.t("tax_events_note"),),
-            ),
-            Table(
-                self.t("tax_totals"),
-                ("", self.t("value")),
-                (
-                    (self.t("tax_due"), self.money(position.tax_due)),
-                    (self.t("tax_withheld"), self.money(position.tax_withheld)),
-                    (self.t("tax_losses_remaining"), self.money(position.losses_remaining)),
-                ),
-                ("left", "right"),
-                (),
-            ),
-        ]
-        if position.losses:
-            tables.append(
-                Table(
-                    self.t("tax_losses"),
-                    (
-                        self.t("tax_year"),
-                        self.t("tax_amount"),
-                        self.t("tax_used"),
-                        self.t("tax_expired"),
-                        self.t("tax_remaining"),
-                        self.t("tax_usable_until"),
-                    ),
-                    tuple(
-                        (
-                            str(lot.year),
-                            self.money(lot.amount),
-                            self.money(lot.used),
-                            self.money(lot.expired),
-                            self.money(lot.remaining),
-                            self.day(lot.expires),
-                        )
-                        for lot in position.losses
-                    ),
-                    ("left", *("right",) * 5),
-                    (),
+        tables = tuple(
+            self._tax_table(table)
+            for table in report.tables
+            if table.rows or table.shown_when_empty
+        )
+        return Section(self.t(report.title), paragraphs, tables, ())
+
+    def _tax_value(self, value: ParagraphValue, report: TaxReport) -> str:
+        if isinstance(value, LabelRef):
+            return self.t(value.key)
+        if isinstance(value, Holdings):
+            return ", ".join(self._name_of(code) for code in value.isins)
+        if isinstance(value, SourcesRef):
+            return "; ".join(report.sources[self.language.value])
+        if isinstance(value, date):
+            return self.day(value)
+        return value
+
+    def _tax_table(self, table: TaxTable) -> Table:
+        return Table(
+            self.t(table.title),
+            tuple(self.t(c.label) if c.label else "" for c in table.columns),
+            tuple(
+                tuple(
+                    self._tax_cell(cell, c.kind, c.prefix)
+                    for cell, c in zip(row, table.columns, strict=True)
                 )
-            )
-        return Section(self.t("tax_title"), tuple(paragraphs), tuple(tables), ())
+                for row in table.rows
+            ),
+            tuple(c.align for c in table.columns),
+            () if table.note is None else (self.t(table.note),),
+        )
+
+    def _tax_cell(self, cell: Cell, kind: ColumnKind, prefix: str) -> str:
+        if cell is None:
+            return self.t("not_available")
+        if kind is ColumnKind.DATE and isinstance(cell, date):
+            return self.day(cell)
+        if kind is ColumnKind.HOLDING:
+            return self._name_of(str(cell))
+        if kind is ColumnKind.LABEL:
+            return self.t(f"{prefix}{cell}")
+        if kind is ColumnKind.MONEY and isinstance(cell, Decimal):
+            return self.money(cell)
+        if kind is ColumnKind.SHARE and isinstance(cell, Decimal):
+            return self.pct(float(cell))
+        return str(cell)
 
     def _lookthrough(self) -> Section:
         if self.lookthrough is None:

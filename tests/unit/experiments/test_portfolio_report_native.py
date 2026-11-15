@@ -163,7 +163,8 @@ def test_a_starting_position_by_hand(tmp_path: Path) -> None:
         'base_currency = "EUR"\nlanguage = "it"\nflow_timing = "start"\n'
         'max_price_age_days = 0\nreturn_frequency = "none"\n'
         "generated_at = 2026-02-01T09:00:00Z\ntarget_weights = {}\n"
-        '\n[parameters.tax]\nregime = "amministrato"\npublic_share = { IE0000000012 = 0 }\n'
+        '\n[parameters.tax]\ncountry = "it"\nregime = "amministrato"\n'
+        "public_share = { IE0000000012 = 0 }\n"
         f'\n[output]\ndirectory = "{(tmp_path / "out").as_posix()}"\n',
         encoding="utf-8",
     )

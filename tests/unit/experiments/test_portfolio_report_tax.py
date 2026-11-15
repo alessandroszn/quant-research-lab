@@ -58,6 +58,7 @@ price_type = "nav"
 """
 TAX = """
 [parameters.tax]
+country = "it"
 regime = "{regime}"
 public_share = {{ {shares} }}
 """
@@ -153,8 +154,25 @@ def test_a_missing_public_share_fails_the_run(tmp_path: Path) -> None:
     [
         (TAX.format(regime="forfettario", shares=SHARES), "regime"),
         (TAX.format(regime="amministrato", shares=f'"{X}" = 1.5'), r"\[0, 1\]"),
-        ('\n[parameters.tax]\nregime = "amministrato"\npublic_share = 3\n', "table"),
-        ('\n[parameters.tax]\nregime = "amministrato"\n', "public_share"),
+        (
+            '\n[parameters.tax]\ncountry = "it"\nregime = "amministrato"\npublic_share = 3\n',
+            "table",
+        ),
+        ('\n[parameters.tax]\ncountry = "it"\nregime = "amministrato"\n', "public_share"),
+        (
+            '\n[parameters.tax]\nregime = "amministrato"\npublic_share = {}\n',
+            "needs country, one of \\['it'\\]",
+        ),
+        (
+            '\n[parameters.tax]\ncountry = "fr"\nregime = "amministrato"\npublic_share = {}\n',
+            "country must be one of \\['it'\\], got 'fr'",
+        ),
+        (
+            '\n[parameters.tax]\ncountry = "it"\nregime = "amministrato"\npublic_share = {}\n'
+            "rate = 1\n",
+            "unknown keys \\['rate'\\]",
+        ),
+        ("\ntax = 3\n", "tax must be a table"),
     ],
 )
 def test_tax_parameters_are_validated(tmp_path: Path, tax: str, match: str) -> None:

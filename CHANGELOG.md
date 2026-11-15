@@ -8,6 +8,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **Tax regimes as a common shape** (phase 9.1), so that countries can be added beside Italy.
+  - `qrlab.tax.TaxRegime` is the interface of a country. It reads its own keys of
+    `[parameters.tax]` and returns a `qrlab.tax.TaxReport`.
+  - The report describes the result: sentences with typed values, tables with typed columns
+    (date, year, holding, label, text, money, share), sources in each report language, the
+    date the rules were checked, and the run's scalars.
+  - The report kind writes the CSV tables and scalars, and the HTML report renders the
+    section, from that description alone.
+  - `qrlab.tax.REGIMES` lists the countries; Italy is `"it"` (`qrlab.tax.ITALY`,
+    `italian_tax_report`). Italian outputs are byte-identical to before.
 - **Vanguard files as published** (phase 8.2b), read with three committed mappings:
   `vanguard_holdings.toml`, `vanguard_prices_market_eur.toml` and
   `vanguard_prices_nav_usd.toml`. The mappings follow the exports of a Vanguard Europe fund
@@ -116,6 +126,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- **`[parameters.tax]` needs `country`** (phase 9.1): add `country = "it"` to an existing
+  Italian tax table. A missing or unknown country raises with the list of countries.
+- **`build_portfolio_report(tax=...)` takes a `TaxReport`** instead of a `TaxPosition`. Use
+  `qrlab.tax.italian_tax_report(position)` to turn an Italian position into one.
 - **Price and holdings mappings need new keys** (phase 8.2b):
   - price mappings: `file_format`, `skip_rows` and `value_affixes`, plus `sheet` for xlsx
     (where `delimiter` and `encoding` are then left out);
