@@ -16,6 +16,9 @@ instruments = "../../examples/data/instruments.toml"
 checks = "../checks/example.toml"
 
 [parameters]
+# "mapped": a broker export read with transactions_mapping; "native": a qrlab transactions
+# file (docs/guides/data-sources.md), with no mapping.
+transactions_format = "mapped"
 title = "Synthetic example"
 base_currency = "EUR"
 language = "it"

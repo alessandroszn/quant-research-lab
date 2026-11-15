@@ -91,7 +91,8 @@ def _setup(tmp: Path, *, tax: str, withheld: str = "-260,00") -> Path:
         f'prices_mapping = "{(tmp / "mapping.toml").as_posix()}"\n'
         f'instruments = "{(tmp / "instruments.toml").as_posix()}"\n'
         f'checks = "{(ROOT / "configs/checks/example.toml").as_posix()}"\n'
-        '\n[parameters]\ntitle = "Tax test"\nbase_currency = "EUR"\nlanguage = "it"\n'
+        '\n[parameters]\ntransactions_format = "mapped"\n'
+        'title = "Tax test"\nbase_currency = "EUR"\nlanguage = "it"\n'
         'flow_timing = "start"\nmax_price_age_days = 3\nreturn_frequency = "none"\n'
         "generated_at = 2025-04-01T09:00:00Z\ntarget_weights = {}\n"
         + tax

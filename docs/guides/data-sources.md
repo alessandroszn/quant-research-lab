@@ -26,6 +26,11 @@ the raw store keeps every vintage.
 
 Your files are read only through explicit mappings, so nothing about their format is guessed:
 
+- transactions in qrlab's own layout, the native file, with no mapping
+  ({py:func}`qrlab.portfolio.parse_native_csv`; phase 8.8). You can write it by hand or let
+  qrlab write it ({py:func}`qrlab.portfolio.write_native_csv`). A starting position is one
+  `transfer_in` per fund, at the market price on the start date, with your original cost per
+  unit in `cost`;
 - broker exports (transactions), through {py:func}`qrlab.portfolio.load_broker_mapping`;
 - price files, through {py:func}`qrlab.data.load_csv_mapping`;
 - fund holdings, through {py:func}`qrlab.instruments.load_holdings_mapping`, as CSV or Excel
@@ -33,11 +38,17 @@ Your files are read only through explicit mappings, so nothing about their forma
   ({py:func}`qrlab.instruments.parse_holdings_file`);
 - issuer maps (`isin,issuer`), through {py:func}`qrlab.instruments.load_issuer_map`.
 
-**Issuer holdings files** (iShares, Vanguard and others) are downloaded by you, for your own
-analysis, from the issuer's website. qrlab has no code that downloads them, and they are
+**Issuer files** (holdings and NAV history from iShares, Vanguard and others) are downloaded by
+you, for your own analysis, from the issuer's website. A first look at the terms, on
+2026-11-15, found that the websites allow personal, non-commercial use, and that BlackRock's
+US iShares terms forbid robots and automated copying. qrlab therefore never downloads them. qrlab has no code that downloads them, and they are
 never redistributed: they stay in `data/`, and tests use synthetic files with the same
-layout. The terms of each issuer's website are reviewed before a mapping file for its layout
-is added to `configs/csv_mappings/`.
+layout. The terms of each issuer's website are reviewed in full before a mapping file for its
+layout is added to `configs/csv_mappings/`.
+
+**Exchange prices** (Borsa Italiana, Xetra): no free history download with clear terms was
+found, so none is added. A fund's prices come from its issuer's NAV history, downloaded by
+you.
 
 {py:func}`qrlab.data.import_local_file` copies a file into the raw store with its provenance.
 

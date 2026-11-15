@@ -143,7 +143,7 @@ def _setup(
         '[experiment]\nname = "lt-report"\nkind = "portfolio_report"\n'
         'hypothesis = "descriptive"\n\n'
         "[inputs]\n" + "\n".join(inputs) + "\n" + inputs_extra + "\n"
-        "[parameters]\n"
+        '[parameters]\ntransactions_format = "mapped"\n'
         + "\n".join(parameters)
         + "\n"
         + parameters_extra

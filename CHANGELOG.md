@@ -8,6 +8,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- A native transactions file (phase 8.8a), so that a portfolio can be described without a
+  broker export: `qrlab.portfolio.native`, with `NATIVE_COLUMNS`, `NATIVE_MAPPING`,
+  `parse_native_csv` and `write_native_csv`.
+  - **Layout:** one fixed CSV, with ISO dates, dot decimals and never-negative numbers.
+  - **Reading:** it goes through the same validated path as a broker export.
+  - **Charges:** fees and taxes are always written with their currency, so none is assumed.
+  - **Writing:** the writer sorts by date and keeps ties in order.
+- **An original cost on transfers in** (phase 8.8a). `Transaction.cost`, optional and allowed
+  only on `transfer_in`, is the cost per unit; brokers and native files map it as
+  `cost`/`cost_currency`.
+  - **Cost basis.** It becomes the cost basis, so realised gains and the Italian tax use it.
+    The external flow stays at market value, so TWR and MWR do not see gains made before the
+    transfer.
+  - **Gain carried in or out.** Each transfer's gain, market value minus cost basis, is
+    recorded (`qrlab.portfolio.TransferGain`, `LedgerHistory.transfers`). The P&L shows it
+    apart, as `PnlBreakdown.transfers` and as a report row when it is not zero, so the
+    breakdown still reconciles.
+- The `portfolio_report` kind reads either format, through the required parameter
+  `transactions_format` (`"mapped"` or `"native"`). A declared original cost adds a sentence
+  to the run's notice.
 - Italian losses in projections and backtests (phase 8.6b). `TaxModel` has an optional
   `losses`, a new `qrlab.simulation.LossRules` (`carry_years`, `fund_assets`):
   - gains on funds are taxed in full and use no losses;
@@ -66,6 +86,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- **`portfolio_report` configs need `transactions_format`** (phase 8.8a). Add
+  `transactions_format = "mapped"` to `[parameters]` of an existing config;
+  `transactions_mapping` is now an optional input, refused with `"native"`. A missing key
+  raises with this hint.
+- **`PnlBreakdown` has a new field, `transfers`,** before `residual`. A transfer out at a market
+  value different from its cost basis used to leave that difference in the residual; it now
+  appears under `transfers`, and the residual is zero.
 - `build_portfolio_report` takes the required keyword `tax` (pass `None` for none).
 - A risk-free rate and the Sharpe ratio in the portfolio report (phase 8.5).
   - **`qrlab.core.overnight_returns`** compounds an overnight rate over periods: simple

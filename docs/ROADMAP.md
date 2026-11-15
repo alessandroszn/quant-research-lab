@@ -336,7 +336,9 @@ promised less than the documentation implied. Each phase had its own design note
 Plan: `docs/design/level-8-plan.md`. Each phase still has its own design note, approved before
 any code. Real files stay in `data/`; everything published is synthetic.
 
-### 8.1 First run on the real portfolio (3–5 h)
+### 8.1 First run on the real portfolio (3–5 h) — replaced by 8.8
+- *There was no broker export to run, and qrlab should not need one. The reconciliation with a
+  broker export is in `docs/IDEAS.md`.*
 - Run `portfolio_report` on the owner's files in `data/`, with private mappings there.
 - Reconcile the end value and cash with the broker's statement, and realised gains with its
   tax statement.
@@ -368,6 +370,15 @@ any code. Real files stay in `data/`; everything published is synthetic.
 ### 8.7 A report entirely in Italian (4–6 h)
 - Translate import notes, not-applicable reasons and library messages shown in the report.
 - Total-return position returns for the diversification checks.
+
+### 8.8 A portfolio built in the app (16–22 h)
+- **8.8a:**
+  - a native transactions file, read without a mapping;
+  - an original cost on transfers in, for a starting position;
+  - `transactions_format` in the report.
+- **8.8b:** a Portfolio screen in the app, with tables for transactions and instruments,
+  Validate and Create report; files downloaded by hand are imported on the Data screen.
+- Market data come from public sources, downloaded by qrlab only where their terms allow it.
 
 **M8 — the report of a real portfolio, reconciled with the broker.**
 

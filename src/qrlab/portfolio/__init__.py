@@ -12,6 +12,7 @@ Modules:
 - ``valuation``: :func:`value_portfolio`, :class:`PriceSeries`, :class:`EcbConverter`.
 - ``performance``: TWR, MWR (XIRR), P&L decomposition, contribution, currency effect.
 - ``broker_import``: broker exports through an explicit :class:`BrokerMapping`.
+- ``native``: the native qrlab transactions file, read without a mapping (phase 8.8).
 """
 
 from qrlab.portfolio.broker_import import (
@@ -31,7 +32,14 @@ from qrlab.portfolio.ledger import (
     RealisedGain,
     ToBase,
     TradeCharge,
+    TransferGain,
     replay,
+)
+from qrlab.portfolio.native import (
+    NATIVE_COLUMNS,
+    NATIVE_MAPPING,
+    parse_native_csv,
+    write_native_csv,
 )
 from qrlab.portfolio.performance import (
     CurrencyEffect,
@@ -51,6 +59,8 @@ from qrlab.portfolio.transactions import Transaction, TransactionKind
 from qrlab.portfolio.valuation import EcbConverter, PriceSeries, Valuation, value_portfolio
 
 __all__ = [
+    "NATIVE_COLUMNS",
+    "NATIVE_MAPPING",
     "BrokerImport",
     "BrokerMapping",
     "CashMovement",
@@ -70,6 +80,7 @@ __all__ = [
     "TradeCharge",
     "Transaction",
     "TransactionKind",
+    "TransferGain",
     "TwrResult",
     "Valuation",
     "XirrResult",
@@ -79,9 +90,11 @@ __all__ = [
     "load_broker_mapping",
     "money_weighted_return",
     "parse_broker_csv",
+    "parse_native_csv",
     "pnl_breakdown",
     "replay",
     "time_weighted_returns",
     "value_portfolio",
+    "write_native_csv",
     "xirr",
 ]

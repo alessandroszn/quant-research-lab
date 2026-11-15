@@ -14,7 +14,7 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Issuer holdings adapters (iShares, Xtrackers, Vanguard, Amundi, SPDR, Invesco) | 1.3 `instruments` | Each needs its own terms-of-use review before any download code. |
 | Exchange listings and trading currencies | 1.3 `instruments` | Needed when valuing transactions on a specific exchange (2.1). |
 | FIFO and specific-lot cost basis | 2.1 `portfolio` | Average cost (Italian regime amministrato) is implemented; other methods for other tax regimes. |
-| Original cost on transfers in | 2.1 `portfolio` | Transfers in take market value as cost basis; carrying the original cost from another broker matters for taxes. |
+| Original purchase FX rate on transfers in | 8.8 | A foreign fund's original cost is converted at the transfer date's rate; the rates of the original purchases would give the exact euro cost. |
 | Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |
 | Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
 | International daily factors | 2.2 `stats` | French publishes daily Developed and Europe factors; only monthly and annual are parsed. |
@@ -22,6 +22,8 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | PDF export of reports | 2.3 `reporting` | Roadmap mentions HTML/PDF; HTML only in v1. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |
 | Total-return series for distributing funds | 8.7 | A total-return file per fund, used by the diversification checks and the report's risk, so that a distributing fund's returns include its distributions. |
+| Reconciliation with a broker export | 8.1, 8.8 | The old 8.1: run the report on a broker export and reconcile value, cash and realised gains with the broker's statements, once such an export exists. |
+| Price fetcher for a licensed API | 8.8 | Automatic fund prices from an API with the user's own key, with its terms recorded; no free source with clear terms was found. |
 | Loss rules in configs | 8.6b | `[parameters]` keys for `qrlab.simulation.LossRules` in the backtest, projection and report kinds; today the rules are a library option only. |
 | Italian taxes on income and wealth | 8.6 | Recompute dividend and coupon taxes (with foreign withholding and treaties); stamp duty and IVAFE; foreign currency as redditi diversi. |
 | Benchmark series in the portfolio report | 8.5 | The relative checks (beta, tracking error against a benchmark) need a benchmark input; with it, beta on excess returns of the €STR. |

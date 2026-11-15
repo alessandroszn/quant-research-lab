@@ -43,6 +43,8 @@ def tx(
     taxes: Money | None = None,
     fx_counter: Money | None = None,
     account: str = "main",
+    cost: Money | None = None,
+    note: str = "",
 ) -> Transaction:
     """Build a transaction with zero fees and taxes in EUR unless given."""
     return Transaction(
@@ -57,7 +59,8 @@ def tx(
         fees=fees if fees is not None else money(0),
         taxes=taxes if taxes is not None else money(0),
         fx_counter=fx_counter,
-        note="",
+        note=note,
+        cost=cost,
     )
 
 

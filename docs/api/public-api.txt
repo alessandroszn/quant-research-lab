@@ -372,10 +372,13 @@ qrlab.portfolio.FlowTiming.START_OF_DAY  member = 'start_of_day'
 qrlab.portfolio.FlowTiming.END_OF_DAY  member = 'end_of_day'
 qrlab.portfolio.Income  class(trade_date: 'date', account: 'str', kind: 'TransactionKind', isin: 'Isin | None', gross_base: 'Decimal', taxes_base: 'Decimal', fees_base: 'Decimal') -> None
 qrlab.portfolio.Income.net_base  property
-qrlab.portfolio.LedgerHistory  class(base: 'Currency', dates: 'tuple[date, ...]', states: 'tuple[LedgerState, ...]', realised: 'tuple[RealisedGain, ...]', external_flows: 'tuple[ExternalFlow, ...]', income: 'tuple[Income, ...]', costs: 'tuple[Cost, ...]', cash_movements: 'tuple[CashMovement, ...]', trade_charges: 'tuple[TradeCharge, ...]') -> None
+qrlab.portfolio.LedgerHistory  class(base: 'Currency', dates: 'tuple[date, ...]', states: 'tuple[LedgerState, ...]', realised: 'tuple[RealisedGain, ...]', external_flows: 'tuple[ExternalFlow, ...]', income: 'tuple[Income, ...]', costs: 'tuple[Cost, ...]', cash_movements: 'tuple[CashMovement, ...]', trade_charges: 'tuple[TradeCharge, ...]', transfers: 'tuple[TransferGain, ...]' = ()) -> None
 qrlab.portfolio.LedgerHistory.state_on  method(day: 'date') -> 'LedgerState'
+qrlab.portfolio.LedgerHistory.transfers  attribute tuple = []
 qrlab.portfolio.LedgerState  class(positions: 'Mapping[PositionKey, Position]', cash: 'Mapping[CashKey, Decimal]') -> None
-qrlab.portfolio.PnlBreakdown  class(total: 'Decimal', realised: 'Decimal', unrealised_change: 'Decimal', income: 'Decimal', costs: 'Decimal', cash_fx: 'Decimal', residual: 'Decimal') -> None
+qrlab.portfolio.NATIVE_COLUMNS  constant tuple = ['id', 'trade_date', 'kind', 'account', 'isin', 'quantity', 'price', 'price_currency', 'cost', 'cost_currency', 'amount', 'amount_currency', 'fees', 'fees_currency', 'taxes', 'taxes_currency', 'fx_counter', 'fx_counter_currency', 'note']
+qrlab.portfolio.NATIVE_MAPPING  constant BrokerMapping
+qrlab.portfolio.PnlBreakdown  class(total: 'Decimal', realised: 'Decimal', unrealised_change: 'Decimal', income: 'Decimal', costs: 'Decimal', cash_fx: 'Decimal', transfers: 'Decimal', residual: 'Decimal') -> None
 qrlab.portfolio.Position  class(quantity: 'Decimal', currency: 'Currency', cost_local: 'Money', cost_base: 'Decimal') -> None
 qrlab.portfolio.Position.average_cost_base  property
 qrlab.portfolio.PriceSeries  class(prices: 'pd.Series', currency: 'Currency', price_type: 'PriceType') -> None
@@ -384,7 +387,7 @@ qrlab.portfolio.PriceSeries.price_on  method(day: 'date', max_age_days: 'int') -
 qrlab.portfolio.RealisedGain  class(trade_date: 'date', account: 'str', isin: 'Isin', quantity: 'Decimal', proceeds_base: 'Decimal', cost_base: 'Decimal', gain_base: 'Decimal', proceeds_local: 'Money', cost_local: 'Money') -> None
 qrlab.portfolio.ToBase  constant _CallableGenericAlias
 qrlab.portfolio.TradeCharge  class(trade_date: 'date', account: 'str', isin: 'Isin', kind: 'TransactionKind', amount_base: 'Decimal') -> None
-qrlab.portfolio.Transaction  class(id: 'str', trade_date: 'date', kind: 'TransactionKind', account: 'str', isin: 'Isin | None', quantity: 'Decimal | None', price: 'Money | None', amount: 'Money | None', fees: 'Money', taxes: 'Money', fx_counter: 'Money | None', note: 'str') -> None
+qrlab.portfolio.Transaction  class(id: 'str', trade_date: 'date', kind: 'TransactionKind', account: 'str', isin: 'Isin | None', quantity: 'Decimal | None', price: 'Money | None', amount: 'Money | None', fees: 'Money', taxes: 'Money', fx_counter: 'Money | None', note: 'str', cost: 'Money | None' = None) -> None
 qrlab.portfolio.TransactionKind  enum
 qrlab.portfolio.TransactionKind.DEPOSIT  member = 'deposit'
 qrlab.portfolio.TransactionKind.WITHDRAWAL  member = 'withdrawal'
@@ -398,6 +401,7 @@ qrlab.portfolio.TransactionKind.FX_CONVERSION  member = 'fx_conversion'
 qrlab.portfolio.TransactionKind.TRANSFER_IN  member = 'transfer_in'
 qrlab.portfolio.TransactionKind.TRANSFER_OUT  member = 'transfer_out'
 qrlab.portfolio.TransactionKind.SPLIT  member = 'split'
+qrlab.portfolio.TransferGain  class(trade_date: 'date', account: 'str', isin: 'Isin', kind: 'TransactionKind', gain_base: 'Decimal') -> None
 qrlab.portfolio.TwrResult  class(returns: 'pd.Series', total: 'float', skipped: 'tuple[date, ...]', flow_timing: 'FlowTiming') -> None
 qrlab.portfolio.Valuation  class(base: 'Currency', totals: 'Mapping[date, Decimal]', positions: 'Mapping[date, Mapping[tuple[str, Isin], Decimal]]', cash: 'Mapping[date, Decimal]', stale_prices: 'tuple[tuple[Isin, date, date], ...]' = <factory>) -> None
 qrlab.portfolio.Valuation.series  method() -> 'pd.Series'
@@ -410,10 +414,12 @@ qrlab.portfolio.external_flows_by_date  function(history: 'LedgerHistory') -> 'd
 qrlab.portfolio.load_broker_mapping  function(path: 'Path') -> 'BrokerMapping'
 qrlab.portfolio.money_weighted_return  function(history: 'LedgerHistory', valuation: 'Valuation', *, end: 'date') -> 'XirrResult'
 qrlab.portfolio.parse_broker_csv  function(content: 'bytes', provenance: 'Provenance', mapping: 'BrokerMapping') -> 'BrokerImport'
+qrlab.portfolio.parse_native_csv  function(content: 'bytes', provenance: 'Provenance') -> 'BrokerImport'
 qrlab.portfolio.pnl_breakdown  function(history: 'LedgerHistory', valuation: 'Valuation', to_base: 'ToBase', *, start: 'date | None', end: 'date') -> 'PnlBreakdown'
 qrlab.portfolio.replay  function(transactions: 'Iterable[Transaction]', *, base: 'Currency', to_base: 'ToBase', allow_negative_cash: 'bool' = False) -> 'LedgerHistory'
 qrlab.portfolio.time_weighted_returns  function(valuation: 'Valuation', flows: 'Mapping[date, Decimal]', *, flow_timing: 'FlowTiming') -> 'TwrResult'
 qrlab.portfolio.value_portfolio  function(history: 'LedgerHistory', prices: 'Mapping[Isin, PriceSeries]', to_base: 'ToBase', *, dates: 'Sequence[date]', max_price_age_days: 'int') -> 'Valuation'
+qrlab.portfolio.write_native_csv  function(transactions: 'Iterable[Transaction]') -> 'bytes'
 qrlab.portfolio.xirr  function(flows: 'Sequence[tuple[date, Decimal]]') -> 'XirrResult'
 qrlab.reporting.AxisFormat  enum
 qrlab.reporting.AxisFormat.NUMBER  member = 'number'

@@ -75,7 +75,8 @@ def _setup(tmp: Path, *, estr: Path | None, frequency: str = "monthly") -> Path:
         f'instruments = "{(data / "instruments.toml").as_posix()}"\n'
         f'checks = "{(ROOT / "configs/checks/example.toml").as_posix()}"\n'
         + extra
-        + '\n[parameters]\ntitle = "Sharpe test"\nbase_currency = "EUR"\nlanguage = "en"\n'
+        + '\n[parameters]\ntransactions_format = "mapped"\n'
+        'title = "Sharpe test"\nbase_currency = "EUR"\nlanguage = "en"\n'
         f'flow_timing = "start"\nmax_price_age_days = 0\nreturn_frequency = "{frequency}"\n'
         "generated_at = 2026-06-01T09:00:00Z\ntarget_weights = {}\n"
         f'\n[output]\ndirectory = "{(tmp / "out").as_posix()}"\n',

@@ -139,7 +139,8 @@ def _config(
         f'prices = "{prices[0].as_posix()}"\nprices_mapping = "{prices[1].as_posix()}"\n'
         f'instruments = "{(tmp / "instruments.toml").as_posix()}"\nchecks = "{checks}"\n'
         + extra_inputs
-        + '\n[parameters]\ntitle = "Risk test"\nbase_currency = "EUR"\nlanguage = "en"\n'
+        + '\n[parameters]\ntransactions_format = "mapped"\n'
+        'title = "Risk test"\nbase_currency = "EUR"\nlanguage = "en"\n'
         'flow_timing = "start"\nmax_price_age_days = 0\nreturn_frequency = "none"\n'
         "generated_at = 2026-06-01T09:00:00Z\ntarget_weights = {}\n"
         + parameters

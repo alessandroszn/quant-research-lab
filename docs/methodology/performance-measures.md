@@ -44,6 +44,13 @@ The flow-timing convention also matters. With valuation dates only at year ends,
   securities (at market value) are external
   ({py:func}`qrlab.portfolio.external_flows_by_date`). Dividends, interest, fees and taxes are
   part of the return.
+- **A transfer in at an original cost keeps the two apart** (phase 8.8).
+  - The flow is at market value, so the TWR and the MWR start from what the units were worth.
+  - The cost basis is the declared cost, so realised gains and taxes use it.
+  - The gain carried in (market value minus cost) did not accrue in the portfolio. The P&L
+    shows it apart (`PnlBreakdown.transfers`), and so does a transfer out's gain carried out.
+  - For a foreign fund, the cost is converted at the rate of the transfer date, because the
+    rate of the original purchases is not known.
 - **Non-unique MWR is reported.** `xirr` scans a grid of rates and keeps every root.
   `XirrResult.candidates` lists them, `sign_changes` counts the sign changes of the flows, and
   `unique_root_guaranteed` is true only with one sign change. Without both a negative and a
@@ -69,6 +76,11 @@ The flow-timing convention also matters. With valuation dates only at year ends,
   `test_xirr_reports_several_sign_changes`, `test_mwr_end_must_be_a_valuation_date`.
 - `tests/unit/portfolio/test_ledger.py`: `test_transaction_flow_classification`,
   `test_transfers_in_and_out_are_external_flows_at_market_value`.
+- `tests/unit/portfolio/test_transfer_cost.py`:
+  - `test_twr_does_not_see_the_gain_carried_in`;
+  - `test_realised_and_pnl_by_hand` (500 = 750 + 750 - 1,000);
+  - `test_a_transfer_out_reconciles`;
+  - `test_a_foreign_cost_is_converted_on_the_transfer_date`.
 - `tests/unit/reporting/test_portfolio_report.py`:
   `test_toy_report_shows_the_hand_values_in_italian` (TWR 3.17 %, MWR 15.73 % and the
   "not comparable" sentence), `test_short_period_is_not_annualised_and_volatility_omitted`,
