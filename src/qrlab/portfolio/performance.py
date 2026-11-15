@@ -29,7 +29,8 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Money
 from qrlab.instruments.identifiers import Isin
 from qrlab.metrics.errors import UndefinedMetricError
-from qrlab.portfolio.ledger import LedgerHistory, ToBase
+from qrlab.portfolio.ledger import LedgerHistory, ToBase, TransferGain
+from qrlab.portfolio.transactions import TransactionKind
 from qrlab.portfolio.valuation import Valuation
 
 __all__ = [
@@ -109,9 +110,12 @@ class XirrResult:
 class PnlBreakdown:
     """Profit and loss over a period in the base currency, exactly decomposed.
 
-    ``total = realised + unrealised_change + income - costs + cash_fx + residual``, where
-    ``total`` is the change in value minus net external flows. ``residual`` is zero for a single
-    currency and limited to ``Decimal`` rounding otherwise; a larger residual signals an error.
+    ``total = realised + unrealised_change + income - costs + cash_fx + transfers + residual``,
+    where ``total`` is the change in value minus net external flows. ``transfers`` (phase 8.8)
+    is the gain carried out by transfers out minus the gain carried in by transfers in at an
+    original cost: gains that did not accrue in the measured portfolio. ``residual`` is zero for
+    a single currency and limited to ``Decimal`` rounding otherwise; a larger residual signals
+    an error.
     """
 
     total: Decimal
@@ -120,6 +124,7 @@ class PnlBreakdown:
     income: Decimal
     costs: Decimal
     cash_fx: Decimal
+    transfers: Decimal
     residual: Decimal
 
 
@@ -272,14 +277,22 @@ def pnl_breakdown(
     income = sum((i.net_base for i in history.income if in_period(i.trade_date)), Decimal(0))
     costs = sum((c.amount_base for c in history.costs if in_period(c.trade_date)), Decimal(0))
     cash_fx = _cash_fx(history, to_base, start, end, in_period)
-    residual = total - (realised + unrealised + income - costs + cash_fx)
-    return PnlBreakdown(total, realised, unrealised, income, costs, cash_fx, residual)
+    transfers = sum((_carried(g) for g in history.transfers if in_period(g.trade_date)), Decimal(0))
+    residual = total - (realised + unrealised + income - costs + cash_fx + transfers)
+    return PnlBreakdown(total, realised, unrealised, income, costs, cash_fx, transfers, residual)
+
+
+def _carried(gain: TransferGain) -> Decimal:
+    """Return a transfer's term in the P&L: + the gain carried out, - the gain carried in."""
+    return gain.gain_base if gain.kind is TransactionKind.TRANSFER_OUT else -gain.gain_base
 
 
 def contribution_by_position(
     history: LedgerHistory, valuation: Valuation, to_base: ToBase, *, start: date | None, end: date
 ) -> dict[tuple[str, Isin], Decimal]:
     """Money P&L per position over ``(start, end]``: realised + unrealised change + dividends.
+
+    Gains carried in or out by transfers are taken off, as in :func:`pnl_breakdown`.
 
     The remainder of :func:`pnl_breakdown` (interest, standalone costs, cash FX effect) belongs
     to no position. Percentage contributions linked over several periods are part of
@@ -301,6 +314,9 @@ def contribution_by_position(
     for income in history.income:
         if income.isin is not None and in_period(income.trade_date):
             add((income.account, income.isin), income.net_base)
+    for transfer in history.transfers:
+        if transfer.gain_base and in_period(transfer.trade_date):
+            add((transfer.account, transfer.isin), _carried(transfer))
     for key, value in _unrealised_by_position(history, valuation, end).items():
         add(key, value)
     if start is not None:

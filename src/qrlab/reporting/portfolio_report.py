@@ -443,12 +443,14 @@ class _Builder:
     def _pnl(self) -> Section:
         pnl = pnl_breakdown(self.history, self.valuation, self.to_base, start=None, end=self.end)
         self.residual = pnl.residual
+        transfers = ((self.t("transfers"), self.money(pnl.transfers)),) if pnl.transfers else ()
         rows = (
             (self.t("realised"), self.money(pnl.realised)),
             (self.t("unrealised_change"), self.money(pnl.unrealised_change)),
             (self.t("income"), self.money(pnl.income)),
             (self.t("costs"), self.money(-pnl.costs)),
             (self.t("cash_fx"), self.money(pnl.cash_fx)),
+            *transfers,
             (self.t("residual"), self.money(pnl.residual)),
             (self.t("pnl"), self.money(pnl.total)),
         )

@@ -40,6 +40,9 @@ IE0000000012 = "../../examples/data/tracking_world.csv"
 IE0000000012 = "../../examples/data/tracking_world_mapping.toml"
 
 [parameters]
+# "mapped": a broker export read with transactions_mapping; "native": a qrlab transactions
+# file (docs/guides/data-sources.md), with no mapping.
+transactions_format = "mapped"
 title = "Synthetic example, two currencies and look-through"
 base_currency = "EUR"
 language = "it"

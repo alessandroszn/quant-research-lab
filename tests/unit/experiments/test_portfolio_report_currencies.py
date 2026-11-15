@@ -135,7 +135,8 @@ def _setup(
         '[experiment]\nname = "fx-report"\nkind = "portfolio_report"\n'
         'hypothesis = "descriptive"\n\n'
         "[inputs]\n" + "\n".join(inputs) + "\n" + extra_inputs + "\n"
-        f'[parameters]\ntitle = "FX test"\nbase_currency = "{base}"\nlanguage = "en"\n'
+        '[parameters]\ntransactions_format = "mapped"\n'
+        f'title = "FX test"\nbase_currency = "{base}"\nlanguage = "en"\n'
         'flow_timing = "start"\nmax_price_age_days = 0\nreturn_frequency = "none"\n'
         f"generated_at = 2026-03-01T09:00:00Z\ntarget_weights = {{}}\n{age}\n"
         f'[output]\ndirectory = "{(tmp / "out").as_posix()}"\n',

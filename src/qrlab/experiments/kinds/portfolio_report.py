@@ -1,10 +1,14 @@
 """Experiment kind ``portfolio_report``: broker export + prices + master data -> HTML report.
 
-Inputs: ``transactions`` (broker export), ``transactions_mapping`` (TOML, phase 2.1),
-``prices`` (price CSV), ``prices_mapping`` (TOML, phase 1.2; instrument ids must be ISINs),
-``instruments`` (TOML, phase 1.3) and ``checks`` (TOML, phase 2.4).
+Inputs: ``transactions``, ``prices`` (price CSV), ``prices_mapping`` (TOML, phase 1.2;
+instrument ids must be ISINs), ``instruments`` (TOML, phase 1.3) and ``checks`` (TOML, phase
+2.4). How ``transactions`` is read is the required parameter ``transactions_format`` (phase
+8.8): ``"mapped"``, a broker export read with the ``transactions_mapping`` input (TOML, phase
+2.1); ``"native"``, a native qrlab transactions file (:mod:`qrlab.portfolio.native`), with no
+mapping.
 
-Parameters (required): ``title``, ``base_currency``, ``language`` (``it``/``en``),
+Parameters (required): ``transactions_format``, ``title``, ``base_currency``, ``language``
+(``it``/``en``),
 ``flow_timing`` (``start``/``end``), ``max_price_age_days``, ``return_frequency``
 (``monthly``/``none``), ``generated_at`` (date-time with time zone) and ``target_weights`` (a
 table, possibly empty).
@@ -134,6 +138,7 @@ from qrlab.metrics.errors import UndefinedMetricError
 from qrlab.metrics.performance import SharpeSE, sharpe_ratio
 from qrlab.portfolio.broker_import import load_broker_mapping, parse_broker_csv
 from qrlab.portfolio.ledger import ToBase, replay
+from qrlab.portfolio.native import parse_native_csv
 from qrlab.portfolio.performance import FlowTiming, external_flows_by_date, time_weighted_returns
 from qrlab.portfolio.valuation import EcbConverter, PriceSeries, value_portfolio
 from qrlab.reporting.formatting import Language
@@ -145,6 +150,7 @@ from qrlab.tax.italy import Regime, TaxPosition, italian_tax_position
 __all__ = ["KIND"]
 
 _PARAMETERS = (
+    "transactions_format",
     "title",
     "base_currency",
     "language",
@@ -156,13 +162,21 @@ _PARAMETERS = (
 )
 _INPUTS = (
     "transactions",
-    "transactions_mapping",
     "prices",
     "prices_mapping",
     "instruments",
     "checks",
 )
-_OPTIONAL_INPUTS = ("fx", "issuers", "scenarios", "estr")
+_OPTIONAL_INPUTS = ("fx", "issuers", "scenarios", "estr", "transactions_mapping")
+_FORMAT_HINT = (
+    'transactions_format is required: "mapped" for a broker export read with '
+    'transactions_mapping, "native" for a native qrlab transactions file (phase 8.8)'
+)
+DECLARED_COST = (
+    "Some units were transferred in at a declared original cost: gains and taxes use that "
+    "cost, performance is measured from the transfer at market value, and the gain carried in "
+    "is shown apart in the profit and loss."
+)
 _GROUPS = (
     "extra_prices",
     "extra_prices_mapping",
@@ -191,6 +205,7 @@ class _Holdings:
 
 @dataclass(frozen=True)
 class _Parameters:
+    native: bool
     title: str
     base: Currency
     language: Language
@@ -232,6 +247,8 @@ def _currency_or_none(parent: Mapping[str, object], key: str) -> Currency | None
 
 
 def _parse(parameters: Mapping[str, object]) -> _Parameters:
+    if "transactions_format" not in parameters:
+        raise ValidationError(_FORMAT_HINT)
     require_keys(
         parameters,
         required=set(_PARAMETERS),
@@ -242,6 +259,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
     if not isinstance(targets, dict) or not all(type(v) in (int, float) for v in targets.values()):
         raise ValidationError("target_weights must be a table of numbers (empty for none)")
     return _Parameters(
+        native=choice(parameters, "transactions_format", {"native", "mapped"}) == "native",
         title=text(parameters, "title"),
         base=Currency(text(parameters, "base_currency")),
         language=Language(choice(parameters, "language", {"it", "en"})),
@@ -301,6 +319,12 @@ def _parse_tax(parameters: Mapping[str, object]) -> tuple[Regime, dict[Isin, Dec
 
 def _check_inputs(parameters: object, names: frozenset[str]) -> None:
     p: _Parameters = parameters  # type: ignore[assignment]
+    if p.native == ("transactions_mapping" in names):
+        raise ValidationError(
+            'transactions_format = "native" takes no transactions_mapping input'
+            if p.native
+            else 'transactions_format = "mapped" needs a transactions_mapping input'
+        )
     if ("fx" in names) != (p.fx_max_age_days is not None):
         raise ValidationError(
             "fx_max_age_days is required with an fx input and refused without one"
@@ -521,10 +545,15 @@ def _run(context: RunContext) -> ExperimentOutput:
     files = context.inputs
     to_base, fx_description, fx_provenance, fx_rates = _converter(context, p)
     export = files["transactions"]
-    imported = parse_broker_csv(
-        export.read_bytes(),
-        local_provenance(export, dataset="transactions"),
-        load_broker_mapping(files["transactions_mapping"]),
+    export_provenance = local_provenance(export, dataset="transactions")
+    imported = (
+        parse_native_csv(export.read_bytes(), export_provenance)
+        if p.native
+        else parse_broker_csv(
+            export.read_bytes(),
+            export_provenance,
+            load_broker_mapping(files["transactions_mapping"]),
+        )
     )
     history = replay(imported.transactions, base=p.base, to_base=to_base)
     price_files = [("prices", files["prices"], files["prices_mapping"])]
@@ -660,7 +689,7 @@ def _run(context: RunContext) -> ExperimentOutput:
         scalars["unexplained_weight"] = Tagged(
             float(rows.loc[rows["kind"] == UNEXPLAINED, "weight"].sum()), "descriptive"
         )
-    caveats = []
+    caveats = [DECLARED_COST] if any(t.cost is not None for t in imported.transactions) else []
     figures = {}
     if tax_position is not None:
         tables |= _tax_tables(tax_position)
@@ -703,7 +732,10 @@ def _run(context: RunContext) -> ExperimentOutput:
 
 KIND = ExperimentKind(
     name="portfolio_report",
-    description="HTML portfolio report with health checks from a broker export (descriptive)",
+    description=(
+        "HTML portfolio report with health checks from a broker export or a native "
+        "transactions file (descriptive)"
+    ),
     inputs=_INPUTS,
     needs_seed=False,
     parameters=_PARAMETERS,

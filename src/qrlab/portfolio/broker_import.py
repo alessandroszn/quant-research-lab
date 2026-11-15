@@ -35,8 +35,8 @@ K = TransactionKind
 FIELDS = frozenset(
     {
         "id", "trade_date", "kind", "account", "isin", "quantity", "price", "price_currency",
-        "amount", "amount_currency", "fees", "fees_currency", "taxes", "taxes_currency",
-        "fx_counter", "fx_counter_currency", "note",
+        "cost", "cost_currency", "amount", "amount_currency", "fees", "fees_currency", "taxes",
+        "taxes_currency", "fx_counter", "fx_counter_currency", "note",
     }
 )  # fmt: skip
 REQUIRED_FIELDS = ("id", "trade_date", "kind", "account")
@@ -67,7 +67,8 @@ class BrokerMapping:
         Currency of the zero fee or tax recorded when the cell is empty.
     columns
         Transaction field to column header, or to a constant written ``"=value"``. ``id``,
-        ``trade_date``, ``kind`` and ``account`` are required.
+        ``trade_date``, ``kind`` and ``account`` are required; ``cost`` (with
+        ``cost_currency``) is the original cost per unit of a transfer in (phase 8.8).
     kinds
         Broker wording to transaction kind.
     """
@@ -244,6 +245,7 @@ class _RowReader:
         )
         counter = self.signed(self.number(row, "fx_counter", line), 1, "fx_counter", line)
         price = self.number(row, "price", line)
+        cost = self.signed(self.number(row, "cost", line), 1, "cost", line)
         charges = {}
         for field in ("fees", "taxes"):
             value = self.number(row, field, line)
@@ -267,6 +269,7 @@ class _RowReader:
                 taxes=charges["taxes"],  # type: ignore[arg-type]
                 fx_counter=self.money(row, "fx_counter", counter, line),
                 note=self.cell(row, "note") or "",
+                cost=self.money(row, "cost", cost, line),
             )
         except ValidationError as exc:
             if isinstance(exc, ParseError):

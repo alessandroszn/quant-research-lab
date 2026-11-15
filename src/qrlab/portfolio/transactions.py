@@ -105,6 +105,10 @@ class Transaction:
         FX conversion only: the amount received, in a different currency.
     note
         Free text.
+    cost
+        Transfers in only, optional: the original cost per unit, charges included, in the price
+        currency (phase 8.8). It becomes the cost basis, while ``price`` (the market value)
+        stays the external flow. ``None`` takes the market value as cost, as before.
     """
 
     id: str
@@ -119,6 +123,7 @@ class Transaction:
     taxes: Money
     fx_counter: Money | None
     note: str
+    cost: Money | None = None
 
     def __post_init__(self) -> None:
         """Enforce the field rules of the transaction kind."""
@@ -145,6 +150,14 @@ class Transaction:
                 raise ValidationError(f"{self.id}: {name} must be positive Money")
         if _same_currency(self.fx_counter, self.amount):
             raise ValidationError(f"{self.id}: FX conversion currencies must differ")
+        cost: object = self.cost
+        if cost is not None:
+            if self.kind is not TransactionKind.TRANSFER_IN:
+                raise ValidationError(f"{self.id}: {self.kind.value} must not have cost")
+            if not (isinstance(cost, Money) and cost.amount > 0):
+                raise ValidationError(f"{self.id}: cost must be positive Money")
+            if self.price is not None and cost.currency != self.price.currency:
+                raise ValidationError(f"{self.id}: cost must be in the price currency")
 
 
 def _positive_decimal(value: object) -> bool:

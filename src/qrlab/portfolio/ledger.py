@@ -12,7 +12,10 @@ Rules:
 - every amount converted to the base currency goes through the caller's explicit ``to_base``
   converter, which must return base-currency ``Money``;
 - an FX conversion executed at a rate different from the converter's reference rate books the
-  difference (the spread) as a cost, so that the profit and loss reconciles.
+  difference (the spread) as a cost, so that the profit and loss reconciles;
+- a transfer is an external flow at market value. A transfer in may carry an original cost
+  (phase 8.8), converted at the transfer date's rate; the gain a transfer carries in or out
+  (market value minus cost basis) is recorded, so that the profit and loss reconciles.
 """
 
 from __future__ import annotations
@@ -41,6 +44,7 @@ __all__ = [
     "RealisedGain",
     "ToBase",
     "TradeCharge",
+    "TransferGain",
     "replay",
 ]
 
@@ -156,6 +160,21 @@ class CashMovement:
 
 
 @dataclass(frozen=True)
+class TransferGain:
+    """The gain a transfer carries in or out: market value minus cost basis, in the base currency.
+
+    It accrued outside the measured portfolio. A transfer in without an original cost carries
+    none (zero).
+    """
+
+    trade_date: date
+    account: str
+    isin: Isin
+    kind: TransactionKind
+    gain_base: Decimal
+
+
+@dataclass(frozen=True)
 class LedgerHistory:
     """Result of :func:`replay`: states after each trade date and booked events."""
 
@@ -168,6 +187,7 @@ class LedgerHistory:
     costs: tuple[Cost, ...]
     cash_movements: tuple[CashMovement, ...]
     trade_charges: tuple[TradeCharge, ...]
+    transfers: tuple[TransferGain, ...] = ()
 
     def state_on(self, day: date) -> LedgerState:
         """State after all transactions dated on or before ``day`` (empty before the first)."""
@@ -213,6 +233,7 @@ class _Replayer:
         self.costs: list[Cost] = []
         self.movements: list[CashMovement] = []
         self.trade_charges: list[TradeCharge] = []
+        self.transfers: list[TransferGain] = []
         self.dates: list[date] = []
         self.states: list[LedgerState] = []
 
@@ -245,6 +266,7 @@ class _Replayer:
             costs=tuple(self.costs),
             cash_movements=tuple(self.movements),
             trade_charges=tuple(self.trade_charges),
+            transfers=tuple(self.transfers),
         )
 
     # ----------------------------------------------------------------- helpers
@@ -369,8 +391,16 @@ class _Replayer:
     def _transfer_in(self, t: Transaction) -> None:
         value = Money(_quantity(t) * _price(t).amount, _price(t).currency)
         value_base = self.conv(value, t.trade_date)
-        self._add_units(t, _quantity(t), value, Decimal(0), value_base)
+        if t.cost is None:
+            basis, basis_base = value, value_base
+        else:
+            basis = Money(_quantity(t) * t.cost.amount, t.cost.currency)
+            basis_base = self.conv(basis, t.trade_date)
+        self._add_units(t, _quantity(t), basis, Decimal(0), basis_base)
         self.flows.append(ExternalFlow(t.trade_date, t.account, t.kind, value_base))
+        self.transfers.append(
+            TransferGain(t.trade_date, t.account, _isin(t), t.kind, value_base - basis_base)
+        )
         self._standalone_charges(t)
 
     def _add_units(
@@ -445,10 +475,12 @@ class _Replayer:
         )
 
     def _transfer_out(self, t: Transaction) -> None:
-        self._remove_units(t)
+        _, cost_base, _ = self._remove_units(t)
         value = Money(_quantity(t) * _price(t).amount, _price(t).currency)
-        self.flows.append(
-            ExternalFlow(t.trade_date, t.account, t.kind, -self.conv(value, t.trade_date))
+        value_base = self.conv(value, t.trade_date)
+        self.flows.append(ExternalFlow(t.trade_date, t.account, t.kind, -value_base))
+        self.transfers.append(
+            TransferGain(t.trade_date, t.account, _isin(t), t.kind, value_base - cost_base)
         )
         self._standalone_charges(t)
 
