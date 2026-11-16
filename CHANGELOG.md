@@ -16,6 +16,8 @@ GitHub release. A later version goes to PyPI.
 
 - Version 1.0.0, development status *Production/Stable*.
 - The install instructions (README, *Installation*) use the wheel of the GitHub release.
+- Archived on Zenodo with a DOI: `10.5281/zenodo.24289229` for every version,
+  `10.5281/zenodo.24289230` for 1.0.0. `CITATION.cff` and the README cite it.
 
 ## [1.0.0rc1] - 2026-11-16
 
