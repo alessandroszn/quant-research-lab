@@ -56,7 +56,7 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 | 5 Research | inference, experiments/CLI, four studies | **M5 Research** | 120–170 |
 | 6 Product | desktop app, `.exe` and installer, docs, release | **M6 v1.0** | 110–150 |
 | 7 Gap closing | `periods_per_year` check, output notices, returns price type, currencies and look-through in the report kind | — (done) | 15–20 |
-| 8 Real portfolio | first real run, issuer holdings, risk, projection, risk-free rate, Italian tax, Italian report | **M8 Real portfolio** | 38–58 |
+| 8 Real portfolio | first real run, issuer holdings, risk, projection, risk-free rate, Italian tax, Italian report | **M8 Real portfolio** (done) | 38–58 |
 | 9 Tax regimes | a common shape for tax regimes, Switzerland, a configurable model (Germany skipped) | **M9 Tax regimes** (done) | 26–40 |
 | 10 Publication | the Linux check, ready for readers, release 1.0.0 | **M10 v1.0 public** | 12–22 |
 | 11 Complete report | total returns, benchmark, stamp duty and IVAFE, VaR backtest and proxies, small items | **M11 Complete report** | 30–48 |
@@ -386,7 +386,8 @@ any code. Real files stay in `data/`; everything published is synthetic.
   Validate and Create report; files downloaded by hand are imported on the Data screen.
 - Market data come from public sources, downloaded by qrlab only where their terms allow it.
 
-**M8 — the report of a real portfolio, reconciled with the broker.**
+**M8 — the report of a portfolio built in the app from public data, with its Italian tax
+position (done). The reconciliation with a broker export moved to IDEAS with 8.1.**
 
 ## Level 9 — Tax regimes beyond Italy → M9
 
@@ -416,7 +417,7 @@ code, and checks its rules against the law in force, with sources.
 Plan for Levels 10 to 13: `docs/design/levels-10-13-plan.md`. Each phase has its own design
 note, approved before any code.
 
-### 10.1 The Linux check, locally (3–6 h)
+### 10.1 The Linux check, locally (3–6 h) — done
 - The quality gate on Linux, Python 3.11 and 3.13, in a WSL Ubuntu installed by the owner (or
   CI, once the minutes return). Every failure fixed with a regression test.
 

@@ -8,6 +8,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **The history audit reads the commits and tags too** (phase 10.2): author, committer and
+  tagger e-mail addresses, and messages checked like file contents. It still reports hashes
+  and paths only, never values.
 - **The CI checks, run locally** (phase 10.1): `scripts/ci_local.sh` runs the steps of
   `ci.yml` in order on a fresh clone, on Linux (WSL) or on Windows (Git Bash). A test keeps
   its commands, Python versions and the guide's system libraries equal to the workflow's.
@@ -188,6 +191,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- **`risk_report` writes a notice** (phase 10.2): "Risk estimates from past returns under the
+  stated model. Future losses can be larger." followed by the not-advice line, in `NOTICE.txt`
+  and the record. It was the only kind whose outputs never said they are not advice, because
+  it writes no HTML report.
 - **Price mappings need `missing_tokens`** (phase 8.2c): cell values that mean "no price",
   besides an empty cell. Add `missing_tokens = []` to an existing price mapping.
 - **Holdings mappings may use the same character as delimiter and decimal separator** (phase

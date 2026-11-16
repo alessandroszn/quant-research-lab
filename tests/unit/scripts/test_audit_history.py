@@ -84,6 +84,7 @@ def test_a_clean_history_passes(repo: Path, tmp_path: Path) -> None:
     findings = audit_history.audit(repo, audit_history.real_isins(_private_data(tmp_path)))
     assert findings.clean
     assert findings.blobs == 4
+    assert findings.commits == 1
     assert findings.real_isins_known == 1
     assert audit_history.report(findings).endswith("CLEAN")
 
@@ -154,3 +155,60 @@ def test_command_line(
     monkeypatch.chdir(repo)
     assert audit_history.main([]) == 0
     assert "ISINs of the real portfolio checked: 0" in capsys.readouterr().out
+
+
+# ------------------------------------------------- commits and tags (design note 10.2)
+def _rev(repo: Path, ref: str) -> str:
+    done = subprocess.run(
+        ["git", "rev-parse", ref], cwd=repo, check=True, capture_output=True, text=True
+    )
+    return done.stdout.strip()
+
+
+def _commit_as(repo: Path, email: str, name: str, message: str) -> str:
+    (repo / name).write_text(name + "\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", f"user.email={email}", "commit", "-q", "-m", message],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+    )
+    return _rev(repo, "HEAD")
+
+
+def test_commit_and_tag_metadata_is_audited_without_values(repo: Path) -> None:
+    trailer = "\n\nCo-Authored-By: Bot <noreply@anthropic.com>"
+    private = _commit_as(repo, "someone@private.test", "a.txt", "add a")
+    holding = _commit_as(repo, "t@example.com", "b.txt", f"we hold {REAL}{trailer}")
+    _commit_as(repo, "t@example.com", "c.txt", f"add c{trailer}")  # the trailer is allowed
+    tagger = ["git", "-c", "user.name=t", "-c", "user.email=tagger@private.test"]
+    subprocess.run(
+        [*tagger, "tag", "-a", "v1", "-m", "release"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+    )
+    _git(repo, "tag", "light")  # a lightweight tag has no tagger and no message of its own
+    tag = _rev(repo, "v1")
+    findings = audit_history.audit(repo, {REAL})
+    # Four commits (the fixture's and three) and one annotated tag.
+    assert findings.commits == 5
+    assert findings.commit_emails == {private, tag}
+    assert findings.commit_messages == {holding}
+    text = audit_history.report(findings)
+    assert "commits or tags with other e-mail addresses: 2" in text
+    assert f"  {private[:12]}\n" in text
+    assert private not in text  # hashes are shortened
+    assert "private.test" not in text
+    assert REAL not in text
+    assert text.endswith("REVIEW THE PATHS ABOVE")
+
+
+def test_a_long_list_of_findings_is_cut() -> None:
+    findings = audit_history.Findings(data_files={f"data/{i:02}.csv" for i in range(25)})
+    text = audit_history.report(findings)
+    assert "files under data/: 25" in text
+    assert "  data/19.csv\n" in text
+    assert "data/20.csv" not in text
+    assert "  ... and 5 more\n" in text

@@ -22,6 +22,7 @@ writes into the folder named in the config's `[output]` table, here
 - one CSV file per table;
 - one PNG file per figure;
 - an HTML report, if the kind writes one;
+- `NOTICE.txt`, if the kind has caveats to state; it ends with the not-advice line;
 - `record.json`.
 
 ## From Python
@@ -38,7 +39,7 @@ The same run, through the public API:
 >>> result.succeeded
 True
 >>> sorted(result.record["outputs"])
-['contributions.csv', 'covariance.csv', 'var_backtest.csv', 'var_es.csv']
+['NOTICE.txt', 'contributions.csv', 'covariance.csv', 'var_backtest.csv', 'var_es.csv']
 >>> volatility = result.record["scalars"]["volatility_annual"]
 >>> round(volatility["value"], 4), volatility["tag"]
 (0.0818, 'descriptive')

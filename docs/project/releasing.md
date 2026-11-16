@@ -11,8 +11,11 @@ steps that publish or change settings are done by the owner, on their own accoun
    uv run python scripts/audit_history.py [FOLDER_WITH_YOUR_REAL_PORTFOLIO_FILES]
    ```
 
-   The script scans every file version in the history. It prints only counts and paths, never
-   values, and must end with `CLEAN`. The ISIN check is only as good as the folder given:
+   The script scans every file version, every commit and every annotated tag in the history
+   (author, committer and tagger e-mails, and messages). It prints only counts, paths and
+   commit hashes, never values. It must end with `CLEAN`, with one accepted exception: its own
+   test file, `tests/unit/scripts/test_audit_history.py`, whose documentation IBAN and invented
+   e-mail addresses exist to test it. The ISIN check is only as good as the folder given:
    point it at the folder that holds your real broker exports and holdings. The default is
    `data/`.
 2. **Make the repository public:** *Settings → General → Danger Zone → Change visibility*.

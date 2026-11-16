@@ -55,6 +55,10 @@ from qrlab.risk.decomposition import (
 from qrlab.risk.var_backtest import var_backtest, var_forecasts
 from qrlab.risk.var_methods import cornish_fisher, filtered_historical
 
+# Design note 10.2: this kind writes no HTML report, so its notice is the only place that says
+# what the numbers are and that they are not advice.
+CAVEATS = "Risk estimates from past returns under the stated model. Future losses can be larger."
+
 __all__ = ["BACKTEST_MODELS", "KIND"]
 
 BACKTEST_MODELS = ("historical", "normal", "cornish_fisher")
@@ -196,7 +200,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             "var_backtest": Tagged(path, "out_of_sample"),
         },
         scalars=scalars,
-        notice=returns_notice(None, p.returns_price_type),
+        notice=returns_notice(CAVEATS, p.returns_price_type),
     )
 
 

@@ -23,7 +23,8 @@ features, so every change follows the same steps.
    uv run ruff format --check . && uv run ruff check . && uv run mypy && uv run pytest
    ```
 
-   Coverage stays at 100%. Warnings are errors in tests.
+   Coverage stays at 100%. Warnings are errors in tests. To run CI's exact steps, on Linux
+   too, see `docs/project/linux-checks.md`.
 5. **Public API.** If a public name or signature changes, regenerate the listing with
    `uv run python tests/api_snapshot.py --write`, and follow `docs/compatibility.md`.
 6. **Commits and PRs.**
