@@ -4,8 +4,11 @@
 backtesting, with a Windows desktop app on top of the same library. Correctness,
 reproducibility and methodological rigour come before speed or feature count.
 
-> **Status:** version 1.0 is in preparation. The public API is frozen
-> ([compatibility policy](https://github.com/alessandroszn/quant-research-lab/blob/main/docs/compatibility.md)). See [`CHANGELOG.md`](https://github.com/alessandroszn/quant-research-lab/blob/main/CHANGELOG.md) and the
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24289229.svg)](https://doi.org/10.5281/zenodo.24289229)
+
+> **Status:** version 1.0.0, released on 2026-11-16
+> ([release](https://github.com/alessandroszn/quant-research-lab/releases/tag/v1.0.0)). The
+> public API is frozen ([compatibility policy](https://github.com/alessandroszn/quant-research-lab/blob/main/docs/compatibility.md)). See [`CHANGELOG.md`](https://github.com/alessandroszn/quant-research-lab/blob/main/CHANGELOG.md) and the
 > [roadmap](https://github.com/alessandroszn/quant-research-lab/blob/main/docs/ROADMAP.md).
 
 *Research analytics, not investment advice.*
@@ -116,7 +119,7 @@ the git-ignored `data/` folder, never in tests, examples or published reports.
 
 ## Citation and licence
 
-If you use Quant Research Lab or its studies, please cite it; see [`CITATION.cff`](https://github.com/alessandroszn/quant-research-lab/blob/main/CITATION.cff).
+If you use Quant Research Lab or its studies, please cite it (DOI [10.5281/zenodo.24289229](https://doi.org/10.5281/zenodo.24289229)); see [`CITATION.cff`](https://github.com/alessandroszn/quant-research-lab/blob/main/CITATION.cff).
 
 - **Code:** [BSD-3-Clause](https://github.com/alessandroszn/quant-research-lab/blob/main/LICENSE).
 - **Documentation and study reports:**

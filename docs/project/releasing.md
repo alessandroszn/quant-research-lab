@@ -55,7 +55,10 @@ steps that publish or change settings are done by the owner, on their own accoun
 5. **Link Zenodo:** log in to <https://zenodo.org> with GitHub, then under *GitHub* switch the
    repository on. Every published GitHub release is then archived with a DOI. Zenodo reads
    `.zenodo.json`.
-6. **Turn on GitHub Pages:** *Settings → Pages → Source: GitHub Actions*.
+6. **Turn on GitHub Pages:** *Settings → Pages → Source: GitHub Actions*. GitHub then
+   creates a `github-pages` environment that deploys from `main` only; add the tag rule `v*`
+   in *Settings → Environments → github-pages*, since the docs are published from release
+   tags.
 7. **Optional:** *Settings → Code security → Private vulnerability reporting*, which
    `SECURITY.md` refers to.
 
