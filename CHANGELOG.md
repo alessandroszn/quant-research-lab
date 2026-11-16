@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-16
+
+The first stable version: the code of 1.0.0rc1, released on GitHub. It is not on PyPI yet,
+because the owner has no PyPI account so far; it is installed from the wheel attached to the
+GitHub release. A later version goes to PyPI.
+
+### Changed
+
+- Version 1.0.0, development status *Production/Stable*.
+- The install instructions (README, *Installation*) use the wheel of the GitHub release.
+
 ## [1.0.0rc1] - 2026-11-16
 
 Release candidate of version 1.0. It was prepared on 2026-11-13 for milestone M6 but not
@@ -21,8 +32,8 @@ published; it now also holds Levels 7 to 10. It brings:
 - tax regimes for Switzerland and a configured country (M9);
 - the local Linux check and the audit before publication (10.1, 10.2).
 
-It is published to TestPyPI to check the release process; 1.0.0 follows with the same code if
-nothing is found. The entries for Levels 7 to 10 come first, then those for M6.
+It was released on GitHub only, as a pre-release; 1.0.0 follows with the same code. The
+entries for Levels 7 to 10 come first, then those for M6.
 
 ### Added
 
@@ -920,7 +931,8 @@ Milestones M1 (Analytics core) and M2 (Portfolio X-ray): phases 1.1 to 2.5.
 - GitHub Actions CI on Linux and Windows for Python 3.11 and 3.13.
 - Project documentation: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
 
-[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0rc1...HEAD
+[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0rc1...v1.0.0
 [1.0.0rc1]: https://github.com/alessandroszn/quant-research-lab/compare/v0.4.0...v1.0.0rc1
 [0.4.0]: https://github.com/alessandroszn/quant-research-lab/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/alessandroszn/quant-research-lab/compare/v0.2.0...v0.3.0

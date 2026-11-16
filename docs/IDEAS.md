@@ -15,6 +15,8 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Exchange listings and trading currencies | 1.3 `instruments` | Needed when valuing transactions on a specific exchange (2.1). |
 | FIFO and specific-lot cost basis | 2.1 `portfolio` | Average cost (Italian regime amministrato) is implemented; other methods for other tax regimes. |
 | Original purchase FX rate on transfers in | 8.8 | A foreign fund's original cost is converted at the transfer date's rate; the rates of the original purchases would give the exact euro cost. |
+| Publish on PyPI | 10.3 | 1.0.0 went out on GitHub only: the owner has no PyPI account yet. With the accounts, add the trusted publishers (`releasing.md`, step 4) and release the next version to PyPI. |
+| Hashes of the wheel and sdist in `SHA256SUMS.txt` | 10.3 | The file lists only the two Windows files, with Windows line endings, so `sha256sum -c` fails on Linux. GitHub shows a SHA-256 for every release file; the wheel is now the install path, so the file should cover it too. |
 | Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |
 | Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |

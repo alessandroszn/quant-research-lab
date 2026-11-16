@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "quant-research-lab"
-version = "1.0.0rc1"
+version = "1.0.0"
 description = "A rigorous Python framework for quantitative financial research, portfolio analytics and backtesting."
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -20,7 +20,7 @@ keywords = [
     "reproducible research",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",

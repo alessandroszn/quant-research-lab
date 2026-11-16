@@ -58,14 +58,14 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 | 7 Gap closing | `periods_per_year` check, output notices, returns price type, currencies and look-through in the report kind | — (done) | 15–20 |
 | 8 Real portfolio | first real run, issuer holdings, risk, projection, risk-free rate, Italian tax, Italian report | **M8 Real portfolio** (done) | 38–58 |
 | 9 Tax regimes | a common shape for tax regimes, Switzerland, a configurable model (Germany skipped) | **M9 Tax regimes** (done) | 26–40 |
-| 10 Publication | the Linux check, ready for readers, release 1.0.0 | **M10 v1.0 public** | 12–22 |
+| 10 Publication | the Linux check, ready for readers, release 1.0.0 | **M10 v1.0 public** (done) | 12–22 |
 | 11 Complete report | total returns, benchmark, stamp duty and IVAFE, VaR backtest and proxies, small items | **M11 Complete report** | 30–48 |
 | 12 Usable app | forms from parameter schemas, cancel and queue, interactive charts, PDF and icon | **M12 App 1.x** | 36–52 |
 | 13 Deeper research | Romano-Wolf and studentized bootstrap, Fama-MacBeth, daily international factors, the factor zoo again | **M13 Research 2** | 38–56 |
 
 Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 was planned at M6; it
-was not cut (the version is `1.0.0rc1`, the last tag `v0.4.0`) and is cut at M10. After it,
-each of Levels 11 to 13 ends in a minor release (`v1.1.0`, `v1.2.0`, `v1.3.0`).
+was cut at M10, on 2026-11-16, on GitHub (PyPI follows once the owner has an account). After
+it, each of Levels 11 to 13 ends in a minor release (`v1.1.0`, `v1.2.0`, `v1.3.0`).
 
 ---
 
@@ -426,13 +426,16 @@ note, approved before any code.
   README, roadmap, version, screenshots and the
   data-sources table brought up to date; the not-advice notice checked everywhere.
 
-### 10.3 Release 1.0.0 (5–8 h) — in progress
+### 10.3 Release 1.0.0 (5–8 h) — done
 - The history rewritten with the `noreply` address and published in a new repository (the
   old one stays private as an archive; design note 10.3).
 - As `docs/project/releasing.md`: the owner's one-time setup, `v1.0.0rc1` on TestPyPI, then
   `v1.0.0` on PyPI with the docs and the Windows installer.
+- **Deviation:** the owner has no PyPI account yet, so `v1.0.0rc1` and `v1.0.0` went out on
+  GitHub only (wheel, sdist, Windows installer) with the docs on Pages; the PyPI publish jobs
+  were rejected. PyPI follows with a later version.
 
-**M10 — v1.0, public, with CI green on Linux and Windows.**
+**M10 — v1.0, public, with CI green on Linux and Windows (done).**
 
 ## Level 11 — A complete portfolio report → M11
 
