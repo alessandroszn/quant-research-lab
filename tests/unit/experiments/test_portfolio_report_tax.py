@@ -7,6 +7,7 @@ at 70, a loss of 300 that joins the losses balance until 31 December 2029.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -186,3 +187,95 @@ def test_without_tax_nothing_changes(tmp_path: Path) -> None:
     assert record["status"] == "success", record["error"]
     assert not (out / "tax_events.csv").exists()
     assert "Posizione fiscale" not in (out / "report.html").read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------- stamp duty and IVAFE (design 11.3)
+# 20 units of ETF X bought at 100 on 2 January 2025 and held: €2,000 on 31 December. The
+# account opened on 2 January, so 364 days of 2025: stamp duty 0.002 x 2,000 x 364/365 = 3.989
+# -> €4.00 (yearly statements, rounded to 10 cents); IVAFE 3.989 -> €3.99, not payable (<= 12).
+MONTH_ENDS_2025 = ("31/01/2025", "28/02/2025", "31/03/2025", "30/04/2025", "30/05/2025",
+                   "30/06/2025", "31/07/2025", "29/08/2025", "30/09/2025", "31/10/2025",
+                   "28/11/2025", "31/12/2025")  # fmt: skip
+
+
+def _held(tmp: Path, custody: str) -> Path:
+    config = _setup(tmp, tax=TAX.format(regime="amministrato", shares=SHARES) + custody)
+    (tmp / "export.csv").write_text(
+        "Riferimento;Data;Operazione;ISIN;Quantita;Prezzo;Divisa;Importo;Commissioni;Imposte;"
+        "Controvalore;Divisa controvalore;Descrizione\n"
+        "t2;02/01/2025;Acquisto;IE0000000012;20;100,00;EUR;;;;;;\n"
+        "t1;02/01/2025;Bonifico in entrata;;;;EUR;2.000,00;;;;;\n",
+        encoding="utf-8",
+    )
+    rows = "".join(f"{d};100,00;100,00\n" for d in ("02/01/2025", *MONTH_ENDS_2025))
+    (tmp / "prices.csv").write_text(f"Data;{X};{Z}\n{rows}", encoding="utf-8")
+    return config
+
+
+ITALY_CUSTODY = (
+    '\n[parameters.tax.custody."conto-principale"]\nwhere = "italy"\nstatements = "year"\n'
+)
+ABROAD_CUSTODY = '\n[parameters.tax.custody."conto-principale"]\nwhere = "abroad"\nshare = 1.0\n'
+
+
+def test_stamp_duty_by_hand(tmp_path: Path) -> None:
+    record, out = _run(_held(tmp_path, ITALY_CUSTODY))
+    assert record["status"] == "success", record["error"]
+    items = pd.read_csv(out / "wealth_tax_items.csv")
+    assert items["tax"].tolist() == ["stamp_duty"]
+    assert items["days"].tolist() == [364]
+    assert items["amount"].tolist() == pytest.approx([4.0])
+    years = pd.read_csv(out / "wealth_tax_years.csv")
+    assert years["stamp_duty"].tolist() == pytest.approx([4.0])
+    assert record["scalars"]["stamp_duty_last_year"]["value"] == 4.0  # type: ignore[index]
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Imposta di bollo e IVAFE per anno" in html
+    assert "D.L. 201/2011, art. 19" in html
+
+
+def test_ivafe_by_hand_in_english(tmp_path: Path) -> None:
+    config = _held(tmp_path, ABROAD_CUSTODY)
+    config.write_text(
+        config.read_text(encoding="utf-8").replace('language = "it"', 'language = "en"'),
+        encoding="utf-8",
+    )
+    record, out = _run(config)
+    assert record["status"] == "success", record["error"]
+    items = pd.read_csv(out / "wealth_tax_items.csv")
+    assert items["holding"].tolist() == [X]
+    assert items["amount"].tolist() == pytest.approx([3.99])
+    years = pd.read_csv(out / "wealth_tax_years.csv")
+    assert years["ivafe_payable"].tolist() == pytest.approx([0.0])  # 3.99 is not above 12
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Stamp duty by statement and IVAFE by holding" in html
+    assert "total is 12 euro or less." in html  # the apostrophe is escaped in HTML
+
+
+@pytest.mark.parametrize(
+    ("custody", "match"),
+    [
+        ('\n[parameters.tax.custody."other"]\nwhere = "italy"\nstatements = "year"\n',
+         r"accounts are held: \['conto-principale'\]"),
+        ('\n[parameters.tax.custody."conto-principale"]\nwhere = "abroad"\n',
+         r"missing \['share'\]"),
+    ],
+)  # fmt: skip
+def test_custody_errors(tmp_path: Path, custody: str, match: str) -> None:
+    config = _held(tmp_path, custody)
+    try:
+        validate_experiment(config, kinds=KINDS)
+    except ValidationError as error:
+        message = str(error)
+    else:
+        record, _ = _run(config)
+        assert record["status"] == "failure"
+        message = str(record["error"])
+    assert re.search(match, message), message
+
+
+def test_without_custody_the_section_is_as_before(tmp_path: Path) -> None:
+    record, out = _run(_held(tmp_path, ""))
+    assert record["status"] == "success", record["error"]
+    assert not (out / "wealth_tax_items.csv").exists()
+    assert "stamp_duty_last_year" not in record["scalars"]  # type: ignore[operator]
+    assert "IVAFE" not in (out / "report.html").read_text(encoding="utf-8")

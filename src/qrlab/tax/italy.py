@@ -43,6 +43,15 @@ from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.master import Instrument, InstrumentType
 from qrlab.portfolio.ledger import LedgerHistory, RealisedGain, ToBase
 from qrlab.portfolio.transactions import Transaction, TransactionKind
+from qrlab.tax.italy_wealth import (
+    WEALTH_RULES_CHECKED_ON,
+    WEALTH_SOURCES,
+    WEALTH_SOURCES_IT,
+    Custody,
+    WealthTaxes,
+    parse_custody,
+    wealth_taxes,
+)
 from qrlab.tax.regime import (
     ColumnKind,
     Holdings,
@@ -318,12 +327,14 @@ _LOSS_COLUMNS = (
 )
 
 
-def italian_tax_report(position: TaxPosition) -> TaxReport:
+def italian_tax_report(position: TaxPosition, wealth: WealthTaxes | None = None) -> TaxReport:
     """Describe an Italian tax position in the common shape (:mod:`qrlab.tax.regime`).
 
     The sentences, tables and scalars are those of the Italian section since phase 8.6a:
     the events (``tax_events``), the totals, and the losses balance (``losses_balance``, shown
-    in the report only when there are lots).
+    in the report only when there are lots). With ``wealth`` (design note 11.3) it adds the
+    stamp duty and IVAFE: ``wealth_tax_items`` and ``wealth_tax_years``, their sentences and
+    sources, and the scalars ``stamp_duty_last_year`` and ``ivafe_last_year``.
     """
     paragraphs = [
         Paragraph(
@@ -383,27 +394,104 @@ def italian_tax_report(position: TaxPosition) -> TaxReport:
         shown_when_empty=False,
     )
     italian = SOURCES_IT if position.sources == SOURCES else position.sources
+    english = position.sources
+    tables = [events, totals, losses]
+    scalars = {
+        "tax_due": position.tax_due,
+        "tax_withheld": position.tax_withheld,
+        "losses_remaining": position.losses_remaining,
+    }
+    if wealth is not None:
+        paragraphs[-1:-1] = _wealth_paragraphs(wealth)
+        tables += _wealth_tables(wealth)
+        english, italian = (*english, *WEALTH_SOURCES), (*italian, *WEALTH_SOURCES_IT)
+        if wealth.years:
+            last = wealth.years[-1]
+            scalars |= {"stamp_duty_last_year": last.stamp_duty, "ivafe_last_year": last.ivafe}
     return TaxReport(
         country="it",
         as_of=position.as_of,
         checked_on=RULES_CHECKED_ON,
-        sources={"en": position.sources, "it": italian},
+        sources={"en": english, "it": italian},
         paragraphs=tuple(paragraphs),
-        tables=(events, totals, losses),
-        scalars={
-            "tax_due": position.tax_due,
-            "tax_withheld": position.tax_withheld,
-            "losses_remaining": position.losses_remaining,
-        },
+        tables=tuple(tables),
+        scalars=scalars,
     )
+
+
+_WEALTH_ITEM_COLUMNS = (
+    TaxColumn("year", "tax_year", ColumnKind.YEAR, _LEFT),
+    TaxColumn("account", "tax_account", ColumnKind.TEXT, _LEFT),
+    TaxColumn("tax", "tax_kind", ColumnKind.LABEL, _LEFT, prefix="tax_wealth_"),
+    TaxColumn("holding", "holding", ColumnKind.HOLDING, _LEFT, none_label=""),
+    TaxColumn("period_end", "tax_period_end", ColumnKind.DATE, _LEFT),
+    TaxColumn("value", "value", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("days", "tax_days", ColumnKind.YEAR, _RIGHT),
+    TaxColumn("rate", "tax_rate", ColumnKind.SHARE, _RIGHT),
+    TaxColumn("amount", "tax_wealth_amount", ColumnKind.MONEY, _RIGHT),
+)
+_WEALTH_YEAR_COLUMNS = (
+    TaxColumn("year", "tax_year", ColumnKind.YEAR, _LEFT),
+    TaxColumn("stamp_duty", "tax_wealth_stamp_duty", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("ivafe", "tax_wealth_ivafe", ColumnKind.MONEY, _RIGHT),
+    TaxColumn("ivafe_payable", "tax_ivafe_payable", ColumnKind.MONEY, _RIGHT),
+)
+
+
+def _wealth_paragraphs(wealth: WealthTaxes) -> list[Paragraph]:
+    paragraphs = [
+        Paragraph("tax_wealth_intro", (("checked", WEALTH_RULES_CHECKED_ON),)),
+        Paragraph("tax_wealth_notes"),
+    ]
+    if wealth.not_computed:
+        years = ", ".join(str(year) for year in wealth.not_computed)
+        paragraphs.append(Paragraph("tax_wealth_not_computed", (("years", years),)))
+    return paragraphs
+
+
+def _wealth_tables(wealth: WealthTaxes) -> list[TaxTable]:
+    items = TaxTable(
+        "tax_wealth_items",
+        _WEALTH_ITEM_COLUMNS,
+        tuple(
+            (
+                i.year,
+                i.account,
+                i.tax,
+                None if i.holding is None else i.holding.code,
+                i.period_end,
+                i.value,
+                i.days,
+                i.rate,
+                i.amount,
+            )
+            for i in wealth.items
+        ),
+        file="wealth_tax_items",
+        index="year",
+    )
+    years = TaxTable(
+        "tax_wealth_years",
+        _WEALTH_YEAR_COLUMNS,
+        tuple((y.year, y.stamp_duty, y.ivafe, y.ivafe_payable) for y in wealth.years),
+        file="wealth_tax_years",
+        index="year",
+        note="tax_wealth_years_note",
+    )
+    return [years, items]
 
 
 @dataclass(frozen=True)
 class ItalianSettings:
-    """The Italian ``[parameters.tax]`` keys: the regime and the government-bond shares."""
+    """The Italian ``[parameters.tax]`` keys.
+
+    The regime, the government-bond shares and, optionally, where each account is held
+    (``custody``, design note 11.3).
+    """
 
     regime: Regime
     public_share: Mapping[Isin, Decimal]
+    custody: Mapping[str, Custody] | None = None
 
 
 class ItalianRegime:
@@ -411,11 +499,11 @@ class ItalianRegime:
 
     country = "it"
     keys = frozenset({"regime", "public_share"})
-    optional_keys: frozenset[str] = frozenset()
+    optional_keys: frozenset[str] = frozenset({"custody"})
     base_currency: Currency | None = None
 
     def parse(self, table: Mapping[str, object]) -> ItalianSettings:
-        """Read ``regime`` (amministrato or dichiarativo) and ``public_share`` (ISIN = share)."""
+        """Read ``regime``, ``public_share`` (ISIN = share) and the optional ``custody``."""
         options = {r.value for r in Regime}
         value = table["regime"]
         if not isinstance(value, str) or value not in options:
@@ -428,7 +516,8 @@ class ItalianRegime:
             if type(share) not in (int, float) or not 0 <= share <= 1:
                 raise ValidationError(f"public_share of {code} must be a number in [0, 1]")
             out[Isin(code)] = Decimal(repr(share))
-        return ItalianSettings(Regime(value), out)
+        custody = parse_custody(table["custody"]) if "custody" in table else None
+        return ItalianSettings(Regime(value), out, custody)
 
     def report(self, inputs: TaxInputs, settings: object) -> TaxReport:
         """Return the Italian tax position in the common shape."""
@@ -443,7 +532,20 @@ class ItalianRegime:
             as_of=inputs.as_of,
             to_base=inputs.to_base,
         )
-        return italian_tax_report(position)
+        wealth = None
+        if settings.custody is not None:
+            if inputs.prices is None or inputs.max_price_age_days is None:
+                raise ValidationError("custody needs the report's prices and price age limit")
+            wealth = wealth_taxes(
+                history=inputs.history,
+                transactions=inputs.transactions,
+                custody=settings.custody,
+                prices=inputs.prices,
+                to_base=inputs.to_base,
+                max_price_age_days=inputs.max_price_age_days,
+                as_of=inputs.as_of,
+            )
+        return italian_tax_report(position, wealth)
 
 
 ITALY = ItalianRegime()

@@ -580,6 +580,7 @@ qrlab.tax.ColumnKind.TEXT  member = 'text'
 qrlab.tax.ColumnKind.MONEY  member = 'money'
 qrlab.tax.ColumnKind.SHARE  member = 'share'
 qrlab.tax.ColumnKind.NUMBER  member = 'number'
+qrlab.tax.Custody  class(where: 'Where', statements: 'Statements | None', share: 'Decimal | None') -> None
 qrlab.tax.CustomRegime  class(inherited)
 qrlab.tax.CustomRegime.country  attribute str = 'custom'
 qrlab.tax.CustomRegime.keys  attribute frozenset = ['description', 'exempt_after_months', 'gains_allowance', 'gains_rate', 'income_rate', 'loss_carry_years', 'losses', 'wealth_tax_rate']
@@ -592,10 +593,10 @@ qrlab.tax.ITALY  constant ItalianRegime
 qrlab.tax.ItalianRegime  class(inherited)
 qrlab.tax.ItalianRegime.country  attribute str = 'it'
 qrlab.tax.ItalianRegime.keys  attribute frozenset = ['public_share', 'regime']
-qrlab.tax.ItalianRegime.optional_keys  attribute frozenset = []
+qrlab.tax.ItalianRegime.optional_keys  attribute frozenset = ['custody']
 qrlab.tax.ItalianRegime.parse  method(table: 'Mapping[str, object]') -> 'ItalianSettings'
 qrlab.tax.ItalianRegime.report  method(inputs: 'TaxInputs', settings: 'object') -> 'TaxReport'
-qrlab.tax.ItalianSettings  class(regime: 'Regime', public_share: 'Mapping[Isin, Decimal]') -> None
+qrlab.tax.ItalianSettings  class(regime: 'Regime', public_share: 'Mapping[Isin, Decimal]', custody: 'Mapping[str, Custody] | None' = None) -> None
 qrlab.tax.LabelRef  class(key: 'str') -> None
 qrlab.tax.LossLot  class(year: 'int', amount: 'Decimal', used: 'Decimal', expired: 'Decimal') -> None
 qrlab.tax.LossLot.expires  property
@@ -608,6 +609,10 @@ qrlab.tax.Regime.AMMINISTRATO  member = 'amministrato'
 qrlab.tax.Regime.DICHIARATIVO  member = 'dichiarativo'
 qrlab.tax.SWITZERLAND  constant SwissRegime
 qrlab.tax.SourcesRef  class() -> None
+qrlab.tax.Statements  enum
+qrlab.tax.Statements.YEAR  member = 'year'
+qrlab.tax.Statements.QUARTER  member = 'quarter'
+qrlab.tax.Statements.MONTH  member = 'month'
 qrlab.tax.SwissRegime  class(inherited)
 qrlab.tax.SwissRegime.base_currency  attribute Currency
 qrlab.tax.SwissRegime.country  attribute str = 'ch'
@@ -621,7 +626,7 @@ qrlab.tax.TaxColumn.none_label  attribute str = 'not_available'
 qrlab.tax.TaxColumn.prefix  attribute str = ''
 qrlab.tax.TaxEvent  class(trade_date: 'date', account: 'str', isin: 'str', category: 'Category', gain: 'Decimal', public_share: 'Decimal', base: 'Decimal', offset: 'Decimal', tax_due: 'Decimal | None', tax_withheld: 'Decimal') -> None
 qrlab.tax.TaxEvent.difference  property
-qrlab.tax.TaxInputs  class(history: 'LedgerHistory', transactions: 'Sequence[Transaction]', instruments: 'Mapping[Isin, Instrument]', valuation: 'Valuation', to_base: 'ToBase', as_of: 'date') -> None
+qrlab.tax.TaxInputs  class(history: 'LedgerHistory', transactions: 'Sequence[Transaction]', instruments: 'Mapping[Isin, Instrument]', valuation: 'Valuation', to_base: 'ToBase', as_of: 'date', prices: 'Mapping[Isin, PriceSeries] | None' = None, max_price_age_days: 'int | None' = None) -> None
 qrlab.tax.TaxPosition  class(as_of: 'date', regime: 'Regime', events: 'tuple[TaxEvent, ...]', losses: 'tuple[LossLot, ...]', flagged: 'tuple[str, ...]', sources: 'tuple[str, ...]' = ('TUIR, D.P.R. 917/1986, artt. 44, 67, 68 (to 31/12/2026)', 'Testo unico imposte sui redditi, D.Lgs. 117/2026, artt. 46, 76, 77 (from 1/1/2027)', 'D.L. 66/2014, art. 3 (26 %)', 'D.L. 138/2011, art. 2; D.M. 13/12/2011; Circolare AdE 19/E del 27/06/2014 (48.08 %)', 'D.Lgs. 461/1997, art. 6 (regime amministrato)', 'L. 111/2023, art. 5: unification of financial income not in force (checked 14/11/2026)')) -> None
 qrlab.tax.TaxPosition.losses_remaining  property
 qrlab.tax.TaxPosition.sources  attribute tuple = ['TUIR, D.P.R. 917/1986, artt. 44, 67, 68 (to 31/12/2026)', 'Testo unico imposte sui redditi, D.Lgs. 117/2026, artt. 46, 76, 77 (from 1/1/2027)', 'D.L. 66/2014, art. 3 (26 %)', 'D.L. 138/2011, art. 2; D.M. 13/12/2011; Circolare AdE 19/E del 27/06/2014 (48.08 %)', 'D.Lgs. 461/1997, art. 6 (regime amministrato)', 'L. 111/2023, art. 5: unification of financial income not in force (checked 14/11/2026)']
@@ -634,11 +639,19 @@ qrlab.tax.TaxReport  class(country: 'str', as_of: 'date', checked_on: 'date', so
 qrlab.tax.TaxReport.title  attribute str = 'tax_title'
 qrlab.tax.TaxTable  class(title: 'str', columns: 'tuple[TaxColumn, ...]', rows: 'tuple[tuple[Cell, ...], ...]', file: 'str | None' = None, index: 'str | None' = None, note: 'str | None' = None, shown_when_empty: 'bool' = True) -> None
 qrlab.tax.TaxTable.shown_when_empty  attribute bool = True
+qrlab.tax.WealthItem  class(year: 'int', account: 'str', tax: 'str', holding: 'Isin | None', period_end: 'date', value: 'Decimal', days: 'int', rate: 'Decimal', amount: 'Decimal') -> None
+qrlab.tax.WealthTaxes  class(items: 'tuple[WealthItem, ...]', years: 'tuple[WealthYear, ...]', not_computed: 'tuple[int, ...]' = <factory>) -> None
+qrlab.tax.WealthYear  class(year: 'int', stamp_duty: 'Decimal', ivafe: 'Decimal', ivafe_payable: 'Decimal') -> None
+qrlab.tax.Where  enum
+qrlab.tax.Where.ITALY  member = 'italy'
+qrlab.tax.Where.ABROAD  member = 'abroad'
+qrlab.tax.Where.ABROAD_PRIVILEGED  member = 'abroad_privileged'
 qrlab.tax.custom_tax_model  function(settings: 'CustomSettings', *, taxable_yield: 'float') -> 'TaxModel'
 qrlab.tax.italian_tax_position  function(history: 'LedgerHistory', transactions: 'Sequence[Transaction]', instruments: 'Mapping[Isin, Instrument]', *, regime: 'Regime', public_share: 'Mapping[Isin, Decimal]', as_of: 'date', to_base: 'ToBase') -> 'TaxPosition'
-qrlab.tax.italian_tax_report  function(position: 'TaxPosition') -> 'TaxReport'
+qrlab.tax.italian_tax_report  function(position: 'TaxPosition', wealth: 'WealthTaxes | None' = None) -> 'TaxReport'
 qrlab.tax.regime_for  function(country: 'object') -> 'TaxRegime'
 qrlab.tax.swiss_tax_model  function(*, wealth_tax_rate: 'float', income_tax_rate: 'float', taxable_yield: 'float') -> 'TaxModel'
+qrlab.tax.wealth_taxes  function(*, history: 'LedgerHistory', transactions: 'Sequence[Transaction]', custody: 'Mapping[str, Custody]', prices: 'Mapping[Isin, PriceSeries]', to_base: 'ToBase', max_price_age_days: 'int', as_of: 'date') -> 'WealthTaxes'
 qrlab.validation.Split  class(train: 'np.ndarray', test: 'np.ndarray', train_start: 'date', train_end: 'date', test_start: 'date', test_end: 'date', purged: 'int', last_label_end: 'date') -> None
 qrlab.validation.Splits  class(index: 'pd.DatetimeIndex', splits: 'tuple[Split, ...]', kind: 'str', params: 'dict[str, int]', unused: 'int') -> None
 qrlab.validation.expanding_splits  function(index: 'pd.DatetimeIndex', *, min_train: 'int', test_size: 'int', step: 'int', embargo: 'int', label_ends: 'pd.Series | None') -> 'Splits'

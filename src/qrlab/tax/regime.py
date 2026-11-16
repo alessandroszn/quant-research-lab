@@ -24,7 +24,7 @@ from qrlab.instruments.identifiers import Isin
 from qrlab.instruments.master import Instrument
 from qrlab.portfolio.ledger import LedgerHistory, ToBase
 from qrlab.portfolio.transactions import Transaction
-from qrlab.portfolio.valuation import Valuation
+from qrlab.portfolio.valuation import PriceSeries, Valuation
 
 __all__ = [
     "LANGUAGES",
@@ -176,7 +176,11 @@ class TaxReport:
 
 @dataclass(frozen=True)
 class TaxInputs:
-    """What any country may need: the account, its instruments and values, and the date."""
+    """What any country may need: the account, its instruments and values, and the date.
+
+    ``prices`` and ``max_price_age_days`` value holdings on dates that are not valuation dates
+    (the Italian stamp duty and IVAFE, design note 11.3); ``None`` when not given.
+    """
 
     history: LedgerHistory
     transactions: Sequence[Transaction]
@@ -184,6 +188,8 @@ class TaxInputs:
     valuation: Valuation
     to_base: ToBase
     as_of: date
+    prices: Mapping[Isin, PriceSeries] | None = None
+    max_price_age_days: int | None = None
 
 
 class TaxRegime(Protocol):

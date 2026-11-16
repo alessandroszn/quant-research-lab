@@ -23,6 +23,10 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | The `risk.beta` check on excess returns | 8.5, 11.2 | The check regresses plain returns (2.4); the report's section uses excess returns over the €STR when given. The checks have no risk-free series. |
 | The partial first day in the return checks | 11.2 | With `flow_timing = "start"` the TWR has a return on the first date, from a deposit to that day's close. The benchmark comparison leaves it out; the volatility, drawdown and other return checks still include it when there is no benchmark. |
 | Up and down capture in the report | 11.2 | `qrlab.metrics.up_capture` and `down_capture` exist; they would join the benchmark section. |
+| Italian stamp duty and IVAFE on cash | 11.3 | The fixed €34.20 on current accounts and savings books (Italy and abroad) depends on average balances by account, which the ledger does not hold. |
+| The foreign wealth-tax credit in the IVAFE | 11.3 | A wealth tax paid abroad on the same products is deducted up to the IVAFE; it needs a per-year input. |
+| Stamp duty and IVAFE from 2027 | 11.3 | The testo unico D.Lgs. 123/2025 applies from 1 January 2027 (D.L. 200/2025); its articles must be checked before those years are computed. |
+| The Agenzia's monthly average rates for the IVAFE | 11.3 | The return converts foreign values at the provvedimento's monthly averages; the report uses the ECB rate of the day. |
 | Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |
 | Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |
