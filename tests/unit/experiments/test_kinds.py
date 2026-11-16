@@ -390,6 +390,7 @@ def test_projection_tables_must_be_tables(key: str, match: str) -> None:
         ("example_optimisation.toml", "In-sample weights"),
         ("example_scenarios.toml", "What-if stress tests"),
         ("example_backtest.toml", "One historical path"),
+        ("example_risk_report.toml", "Risk estimates from past returns"),
     ],
 )
 def test_kinds_write_their_notice(tmp_path: Path, name: str, start: str) -> None:
@@ -421,8 +422,35 @@ def test_projection_says_when_sensitivity_was_off(tmp_path: Path) -> None:
     )
 
 
-def test_kinds_without_a_notice(tmp_path: Path) -> None:
+def test_portfolio_report_without_caveats_has_no_notice_file(tmp_path: Path) -> None:
+    # Its HTML report already ends with the not-advice line (tested below).
     result = run_experiment(
-        _localise("example_risk_report.toml", tmp_path), kinds=KINDS, overwrite=False
+        _localise("example_portfolio_report.toml", tmp_path), kinds=KINDS, overwrite=False
     )
     assert result.record["notice"] is None
+    assert not (result.output_dir / "NOTICE.txt").exists()
+
+
+# ------------------------------------------- the not-advice line in every report (design 10.2)
+ADVICE = {"en": "not investment advice", "it": "non consulenza finanziaria"}
+
+
+@pytest.mark.parametrize("name", sorted(p.name for p in CONFIGS.glob("*.toml")))
+def test_every_example_output_says_it_is_not_advice(tmp_path: Path, name: str) -> None:
+    # The HTML report when the kind writes one (in its language), else NOTICE.txt (English).
+    config = _localise(name, tmp_path)
+    language = tomllib.loads(config.read_text(encoding="utf-8"))["parameters"].get("language")
+    result = run_experiment(config, kinds=KINDS, overwrite=False)
+    html = result.output_dir / "report.html"
+    shown = html if html.exists() else result.output_dir / "NOTICE.txt"
+    assert ADVICE[language or "en"] in shown.read_text(encoding="utf-8")
+
+
+def test_the_english_portfolio_report_says_it_is_not_advice(tmp_path: Path) -> None:
+    config = _localise(
+        "example_portfolio_report.toml", tmp_path, **{'language = "it"': 'language = "en"'}
+    )
+    result = run_experiment(config, kinds=KINDS, overwrite=False)
+    html = (result.output_dir / "report.html").read_text(encoding="utf-8")
+    assert ADVICE["en"] in html
+    assert ADVICE["it"] not in html

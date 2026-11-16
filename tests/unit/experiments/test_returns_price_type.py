@@ -90,14 +90,11 @@ def test_the_declaration_labels_the_data_and_changes_no_number(tmp_path: Path, k
     outputs_b, scalars_b, notice_b = _outputs(b.output_dir)
     assert outputs_a == outputs_b  # same files, same tags, same bytes
     assert scalars_a == scalars_b
-    if kind == "risk_report":
-        assert notice_a is None
-        assert notice_b == f"{PRICE_RETURNS} {ADVICE}"
-    else:
-        assert isinstance(notice_a, str)
-        assert PRICE_RETURNS not in notice_a
-        assert notice_a.endswith(ADVICE)
-        assert notice_b == notice_a.replace(ADVICE, f"{PRICE_RETURNS} {ADVICE}")
+    # Every kind here has caveats (risk_report since design note 10.2), so a notice either way.
+    assert isinstance(notice_a, str)
+    assert PRICE_RETURNS not in notice_a
+    assert notice_a.endswith(ADVICE)
+    assert notice_b == notice_a.replace(ADVICE, f"{PRICE_RETURNS} {ADVICE}")
 
 
 @pytest.mark.parametrize("kind", sorted(EXAMPLES))

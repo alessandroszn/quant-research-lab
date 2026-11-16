@@ -13,13 +13,19 @@ reproducibility and methodological rigour come before speed or feature count.
 ## What it does
 
 - **Portfolio and ETF analytics.**
-  - Broker exports are imported through explicit mappings and replayed into positions and
-    cash.
+  - A portfolio is entered in the app, or read from your own files through explicit
+    mappings, and replayed into positions and cash. No broker export is needed.
+  - Market data come from public sources: downloaded by qrlab where the terms allow it, by
+    hand otherwise. Issuers' holdings files (Vanguard, iShares) are read as published.
   - Performance: time- and money-weighted returns, labelled and never mixed, and an exact P&L
     breakdown.
   - Risk: covariance estimators, risk contributions, VaR/ES with backtests.
   - ETF look-through and overlap, health checks, historical and hypothetical stress tests, and
     Monte Carlo projections reported as distributions.
+  - The tax position: Italy (amministrato and dichiarativo) and Switzerland (private
+    investor), with their legal sources, or a simplified model you configure for another
+    country.
+  - One HTML report, in English or Italian.
 - **A research lab.**
   - Optimisation: minimum variance, mean-variance, maximum Sharpe, Black-Litterman, risk
     parity, maximum diversification, HRP.
@@ -89,12 +95,13 @@ The [documentation](https://alessandroszn.github.io/quant-research-lab/) covers 
 uv run ruff format --check . && uv run ruff check . && uv run mypy && uv run pytest
 ```
 
-- **Tests:** about 2,000 deterministic tests, with 100 % coverage and no network. Financial
+- **Tests:** about 2,500 deterministic tests, with 100 % coverage and no network. Financial
   formulas have hand-calculated examples and cross-checks against statsmodels, SciPy and
   scikit-learn.
 - **Typing and layering:** mypy runs strict, and a test enforces the layering of the
   subpackages.
-- **CI:** Linux and Windows, Python 3.11 and 3.13.
+- **CI:** Linux and Windows, Python 3.11 and 3.13. `scripts/ci_local.sh` runs the same steps
+  locally.
 - **Documentation:** built with warnings treated as errors.
 - **Windows build:** the frozen program must reproduce the source results byte for byte.
 

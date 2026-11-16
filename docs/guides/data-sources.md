@@ -19,6 +19,10 @@ Quant Research Lab reads public data and your own files. Its rules for data:
 | European Central Bank (ECB Data Portal) | Euro reference FX rates, €STR, euro-area HICP, AAA government yield curve | Free reuse if reproduced accurately, with the ECB cited as source. |
 | Open Source Asset Pricing (Chen and Zimmermann) | Long-short returns of published predictors and their documentation, release 2026.10 at a pinned revision | CC BY 4.0. Cite Chen and Zimmermann (2022), *Critical Finance Review*. Raw files are not redistributed. |
 
+The terms were checked on 2026-11-10 (Kenneth R. French, ECB) and 2026-11-12 (Open Source
+Asset Pricing), and the issuers' on 2026-11-15 (below). Terms change: check them again before
+relying on a source for something new.
+
 **Excluded:** FRED. Its terms prohibit storing or caching data without written consent, and
 the raw store keeps every vintage.
 

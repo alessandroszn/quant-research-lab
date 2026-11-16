@@ -1,4 +1,4 @@
-"""Audit the whole git history before the repository is made public (design note 6.3c).
+"""Audit the whole git history before the repository is made public (design notes 6.3c, 10.2).
 
 Usage, from the repository root: ``uv run python scripts/audit_history.py [DATA_DIR]``
 
@@ -12,6 +12,15 @@ reports, as **file paths and counts only, never values**:
 - e-mail addresses other than GitHub's noreply and example domains;
 - any ISIN of the **real portfolio**. The ISINs are collected from the local, git-ignored
   ``DATA_DIR`` (default ``data/``) and kept in memory only.
+
+It also reads every commit and annotated tag reachable from any ref (design note 10.2), and
+reports their hashes only:
+
+- author, committer and tagger e-mail addresses other than the allowed ones;
+- messages with any of the findings above that apply to text (secrets, IBANs, e-mails, ISINs).
+
+The allowed e-mail addresses are GitHub's ``noreply`` ones, the example domains, and
+``noreply@anthropic.com``, which ``Co-Authored-By`` trailers use.
 
 The exit code is 0 when nothing is found, 1 otherwise, and 2 for a usage error. A finding is
 not necessarily a leak. For example, a synthetic IBAN in a test is reported too; each path must
@@ -29,12 +38,14 @@ from pathlib import Path, PurePosixPath
 
 from qrlab.instruments import is_valid_isin
 
-__all__ = ["Findings", "audit", "blobs", "main", "real_isins"]
+__all__ = ["Findings", "audit", "blobs", "history", "main", "real_isins"]
 
 ISIN = re.compile(rb"\b[A-Z]{2}[A-Z0-9]{9}[0-9]\b")
 IBAN = re.compile(rb"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}\b")
 EMAIL = re.compile(rb"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 ALLOWED_EMAIL_DOMAINS = (b"users.noreply.github.com", b"example.com", b"example.org")
+ALLOWED_EMAILS = (b"noreply@github.com", b"noreply@anthropic.com")
+SHOWN = 20  # paths or hashes listed per kind of finding; the rest are counted
 SECRETS = (
     re.compile(rb"AKIA[0-9A-Z]{16}"),
     re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"),
@@ -54,6 +65,7 @@ class Findings:
     """Paths per kind of finding; no values are ever stored."""
 
     blobs: int = 0
+    commits: int = 0
     data_files: set[str] = field(default_factory=set)
     spreadsheets: set[str] = field(default_factory=set)
     csv_outside_examples: set[str] = field(default_factory=set)
@@ -62,6 +74,8 @@ class Findings:
     emails: set[str] = field(default_factory=set)
     real_isins: set[str] = field(default_factory=set)
     real_isins_known: int = 0
+    commit_emails: set[str] = field(default_factory=set)
+    commit_messages: set[str] = field(default_factory=set)
 
     def kinds(self) -> dict[str, set[str]]:
         """Every kind of finding with its paths."""
@@ -73,6 +87,8 @@ class Findings:
             "valid IBANs": self.ibans,
             "e-mail addresses": self.emails,
             "ISINs of the real portfolio": self.real_isins,
+            "commits or tags with other e-mail addresses": self.commit_emails,
+            "commit or tag messages to review": self.commit_messages,
         }
 
     @property
@@ -108,6 +124,21 @@ def blobs(repo: Path) -> Iterator[tuple[str, bytes]]:
         position = start + size + 1
 
 
+def history(repo: Path) -> Iterator[tuple[str, list[bytes], bytes]]:
+    """Yield ``(hash, e-mail addresses, message)`` for every commit and annotated tag."""
+    log = _git(repo, "log", "--all", "--format=%H%x00%ae%x00%ce%x00%B%x1e")
+    for record in log.split(b"\x1e"):
+        if record.strip():
+            sha, author, committer, message = record.lstrip(b"\n").split(b"\x00", 3)
+            yield sha.decode(), [author, committer], message
+    tag_format = "--format=%(objectname)%00%(objecttype)%00%(taggeremail)%00%(contents)%1e"
+    for record in _git(repo, "for-each-ref", tag_format, "refs/tags").split(b"\x1e"):
+        if record.strip():
+            sha, kind, tagger, message = record.lstrip(b"\n").split(b"\x00", 3)
+            if kind == b"tag":  # a lightweight tag is only a name for a commit
+                yield sha.decode(), [tagger.strip(b"<>")], message
+
+
 def real_isins(data_dir: Path) -> set[str]:
     """Return the valid ISINs found in the files under ``data_dir`` (except its README)."""
     found: set[str] = set()
@@ -129,10 +160,35 @@ def _valid_iban(text: bytes) -> bool:
     return int(digits) % 97 == 1
 
 
+def _allowed_email(email: bytes) -> bool:
+    lower = email.lower()
+    return lower.endswith(ALLOWED_EMAIL_DOMAINS) or lower in ALLOWED_EMAILS
+
+
+def _text_findings(content: bytes, wanted: Sequence[bytes]) -> set[str]:
+    """Return the kinds of finding in a text: secrets, IBANs, e-mails, real ISINs."""
+    kinds: set[str] = set()
+    if any(pattern.search(content) for pattern in SECRETS):
+        kinds.add("secrets")
+    if any(_valid_iban(m) for m in IBAN.findall(content)):
+        kinds.add("ibans")
+    if any(not _allowed_email(e) for e in EMAIL.findall(content)):
+        kinds.add("emails")
+    if any(isin in content for isin in wanted):
+        kinds.add("real_isins")
+    return kinds
+
+
 def audit(repo: Path, isins: set[str]) -> Findings:
     """Scan the history of ``repo`` for every kind of finding."""
     findings = Findings(real_isins_known=len(isins))
     wanted = [i.encode() for i in isins]
+    for sha, emails, message in history(repo):
+        findings.commits += 1
+        if any(not _allowed_email(email) for email in emails):
+            findings.commit_emails.add(sha)
+        if _text_findings(message, wanted):
+            findings.commit_messages.add(sha)
     for path, content in blobs(repo):
         findings.blobs += 1
         posix = PurePosixPath(path)
@@ -142,15 +198,9 @@ def audit(repo: Path, isins: set[str]) -> Findings:
             findings.spreadsheets.add(path)
         if posix.suffix.lower() == ".csv" and not path.startswith(CSV_ALLOWED):
             findings.csv_outside_examples.add(path)
-        if any(pattern.search(content) for pattern in SECRETS):
-            findings.secrets.add(path)
-        if any(_valid_iban(m) for m in IBAN.findall(content)):
-            findings.ibans.add(path)
-        emails = EMAIL.findall(content)
-        if any(not e.lower().endswith(ALLOWED_EMAIL_DOMAINS) for e in emails):
-            findings.emails.add(path)
-        if any(isin in content for isin in wanted):
-            findings.real_isins.add(path)
+        kinds = _text_findings(content, wanted)
+        for kind in kinds:
+            getattr(findings, kind).add(path)
     return findings
 
 
@@ -158,11 +208,16 @@ def report(findings: Findings) -> str:
     """Return the text report: counts and paths, never values."""
     lines = [
         f"blobs scanned: {findings.blobs}",
+        f"commits and tags scanned: {findings.commits}",
         f"ISINs of the real portfolio checked: {findings.real_isins_known}",
     ]
-    for kind, paths in findings.kinds().items():
-        lines.append(f"{kind}: {len(paths)}")
-        lines += [f"  {path}" for path in sorted(paths)]
+    hashes = findings.commit_emails | findings.commit_messages
+    for kind, items in findings.kinds().items():
+        lines.append(f"{kind}: {len(items)}")
+        shown = sorted(items)[:SHOWN]
+        lines += [f"  {item[:12] if item in hashes else item}" for item in shown]
+        if len(items) > SHOWN:
+            lines.append(f"  ... and {len(items) - SHOWN} more")
     lines.append("CLEAN" if findings.clean else "REVIEW THE PATHS ABOVE")
     return "\n".join(lines)
 
