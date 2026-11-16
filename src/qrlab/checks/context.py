@@ -45,6 +45,10 @@ class CheckContext:
     lookthrough
         Exposures through fund holdings on ``as_of``, with the holdings and tracking series,
         or ``None``.
+    return_levels
+        Levels whose returns include the income paid out (a total-return series, or prices
+        adjusted for distributions), by ISIN, for return-based checks (design note 11.1). A
+        position without an entry, or ``None``, uses its ``prices``.
     """
 
     as_of: date
@@ -57,6 +61,7 @@ class CheckContext:
     benchmark_returns: pd.Series | None
     target_weights: Mapping[str, float] | None
     lookthrough: LookThroughInputs | None
+    return_levels: Mapping[Isin, pd.Series] | None = None
 
     def __post_init__(self) -> None:
         """Validate the date and the target weights."""

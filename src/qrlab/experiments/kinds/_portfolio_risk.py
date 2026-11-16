@@ -21,7 +21,6 @@ from qrlab.core.calendar import CONVENTIONAL_PERIODS_PER_YEAR, Frequency, infer_
 from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency, Money
 from qrlab.data.provenance import Dataset
-from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._frames import covariance_spec, estimate_covariance
 from qrlab.experiments.kinds._params import choice, number, whole
@@ -42,7 +41,7 @@ from qrlab.scenarios.engine import (
 )
 from qrlab.scenarios.summary import RiskSummary
 
-__all__ = ["PRICE_ONLY", "RiskOutputs", "RiskSpec", "compute_risk", "parse_risk", "unit_values"]
+__all__ = ["RiskOutputs", "RiskSpec", "compute_risk", "parse_risk", "unit_values"]
 
 _FREQUENCIES = {"weekly": Frequency.WEEKLY, "monthly": Frequency.MONTHLY}
 # Price-file frequencies fine enough for each risk frequency.
@@ -52,10 +51,6 @@ _FINE_ENOUGH = {
 }
 _PERIOD = {Frequency.WEEKLY: "W-FRI", Frequency.MONTHLY: "M"}
 _EUR = Currency("EUR")
-PRICE_ONLY = (
-    "Risk is computed from price returns for {names}: their return levels exclude dividends; "
-    "volatilities and correlations are barely affected."
-)
 
 
 @dataclass(frozen=True)
@@ -76,7 +71,6 @@ class RiskOutputs:
     summary: RiskSummary
     tables: Mapping[str, Tagged]
     scalars: Mapping[str, Tagged]
-    price_only: tuple[str, ...]  # positions whose risk uses price returns (no dividends)
 
 
 def parse_risk(parameters: Mapping[str, object]) -> RiskSpec | None:
@@ -134,14 +128,19 @@ def compute_risk(
     value: float,
     base: Currency,
     prices: Mapping[Isin, PriceSeries],
-    names: Mapping[Isin, str],
     position_weights: Mapping[Isin, float],
     cash_weights: Mapping[Currency, float],
     exposure_currencies: Mapping[Isin, Currency],
     fx: Dataset | None,
     scenarios: Sequence[Scenario],
+    levels: Mapping[Isin, pd.Series] | None = None,
 ) -> RiskOutputs:
-    """Build the risk summary of today's portfolio from its price files."""
+    """Build the risk summary of today's portfolio from its price files.
+
+    ``levels`` gives, by ISIN, the series whose returns a position uses in place of its prices
+    (design note 11.1: a total-return series, or the prices adjusted for distributions), in
+    the price file's currency.
+    """
     held = sorted((i for i, w in position_weights.items() if w != 0.0), key=lambda i: i.code)
     foreign = sorted(
         (c for c, w in cash_weights.items() if c != base and w != 0.0), key=lambda c: c.code
@@ -151,7 +150,11 @@ def compute_risk(
     periodic: dict[str, pd.Series] = {}
     local: dict[Isin, pd.Series] = {}
     for isin in held:
-        series = prices[isin].prices.dropna().astype("float64")
+        series = (
+            levels[isin]
+            if levels is not None and isin in levels
+            else prices[isin].prices.dropna().astype("float64")
+        )
         found = infer_frequency(pd.DatetimeIndex(series.index))
         if found not in _FINE_ENOUGH[spec.frequency]:
             observed = found.name.lower() if found is not None else "irregular"
@@ -231,10 +234,7 @@ def compute_risk(
     if "historical" not in notes:
         scalars["var_historical"] = Tagged(var_es["historical"][0], "descriptive")
         scalars["es_historical"] = Tagged(var_es["historical"][1], "descriptive")
-    price_only = tuple(
-        names.get(i, i.code) for i in held if prices[i].price_type is PriceType.PRICE
-    )
-    return RiskOutputs(summary, tables, scalars, price_only)
+    return RiskOutputs(summary, tables, scalars)
 
 
 def _window(periodic: pd.DataFrame, spec: RiskSpec, as_of: date) -> pd.DataFrame:

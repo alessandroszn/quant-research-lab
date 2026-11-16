@@ -35,7 +35,7 @@ qrlab.checks.Category.DRIFT  member = 'drift'
 qrlab.checks.Category.DATA_QUALITY  member = 'data_quality'
 qrlab.checks.Category.LOOKTHROUGH  member = 'lookthrough'
 qrlab.checks.CheckConfig  class(checks: 'Mapping[str, Thresholds]') -> None
-qrlab.checks.CheckContext  class(as_of: 'date', history: 'LedgerHistory', valuation: 'Valuation', to_base: 'ToBase', instruments: 'Mapping[Isin, Instrument]', prices: 'Mapping[Isin, PriceSeries]', portfolio_returns: 'pd.Series | None', benchmark_returns: 'pd.Series | None', target_weights: 'Mapping[str, float] | None', lookthrough: 'LookThroughInputs | None') -> None
+qrlab.checks.CheckContext  class(as_of: 'date', history: 'LedgerHistory', valuation: 'Valuation', to_base: 'ToBase', instruments: 'Mapping[Isin, Instrument]', prices: 'Mapping[Isin, PriceSeries]', portfolio_returns: 'pd.Series | None', benchmark_returns: 'pd.Series | None', target_weights: 'Mapping[str, float] | None', lookthrough: 'LookThroughInputs | None', return_levels: 'Mapping[Isin, pd.Series] | None' = None) -> None
 qrlab.checks.CheckContext.base  property
 qrlab.checks.CheckContext.cash_weights  method() -> 'dict[Currency, float]'
 qrlab.checks.CheckContext.exposure_currency  method(isin: 'Isin') -> 'Currency'
@@ -100,6 +100,7 @@ qrlab.core.aggregate_returns  function(returns: '_T', *, kind: 'ReturnKind', to:
 qrlab.core.compound  function(returns: 'pd.Series | pd.DataFrame', *, kind: 'ReturnKind') -> 'float | pd.Series'
 qrlab.core.convert  function(amount: 'Money', rate: 'FxRate', *, to: 'Currency') -> 'Money'
 qrlab.core.convert_return_currency  function(returns: '_T', fx: 'pd.Series', *, kind: 'ReturnKind') -> '_T'
+qrlab.core.distribution_adjusted  function(prices: 'pd.Series', distributions: 'pd.Series') -> 'pd.Series'
 qrlab.core.easter_sunday  function(year: 'int') -> 'date'
 qrlab.core.excess_returns  function(returns: '_T', risk_free: 'pd.Series', *, kind: 'ReturnKind') -> '_T'
 qrlab.core.infer_frequency  function(index: 'pd.DatetimeIndex') -> 'Frequency | None'
@@ -446,11 +447,22 @@ qrlab.reporting.Language.IT  member = 'it'
 qrlab.reporting.Language.EN  member = 'en'
 qrlab.reporting.NumberStyle  class(decimal: 'str', thousands: 'str', percent_space: 'bool', currency_first: 'bool') -> None
 qrlab.reporting.Report  class(title: 'str', language: 'Language', facts: 'tuple[tuple[str, str], ...]', warnings: 'tuple[str, ...]', sections: 'tuple[Section, ...]', footer: 'tuple[str, ...]') -> None
+qrlab.reporting.ReturnSource  enum
+qrlab.reporting.ReturnSource.TOTAL_RETURN_FILE  member = 'total_return_file'
+qrlab.reporting.ReturnSource.DISTRIBUTIONS  member = 'distributions'
+qrlab.reporting.ReturnSource.TOTAL_RETURN_PRICES  member = 'total_return_prices'
+qrlab.reporting.ReturnSource.ACCUMULATING  member = 'accumulating'
+qrlab.reporting.ReturnSource.NO_INCOME  member = 'no_income'
+qrlab.reporting.ReturnSource.DISTRIBUTING  member = 'distributing'
+qrlab.reporting.ReturnSource.POLICY_UNKNOWN  member = 'policy_unknown'
+qrlab.reporting.ReturnSource.STOCK  member = 'stock'
+qrlab.reporting.ReturnSource.BOND  member = 'bond'
+qrlab.reporting.ReturnSource.OTHER  member = 'other'
 qrlab.reporting.RiskFreeSummary  class(source: 'str', total: 'float', sharpe: 'SharpeEstimate | None', reason: 'str' = '') -> None
 qrlab.reporting.RiskFreeSummary.reason  attribute str = ''
 qrlab.reporting.Section  class(title: 'str', paragraphs: 'tuple[str, ...]', tables: 'tuple[Table, ...]', figures: 'tuple[Figure, ...]') -> None
 qrlab.reporting.Table  class(title: 'str', columns: 'tuple[str, ...]', rows: 'tuple[tuple[str, ...], ...]', align: 'tuple[str, ...]', notes: 'tuple[str, ...]') -> None
-qrlab.reporting.build_portfolio_report  function(*, name: 'str', history: 'LedgerHistory', valuation: 'Valuation', prices: 'Mapping[Isin, PriceSeries]', to_base: 'ToBase', language: 'Language', generated_at: 'datetime', flow_timing: 'FlowTiming', max_price_age_days: 'int', fx_description: 'str', provenance: 'Sequence[Provenance]', instruments: 'Mapping[Isin, Instrument]', import_notes: 'Sequence[str]', return_frequency: 'tuple[Frequency, float] | None', checks: 'CheckResult | None', lookthrough: 'LookThroughInputs | None', risk: 'RiskSummary | None', projection: 'ProjectionResult | None', risk_free: 'RiskFreeSummary | None', tax: 'TaxReport | None') -> 'Report'
+qrlab.reporting.build_portfolio_report  function(*, name: 'str', history: 'LedgerHistory', valuation: 'Valuation', prices: 'Mapping[Isin, PriceSeries]', to_base: 'ToBase', language: 'Language', generated_at: 'datetime', flow_timing: 'FlowTiming', max_price_age_days: 'int', fx_description: 'str', provenance: 'Sequence[Provenance]', instruments: 'Mapping[Isin, Instrument]', import_notes: 'Sequence[str]', return_frequency: 'tuple[Frequency, float] | None', checks: 'CheckResult | None', lookthrough: 'LookThroughInputs | None', risk: 'RiskSummary | None', projection: 'ProjectionResult | None', risk_free: 'RiskFreeSummary | None', tax: 'TaxReport | None', return_sources: 'Mapping[Isin, ReturnSource] | None' = None) -> 'Report'
 qrlab.reporting.escape  function(text: 'str') -> 'str'
 qrlab.reporting.format_date  function(day: 'date', *, language: 'Language') -> 'str'
 qrlab.reporting.format_money  function(amount: 'Money', *, style: 'NumberStyle') -> 'str'

@@ -1,9 +1,10 @@
 """Diversification checks on position returns, including Meucci's effective number of bets.
 
 Position returns are simple returns of each held instrument's price series up to ``as_of``,
-on the dates where every held instrument has a price (rows with a missing price are dropped),
-over the last ``window`` returns. Fewer returns than ``window`` makes the check not
-applicable; it is never estimated on a shorter sample.
+or of its entry in ``CheckContext.return_levels`` when there is one (a series that includes
+the income paid out, design note 11.1), on the dates where every held instrument has a price
+(rows with a missing price are dropped), over the last ``window`` returns. Fewer returns
+than ``window`` makes the check not applicable; it is never estimated on a shorter sample.
 """
 
 from __future__ import annotations
@@ -35,9 +36,12 @@ def position_returns(ctx: CheckContext, window: object) -> pd.DataFrame | NotApp
     if missing:
         return NotApplicable(f"no price series for {missing}")
     columns = {}
+    levels = ctx.return_levels or {}
     for isin in held:
-        prices = ctx.prices[isin].prices.loc[: pd.Timestamp(ctx.as_of)]
-        columns[isin.code] = prices_to_returns(prices, kind=ReturnKind.SIMPLE)
+        series = levels[isin] if isin in levels else ctx.prices[isin].prices
+        columns[isin.code] = prices_to_returns(
+            series.loc[: pd.Timestamp(ctx.as_of)], kind=ReturnKind.SIMPLE
+        )
     returns = pd.concat(columns, axis=1, join="inner").dropna()
     if len(returns) < window:
         return NotApplicable(f"{len(returns)} common returns, fewer than the window of {window}")

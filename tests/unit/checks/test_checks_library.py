@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import date
 
 import numpy as np
@@ -133,6 +134,23 @@ def test_diversification_ignores_prices_after_as_of_and_rows_with_gaps(
     assert isinstance(returns, pd.DataFrame)
     assert returns.index[-1] == pd.Timestamp(AS_OF)
     assert not returns.isna().to_numpy().any()
+
+
+def test_diversification_reads_return_levels_when_given(rng: np.random.Generator) -> None:
+    """Design note 11.1: an entry in ``return_levels`` replaces the position's prices."""
+    prices = _two_assets(rng, 0.5)
+    ctx = weighted_context({A: "0.5", B: "0.5"}, prices=prices)  # type: ignore[arg-type]
+    before = diversification.position_returns(ctx, WINDOW)
+    assert isinstance(before, pd.DataFrame)
+    # B paid 1.0 on its last date: its level rises by 1 % more than its price there.
+    levels = prices[B] * np.where(prices[B].index == pd.Timestamp(AS_OF), 1.01, 1.0)
+    with_levels = replace(ctx, return_levels={B: levels})
+    after = diversification.position_returns(with_levels, WINDOW)
+    assert isinstance(after, pd.DataFrame)
+    pd.testing.assert_series_equal(after[A.code], before[A.code])  # no entry: its prices
+    assert after[B.code].iloc[-1] == pytest.approx((1.0 + before[B.code].iloc[-1]) * 1.01 - 1.0)
+    assert after[B.code].iloc[:-1].equals(before[B.code].iloc[:-1])
+    assert ctx.return_levels is None  # the default keeps today's behaviour
 
 
 @pytest.mark.parametrize("window", [1, 2.0, True, "24"])

@@ -92,6 +92,20 @@ the notice. See :mod:`qrlab.tax.custom`.
 The projection may add ``income_tax_rate`` and ``taxable_yield`` (both or neither, phase
 9.2): a yearly tax of their product on value.
 
+Income in the returns (design note 11.1), all optional. Risk and the diversification checks
+read returns; valuation keeps the market prices. Per held position, by ISIN:
+
+- ``total_returns`` and ``total_returns_mapping``: a price file whose columns are total-return
+  series (``price_type = "total_return"``), each in the currency of the position's price file;
+- ``[parameters.distributions]``: ISIN = list of ``{ ex_date, per_unit, currency }``, gross
+  amounts per unit in the price file's currency, which adjust the position's prices
+  (:func:`qrlab.core.returns.distribution_adjusted`).
+
+Otherwise the price is used, which includes the income for a ``total_return`` price file, an
+accumulating fund and an ETC. The notice names every other position, with the reason, when
+risk or a diversification check reads returns; with risk the run writes
+``return_sources.csv`` and the report shows the source of each position's returns.
+
 Valuation dates are the dates of all price files from the first transaction on. The report is
 descriptive.
 """
@@ -115,7 +129,7 @@ from qrlab.data.ecb import FX_DATASET, parse_ecb_fx, parse_estr
 from qrlab.data.ecb import SOURCE as ECB_SOURCE
 from qrlab.data.ecb import TERMS as ECB_TERMS
 from qrlab.data.provenance import Dataset, Provenance
-from qrlab.data.user_csv import load_csv_mapping, parse_price_csv
+from qrlab.data.user_csv import PriceData, load_csv_mapping, parse_price_csv
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._frames import ADVICE
 from qrlab.experiments.kinds._params import (
@@ -131,7 +145,13 @@ from qrlab.experiments.kinds._portfolio_projection import (
     parse_projection,
     project_portfolio,
 )
-from qrlab.experiments.kinds._portfolio_risk import PRICE_ONLY, RiskSpec, compute_risk, parse_risk
+from qrlab.experiments.kinds._portfolio_risk import RiskSpec, compute_risk, parse_risk
+from qrlab.experiments.kinds._return_sources import (
+    Payment,
+    excluded_note,
+    parse_distributions,
+    return_levels,
+)
 from qrlab.experiments.kinds._studies import raw_provenance
 from qrlab.experiments.kinds.projection import SCENARIOS
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
@@ -155,7 +175,11 @@ from qrlab.portfolio.performance import FlowTiming, external_flows_by_date, time
 from qrlab.portfolio.valuation import EcbConverter, PriceSeries, value_portfolio
 from qrlab.reporting.formatting import Language
 from qrlab.reporting.html import render_html
-from qrlab.reporting.portfolio_report import RiskFreeSummary, build_portfolio_report
+from qrlab.reporting.portfolio_report import (
+    ReturnSource,
+    RiskFreeSummary,
+    build_portfolio_report,
+)
 from qrlab.scenarios.definitions import load_scenarios
 from qrlab.tax.regime import ColumnKind, TaxInputs, TaxRegime, TaxReport
 from qrlab.tax.regimes import REGIMES, regime_for
@@ -180,7 +204,15 @@ _INPUTS = (
     "instruments",
     "checks",
 )
-_OPTIONAL_INPUTS = ("fx", "issuers", "scenarios", "estr", "transactions_mapping")
+_OPTIONAL_INPUTS = (
+    "fx",
+    "issuers",
+    "scenarios",
+    "estr",
+    "transactions_mapping",
+    "total_returns",
+    "total_returns_mapping",
+)
 _FORMAT_HINT = (
     'transactions_format is required: "mapped" for a broker export read with '
     'transactions_mapping, "native" for a native qrlab transactions file (phase 8.8)'
@@ -206,6 +238,7 @@ _OPTIONAL_PARAMETERS = (
     "risk",
     "projection",
     "tax",
+    "distributions",
 )
 
 
@@ -234,6 +267,7 @@ class _Parameters:
     treatment: WeightTreatment | None
     holdings: Mapping[Isin, _Holdings]
     index_hedged_to: Mapping[Isin, Currency | None]
+    distributions: Mapping[Isin, tuple[Payment, ...]]
 
 
 def _per_fund(
@@ -311,6 +345,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
             isin: _currency_or_none(spec, "index_hedged_to")
             for isin, spec in _per_fund(parameters, "tracking", {"index_hedged_to"}).items()
         },
+        distributions=parse_distributions(parameters),
     )
 
 
@@ -386,6 +421,8 @@ def _check_inputs(parameters: object, names: frozenset[str]) -> None:
         raise ValidationError("a scenarios file is used only with [parameters.risk]")
     if "issuers" in names and not keys("holdings"):
         raise ValidationError("an issuers file is used only with holdings files")
+    if ("total_returns" in names) != ("total_returns_mapping" in names):
+        raise ValidationError("total_returns and total_returns_mapping go together")
 
 
 def _converter(
@@ -492,6 +529,16 @@ def _lookthrough(
         issuers=issuers,
     )
     return LookThroughInputs(exposures, snapshots, tracking), provenance
+
+
+def _total_returns(context: RunContext) -> tuple[PriceData | None, list[Provenance]]:
+    """Read the optional total-return series and its mapping (design note 11.1)."""
+    if "total_returns" not in context.inputs:
+        return None, []
+    path = context.inputs["total_returns"]
+    provenance = local_provenance(path, dataset="total_returns")
+    mapping = load_csv_mapping(context.inputs["total_returns_mapping"])
+    return parse_price_csv(path.read_bytes(), provenance, mapping), [provenance]
 
 
 def _risk_free(
@@ -610,8 +657,26 @@ def _run(context: RunContext) -> ExperimentOutput:
         lookthrough=None,
     )
     lookthrough, lookthrough_provenance = _lookthrough(context, p, check_context, instruments)
-    check_context = replace(check_context, lookthrough=lookthrough)
-    checks = run_checks(check_context, load_check_config(files["checks"]))
+    total_returns, total_returns_provenance = _total_returns(context)
+    held = sorted(
+        (i for i, w in check_context.position_weights().items() if w != 0.0), key=lambda i: i.code
+    )
+    sources = return_levels(
+        held,
+        prices=prices,
+        instruments=instruments,
+        total_returns=total_returns,
+        distributions=p.distributions,
+    )
+    # The checks get only the series that differ from the prices, so nothing else changes.
+    adjusted = {
+        isin: sources.levels[isin]
+        for isin in held
+        if sources.sources[isin] in (ReturnSource.TOTAL_RETURN_FILE, ReturnSource.DISTRIBUTIONS)
+    }
+    check_config = load_check_config(files["checks"])
+    check_context = replace(check_context, lookthrough=lookthrough, return_levels=adjusted or None)
+    checks = run_checks(check_context, check_config)
     risk = None
     if p.risk is not None:
         position_weights = check_context.position_weights()
@@ -621,12 +686,12 @@ def _run(context: RunContext) -> ExperimentOutput:
             value=float(valuation.totals[dates[-1]]),
             base=p.base,
             prices=prices,
-            names={isin: instrument.name for isin, instrument in instruments.items()},
             position_weights=position_weights,
             cash_weights=check_context.cash_weights(),
             exposure_currencies={i: check_context.exposure_currency(i) for i in position_weights},
             fx=fx_rates,
             scenarios=load_scenarios(files["scenarios"]) if "scenarios" in files else (),
+            levels=sources.levels,
         )
     tax_position = None
     if p.tax is not None:
@@ -670,6 +735,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             *lookthrough_provenance,
             *fx_provenance,
             *risk_free_provenance,
+            *total_returns_provenance,
         ],
         instruments=instruments,
         import_notes=list(imported.notes),
@@ -680,6 +746,7 @@ def _run(context: RunContext) -> ExperimentOutput:
         projection=None if plan is None else plan[0].result,
         risk_free=risk_free,
         tax=tax_position,
+        return_sources=None if risk is None else sources.sources,
     )
     findings = pd.DataFrame(
         [
@@ -722,9 +789,26 @@ def _run(context: RunContext) -> ExperimentOutput:
             scalars["sharpe_ratio_se"] = Tagged(risk_free.sharpe.standard_error, "descriptive")
     if risk is not None:
         tables |= risk.tables
+        tables["return_sources"] = Tagged(
+            pd.DataFrame(
+                {
+                    "source": [sources.sources[i].value for i in held],
+                    "income_included": [sources.sources[i].income_included for i in held],
+                },
+                index=pd.Index([i.code for i in held], name="holding"),
+            ),
+            "descriptive",
+        )
         scalars |= risk.scalars
-        if risk.price_only:
-            caveats.append(PRICE_ONLY.format(names=", ".join(risk.price_only)))
+    uses_returns = risk is not None or any(
+        check_id.startswith("diversification.") and thresholds.enabled
+        for check_id, thresholds in check_config.checks.items()
+    )
+    note = excluded_note(
+        sources.sources, {isin: instrument.name for isin, instrument in instruments.items()}
+    )
+    if uses_returns and note is not None:
+        caveats.append(note)
     if plan is not None:
         run, cost = plan
         summary = run.result.summary

@@ -47,6 +47,19 @@ gap is the dividend, not tracking.
   - **Size of the error:** in the example above, 3 percentage points a year. `mean_variance`
     and `maximum_sharpe` optimisation use mean returns and are the most affected; the
     covariance-only methods hardly move.
+- **The portfolio report's returns include the income where it is known** (phase 11.1). Risk
+  and the diversification checks read returns, while valuation keeps the market prices.
+  - **What the owner can give, per fund:** a total-return series, or the distributions (ex-date
+    and gross amount per unit). The prices are then adjusted with
+    {py:func}`qrlab.core.distribution_adjusted`: each period's return is
+    $(P_t + D_t)/P_{t-1} - 1$.
+  - **Otherwise the price is used.** It already includes the income for a `total_return`
+    price file, an accumulating fund (the income stays in the fund) and an ETC (it pays none).
+  - **Every other position is named** in the notice, with the reason: a distributing fund, a
+    fund of unknown policy, a stock, a bond. A NAV is treated like a price, because it falls
+    by each distribution.
+  - **With risk,** the report and `return_sources.csv` show the source of each position's
+    returns.
 - **Tracking needs income on both sides.** {py:func}`qrlab.lookthrough.tracking_difference`
   and {py:func}`qrlab.lookthrough.tracking_error` accept a fund series only if it is NAV or
   total return, and an index series only if it is total return. A price-only fund series
@@ -73,6 +86,13 @@ gap is the dividend, not tracking.
   `test_the_declaration_is_required`, `test_the_declaration_labels_the_data_and_changes_no_number`
   (same tables and scalars with either declaration; the notice differs by the one sentence),
   `test_no_position_returns_no_price_sentence`.
+- `tests/unit/core/test_distribution_adjusted.py`: the hand examples, the cross-check against
+  a cumulative product and every refused input.
+- `tests/unit/experiments/test_return_sources.py`: one test per row of the rule.
+- `tests/unit/experiments/test_portfolio_report_risk.py`: `test_distributions_by_hand`,
+  `test_a_total_return_file_gives_the_same_returns`,
+  `test_a_distributing_fund_without_income_is_named` (price and NAV),
+  `test_the_note_is_given_for_the_checks_alone`.
 - `tests/unit/data/test_user_csv.py`: `test_column_spec_validation`,
   `test_config_with_unknown_or_missing_keys_raises`.
 - `tests/unit/checks/test_checks_library.py`: `test_etf_shares_with_unknown_fields`,

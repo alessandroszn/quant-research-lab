@@ -31,7 +31,7 @@ from qrlab.reporting.formatting import (
 )
 from qrlab.reporting.html import Figure, Report, Section, render_html, write_report
 from qrlab.reporting.labels import LABELS, label
-from qrlab.reporting.portfolio_report import RiskFreeSummary, build_portfolio_report
+from qrlab.reporting.portfolio_report import ReturnSource, RiskFreeSummary, build_portfolio_report
 from qrlab.reporting.tables import Table
 
 __all__ = [
@@ -43,6 +43,7 @@ __all__ = [
     "Language",
     "NumberStyle",
     "Report",
+    "ReturnSource",
     "RiskFreeSummary",
     "Section",
     "Table",
