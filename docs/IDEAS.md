@@ -17,23 +17,13 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Original purchase FX rate on transfers in | 8.8 | A foreign fund's original cost is converted at the transfer date's rate; the rates of the original purchases would give the exact euro cost. |
 | Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |
 | Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
-| International daily factors | 2.2 `stats` | French publishes daily Developed and Europe factors; only monthly and annual are parsed. |
-| Fama-MacBeth regressions | 2.2 `stats` | Cross-sectional asset pricing tests, needed for the factor-zoo study (5.3). |
-| PDF export of reports | 2.3 `reporting` | Roadmap mentions HTML/PDF; HTML only in v1. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |
-| Total-return series for distributing funds | 8.7 | A total-return file per fund, used by the diversification checks and the report's risk, so that a distributing fund's returns include its distributions. |
 | Reconciliation with a broker export | 8.1, 8.8 | The old 8.1: run the report on a broker export and reconcile value, cash and realised gains with the broker's statements, once such an export exists. |
 | Price fetcher for a licensed API | 8.8 | Automatic fund prices from an API with the user's own key, with its terms recorded; no free source with clear terms was found. |
-| Italian country names | 8.2c | A full table of Italian country names in `qrlab.instruments.countries`, so that iShares' Italian holdings files need no `country_values` list per fund. |
 | Germany in detail (the old 9.4) | 9 | Abgeltungsteuer with the solidarity surcharge (church tax optional); Teilfreistellung by fund type (a new instrument field); the yearly Vorabpauschale with each year's base rate; the Sparer-Pauschbetrag and the two loss pots; FIFO cost basis next to average cost. 20–30 h. The configurable model (9.3) is the first view meanwhile. |
 | Swiss treaty relief and more | 9.2 | Relief for foreign withholding tax (DA-1) and the US additional withholding; real-estate funds (LIFD art. 20 cpv. 1 lett. e); pillar 3a; reports in German and French; reading the ESTV price list (ICTax) automatically, after its terms are checked. |
-| Income tax in the projection kind | 9.2 | `income_tax_rate` and `taxable_yield` in the standalone `projection` kind, as in the report's projection. |
-| Loss rules in configs | 8.6b | `[parameters]` keys for `qrlab.simulation.LossRules` in the backtest, projection and report kinds; today the rules are a library option only. |
-| Italian taxes on income and wealth | 8.6 | Recompute dividend and coupon taxes (with foreign withholding and treaties); stamp duty and IVAFE; foreign currency as redditi diversi. |
-| Benchmark series in the portfolio report | 8.5 | The relative checks (beta, tracking error against a benchmark) need a benchmark input; with it, beta on excess returns of the €STR. |
+| Italian taxes on income | 8.6 | Recompute dividend and coupon taxes (with foreign withholding and treaties); foreign currency as redditi diversi. Stamp duty and IVAFE are phase 11.3. |
 | Currency model in projections | 8.4 | Foreign assets and cash are projected in the base currency; their stated return and volatility must include the currency risk. |
-| VaR backtest in the portfolio report | 8.3 | The `risk_report` kind has Kupiec and Christoffersen tests; the report's risk section is descriptive only. |
-| Factor proxies in the portfolio report | 8.3 | Betas for positions without their own history, so factor shocks and older crises cover them (as `scenario_analysis` does). |
 | Duplicated exposure by name | 8.2 | `duplicated_exposure` matches securities by ISIN only; files without ISINs (some issuers) could use the normalised names already used for overlap, labelled approximate. |
 | Fund-of-funds look-through | 2.5 `lookthrough` | A fund held inside a fund is one security; a second level needs that fund's holdings. |
 | Sector for direct positions | 2.5 `lookthrough` | Master data has no sector field, so direct stocks show an unknown sector. |
@@ -55,18 +45,10 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Karnosky-Singer currency attribution | 4.4 `attribution` | Forward premia and hedging costs need interest rates per currency. |
 | Multi-period currency attribution | 4.4 `attribution` | Currency effects are one period; linking them needs a stated convention. |
 | Other linking methods (Menchero, Frongello) | 4.4 `attribution` | Carino is one convention; others give different splits of the same total. |
-| Studentized bootstrap for Sharpe differences | 5.1 inference | Ledoit-Wolf (2008) also propose a studentized circular-block bootstrap with better size in small samples. |
-| Romano-Wolf stepdown | 5.1 inference | Family-wise error control that uses the dependence between strategies, for the factor-zoo study. |
 | `qrlab fetch` | 5.2 `experiments` | An explicit download step into the raw store (Ken French, ECB), kept separate from runs. |
 | Trading costs of anomalies | 5.3 study 3 | Chen and Velikov (2023) estimate effective spreads; net-of-cost survival of the factor zoo needs their cost data. |
-| Time effects in the decay regression | 5.3 study 3 | Month fixed effects or a time trend, to separate publication from a general decline of anomaly returns (McLean and Pontiff's robustness check). |
-| Form editor for experiment parameters | 6.1 app | A typed form per kind instead of the TOML editor; needs parameter schemas in the kinds. |
-| Cancelling runs and a run queue | 6.1 app | The runner has no cancellation hook; long studies cannot be stopped from the app. |
-| Interactive charts in the app | 6.1 app | Today the app shows the PNG figures the runner writes. |
 | Return kind carried by the data | 6.3b methodology | Metrics assume simple returns by contract; a series that carries its `ReturnKind` would catch log returns passed by mistake. |
 | Code signing of the Windows build | 6.2 build | Removes the SmartScreen warning; needs a paid certificate or Azure Trusted Signing. |
 | macOS build | 6.2 build | A PyInstaller `.app` and a disk image, built on a macOS runner with the same source-versus-frozen check. |
-| App icon | 6.2 build | The Windows build uses PyInstaller's default icon. |
 | Rebalancing with contributions | 5.3 study 4 | Monthly savings can rebalance without selling (cash-flow rebalancing), which avoids realising gains under Italian tax. |
 | Hedged equity and loss carry-forward in study 4 | 5.3 study 4 | EUR-hedged equity (needs USD and EUR short rates) and the four-year carry-forward of capital losses (the engine has it since 8.6b, as `LossRules`). |
-| Anomalies by category | 5.3 study 3 | Decay by data type (accounting, price, analyst) or by economic category, with the same panel regression. |
