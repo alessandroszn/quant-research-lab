@@ -61,6 +61,7 @@ def _mapping(**changes: object) -> CsvMapping:
         sheet=None,
         skip_rows=0,
         value_affixes=(),
+        missing_tokens=(),
     )
     return replace(base, **changes)  # type: ignore[arg-type]
 

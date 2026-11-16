@@ -53,6 +53,7 @@ MAPPING = """\
 file_format = "csv"
 skip_rows = 0
 value_affixes = []
+missing_tokens = []
 date_column = "date"
 date_format = "%Y-%m-%d"
 delimiter = ","

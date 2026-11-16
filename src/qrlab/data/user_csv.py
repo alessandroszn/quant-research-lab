@@ -32,7 +32,13 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency
 from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Dataset, Provenance, Unit
-from qrlab.data.sheets import FileFormat, check_affixes, read_xlsx_rows, strip_affixes
+from qrlab.data.sheets import (
+    FileFormat,
+    check_affixes,
+    read_spreadsheetml_rows,
+    read_xlsx_rows,
+    strip_affixes,
+)
 from qrlab.data.store import RawStore, StoredFile
 
 __all__ = [
@@ -118,7 +124,7 @@ class CsvMapping:
         Header of each price column mapped to its :class:`ColumnSpec`. Unmapped columns are
         ignored and listed in the dataset notes.
     file_format
-        CSV or xlsx (phase 8.2b).
+        CSV or xlsx (phase 8.2b), or an XML spreadsheet (SpreadsheetML, phase 8.2c).
     sheet
         Name of the sheet to read in an xlsx file; ``None`` for a CSV file.
     skip_rows
@@ -126,6 +132,9 @@ class CsvMapping:
     value_affixes
         Symbols written next to numbers and removed before reading them, e.g. ``("$",)``; any
         other character still raises.
+    missing_tokens
+        Cell values that mean "no price", besides an empty cell (always missing), e.g.
+        ``("--",)`` (phase 8.2c). They become NaN, never filled.
     """
 
     date_column: str
@@ -141,6 +150,7 @@ class CsvMapping:
     sheet: str | None
     skip_rows: int
     value_affixes: tuple[str, ...]
+    missing_tokens: tuple[str, ...]
 
     def __post_init__(self) -> None:
         """Validate the mapping as a whole."""
@@ -149,13 +159,18 @@ class CsvMapping:
         if type(self.skip_rows) is not int or self.skip_rows < 0:
             raise ValidationError(f"skip_rows must be a non-negative int, got {self.skip_rows!r}")
         check_affixes(self.value_affixes)
+        tokens: object = self.missing_tokens
+        if not isinstance(tokens, tuple) or not all(isinstance(t, str) for t in tokens):
+            raise ValidationError(f"missing_tokens must be a list of text, got {tokens!r}")
         if self.decimal_separator not in _DECIMALS:
             raise ValidationError(
                 f"decimal_separator must be '.' or ',', got {self.decimal_separator!r}"
             )
-        if self.file_format is FileFormat.XLSX:
+        if self.file_format is not FileFormat.CSV:
             if not isinstance(self.sheet, str) or self.delimiter is not None or self.encoding:
-                raise ValidationError("an xlsx mapping needs a sheet and no delimiter or encoding")
+                raise ValidationError(
+                    "an xlsx or spreadsheetml mapping needs a sheet and no delimiter or encoding"
+                )
         else:
             if self.sheet is not None:
                 raise ValidationError("a CSV mapping has no sheet")
@@ -257,8 +272,12 @@ def parse_price_csv(content: bytes, provenance: Provenance, mapping: CsvMapping)
     notes.append("Empty cells kept as NaN; no forward fill.")
     if mapping.file_format is FileFormat.XLSX:
         notes.append(f"Read sheet {mapping.sheet!r} of an xlsx workbook.")
+    elif mapping.file_format is FileFormat.SPREADSHEETML:
+        notes.append(f"Read sheet {mapping.sheet!r} of an XML spreadsheet (SpreadsheetML).")
     if mapping.value_affixes:
         notes.append(f"Symbols removed from numbers: {list(mapping.value_affixes)}.")
+    if mapping.missing_tokens:
+        notes.append(f"Cells equal to {list(mapping.missing_tokens)} treated as unknown.")
     dataset = Dataset(
         data=frame,
         provenance=provenance,
@@ -287,7 +306,7 @@ def load_csv_mapping(path: Path) -> CsvMapping:
     except ValueError:
         raise ValidationError(f"{path}: unknown file_format {raw['file_format']!r}") from None
     expected = {
-        "file_format", "skip_rows", "value_affixes", "date_column", "date_format",
+        "file_format", "skip_rows", "value_affixes", "missing_tokens", "date_column", "date_format",
         "decimal_separator", "thousands_separator", "currency", "frequency", "columns",
     }  # fmt: skip
     expected |= {"delimiter", "encoding"} if file_format is FileFormat.CSV else {"sheet"}
@@ -320,6 +339,9 @@ def load_csv_mapping(path: Path) -> CsvMapping:
         sheet=raw.get("sheet"),
         skip_rows=raw["skip_rows"],
         value_affixes=check_affixes(raw["value_affixes"]),
+        missing_tokens=tuple(raw["missing_tokens"])
+        if isinstance(raw["missing_tokens"], list)
+        else raw["missing_tokens"],
     )
 
 
@@ -357,6 +379,10 @@ def _price_rows(content: bytes, mapping: CsvMapping) -> list[tuple[int, list[obj
     """Return the header and the non-empty rows after the preamble, with their line numbers."""
     if mapping.file_format is FileFormat.XLSX:
         body = read_xlsx_rows(content, sheet=str(mapping.sheet), skip_rows=mapping.skip_rows)
+    elif mapping.file_format is FileFormat.SPREADSHEETML:
+        body = read_spreadsheetml_rows(
+            content, sheet=str(mapping.sheet), skip_rows=mapping.skip_rows
+        )
     else:
         try:
             text = content.decode(str(mapping.encoding))
@@ -465,6 +491,8 @@ def _normalised(raw: str, decimal: str, thousands: str | None, line: int) -> str
 
 
 def _parse_price(raw: object, mapping: CsvMapping, line: int) -> float:
+    if isinstance(raw, str) and raw.strip() in mapping.missing_tokens:
+        return float("nan")
     if isinstance(raw, int | float) and not isinstance(raw, bool):
         value = float(raw)  # a numeric cell of an xlsx sheet
     else:

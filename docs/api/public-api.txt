@@ -115,7 +115,7 @@ qrlab.core.validate_series  function(obj: 'pd.Series', *, nan_policy: 'NanPolicy
 qrlab.core.wealth_index  function(returns: '_T', *, kind: 'ReturnKind', initial: 'float') -> '_T'
 qrlab.core.weekday_calendar  function() -> 'BusinessCalendar'
 qrlab.data.ColumnSpec  class(instrument: 'str', price_type: 'PriceType') -> None
-qrlab.data.CsvMapping  class(date_column: 'str', date_format: 'str', delimiter: 'str | None', decimal_separator: 'str', thousands_separator: 'str | None', encoding: 'str | None', currency: 'Currency', frequency: 'Frequency', columns: 'Mapping[str, ColumnSpec]', file_format: 'FileFormat', sheet: 'str | None', skip_rows: 'int', value_affixes: 'tuple[str, ...]') -> None
+qrlab.data.CsvMapping  class(date_column: 'str', date_format: 'str', delimiter: 'str | None', decimal_separator: 'str', thousands_separator: 'str | None', encoding: 'str | None', currency: 'Currency', frequency: 'Frequency', columns: 'Mapping[str, ColumnSpec]', file_format: 'FileFormat', sheet: 'str | None', skip_rows: 'int', value_affixes: 'tuple[str, ...]', missing_tokens: 'tuple[str, ...]') -> None
 qrlab.data.DataNotFoundError  exception(inherited)
 qrlab.data.Dataset  class(data: 'pd.DataFrame', provenance: 'Provenance', frequency: 'Frequency', unit: 'Unit', return_kind: 'ReturnKind | None', currency: 'Currency | None', availability: 'str', notes: 'tuple[str, ...]' = <factory>, available_from: 'pd.Series | None' = None, status: 'pd.Series | None' = None) -> None
 qrlab.data.ECB_SERIES  constant mappingproxy
@@ -125,6 +125,7 @@ qrlab.data.Fetcher.fetch  method(url: 'str') -> 'bytes'
 qrlab.data.FileFormat  enum
 qrlab.data.FileFormat.CSV  member = 'csv'
 qrlab.data.FileFormat.XLSX  member = 'xlsx'
+qrlab.data.FileFormat.SPREADSHEETML  member = 'spreadsheetml'
 qrlab.data.IntegrityError  exception(inherited)
 qrlab.data.KEN_FRENCH_DATASETS  constant mappingproxy
 qrlab.data.OSAP_FILES  constant mappingproxy
@@ -169,6 +170,7 @@ qrlab.data.parse_long_short_returns  function(content: 'bytes', provenance: 'Pro
 qrlab.data.parse_price_csv  function(content: 'bytes', provenance: 'Provenance', mapping: 'CsvMapping') -> 'PriceData'
 qrlab.data.parse_signal_doc  function(content: 'bytes', provenance: 'Provenance') -> 'pd.DataFrame'
 qrlab.data.parse_yield_curve  function(content: 'bytes', provenance: 'Provenance') -> 'Dataset'
+qrlab.data.read_spreadsheetml_rows  function(content: 'bytes', *, sheet: 'str', skip_rows: 'int') -> 'list[list[object]]'
 qrlab.data.read_xlsx_rows  function(content: 'bytes', *, sheet: 'str', skip_rows: 'int') -> 'list[list[object]]'
 qrlab.experiments.ExperimentConfig  class(path: 'Path', name: 'str', kind: 'str', hypothesis: 'str', seed: 'int | None', inputs: 'Mapping[str, Path]', given_inputs: 'Mapping[str, str]', parameters: 'Mapping[str, object]', output_dir: 'Path', raw: 'Mapping[str, object]', hash: 'str', input_groups: 'frozenset[str]' = frozenset()) -> None
 qrlab.experiments.ExperimentConfig.input_groups  attribute frozenset = []
@@ -226,6 +228,7 @@ qrlab.instruments.HoldingsCsvMapping  class(skip_rows: 'int', delimiter: 'str | 
 qrlab.instruments.HoldingsFileFormat  enum
 qrlab.instruments.HoldingsFileFormat.CSV  member = 'csv'
 qrlab.instruments.HoldingsFileFormat.XLSX  member = 'xlsx'
+qrlab.instruments.HoldingsFileFormat.SPREADSHEETML  member = 'spreadsheetml'
 qrlab.instruments.HoldingsSnapshot  class(fund: 'Isin', as_of: 'date', holdings: 'pd.DataFrame', provenance: 'Provenance', weight_basis: 'str', sector_taxonomy: 'str | None', notes: 'tuple[str, ...]') -> None
 qrlab.instruments.INSTRUMENT_FIELDS  constant tuple = ['isin', 'name', 'instrument_type', 'asset_class', 'currency', 'as_of', 'domicile', 'replication', 'distribution', 'ter', 'benchmark', 'hedged_to', 'inception', 'fund_size', 'source']
 qrlab.instruments.Instrument  class(isin: 'Isin', name: 'str', instrument_type: 'InstrumentType', asset_class: 'AssetClass', currency: 'Currency', as_of: 'date', domicile: 'str | None', replication: 'Replication | None', distribution: 'Distribution | None', ter: 'Decimal | None', benchmark: 'str | None', hedged_to: 'Currency | None', inception: 'date | None', fund_size: 'Money | None', source: 'str') -> None

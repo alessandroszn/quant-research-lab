@@ -6,6 +6,7 @@
 file_format = "csv"          # "csv", or "xlsx" with sheet = "..." instead of delimiter and encoding
 skip_rows = 0                # lines before the header (an issuer's preamble)
 value_affixes = []           # symbols next to numbers to remove, e.g. ["$"] or ["€"]
+missing_tokens = []        # cell values that mean "no price", e.g. ["--"]
 date_column = "Data"
 date_format = "%d/%m/%Y"
 delimiter = ";"

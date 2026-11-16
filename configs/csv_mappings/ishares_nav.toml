@@ -1,0 +1,30 @@
+# Mapping for the NAV history of an iShares UCITS ETF, from the fund-data file (phase 8.2c).
+#
+# The file: "Scarica" next to the fund's name on its page of ishares.com/it (served as .xls).
+# It is not an Excel file but an XML Spreadsheet 2003 (SpreadsheetML), so file_format is
+# "spreadsheetml". Downloaded by you for your own analysis; keep it under data/ (see
+# ishares_holdings_it.toml about the website's terms).
+#
+# Layout seen on 2026-11-16 (iShares Core MSCI World, SWDA): sheet "Storico", header
+# "Al, Currency, NAV, Titoli in emissione, Asset netti, ...", one row per day, newest first.
+# Dates are text ("13/11/2026"); NAVs are numeric cells, in the share class's currency (the
+# "Currency" column: USD for SWDA). State that currency below.
+#
+# REPLACE the instrument below (a made-up ISIN) with your fund's ISIN, as in instruments.toml,
+# and the currency with your share class's.
+
+file_format = "spreadsheetml"
+sheet = "Storico"
+skip_rows = 0
+date_column = "Al"
+date_format = "%d/%m/%Y"
+decimal_separator = "."
+thousands_separator = ""
+value_affixes = []
+missing_tokens = ["--"]   # a day without a NAV is written "--"
+currency = "USD"
+frequency = "daily"
+
+[columns."NAV"]
+instrument = "IE0000000012"
+price_type = "nav"

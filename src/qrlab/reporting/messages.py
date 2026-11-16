@@ -248,6 +248,11 @@ _ENTRIES: tuple[tuple[str, str, Mapping[int, Mapping[str, str]]], ...] = (
         {},
     ),
     (r"Read sheet (.+) of an xlsx workbook\.", "Letto il foglio {0} di una cartella xlsx.", {}),
+    (
+        r"Read sheet (.+) of an XML spreadsheet \(SpreadsheetML\)\.",
+        "Letto il foglio {0} di un foglio di calcolo XML (SpreadsheetML).",
+        {},
+    ),
     (r"Symbols removed from numbers: (.+)\.", "Simboli rimossi dai numeri: {0}.", {}),
     # --- fixed phrases in measurement details ------------------------------------------
     (

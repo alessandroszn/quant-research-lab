@@ -99,6 +99,7 @@ def main() -> None:
             sheet=None,
             skip_rows=0,
             value_affixes=(),
+            missing_tokens=(),
         )
         prices = parse_price_csv(store.read(stored), stored.provenance, mapping).dataset
 
