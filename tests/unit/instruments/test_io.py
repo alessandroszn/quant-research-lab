@@ -281,17 +281,16 @@ def test_minimal_file_without_trailer_or_extra_columns() -> None:
     [
         ({"decimal_separator": ";"}, "decimal_separator"),
         ({"delimiter": ";", "decimal_separator": ",", "thousands_separator": "."}, None),
-        (
-            {"delimiter": ",", "decimal_separator": ",", "thousands_separator": "."},
-            "decimal separator",
-        ),
+        # A comma delimiter with comma decimals is allowed since 8.2c: numbers are quoted, and
+        # an unquoted one changes the field count, which is rejected per row.
+        ({"delimiter": ",", "decimal_separator": ",", "thousands_separator": "."}, None),
         ({"weight_unit": "percent"}, "WeightUnit"),
     ],
 )
 def test_more_mapping_validation(changes: dict[str, object], match: str | None) -> None:
     base = load_holdings_mapping(HOLDINGS_MAPPING)
     if match is None:
-        assert replace(base, **changes).delimiter == ";"  # type: ignore[arg-type]
+        assert replace(base, **changes).delimiter == changes["delimiter"]  # type: ignore[arg-type]
     else:
         with pytest.raises(ValidationError, match=match):
             replace(base, **changes)  # type: ignore[arg-type]

@@ -296,7 +296,7 @@ def test_mapping_fields_are_checked() -> None:
         replace(mapping, file_format="xlsx")  # type: ignore[arg-type]
     with pytest.raises(ValidationError, match="skip_rows must be a non-negative int"):
         replace(mapping, skip_rows=-1)
-    with pytest.raises(ValidationError, match="an xlsx mapping needs a sheet"):
+    with pytest.raises(ValidationError, match="an xlsx or spreadsheetml mapping needs a sheet"):
         replace(mapping, sheet=None)
     with pytest.raises(ValidationError, match="a CSV mapping has no sheet"):
         replace(mapping, file_format=FileFormat.CSV, delimiter=",", encoding="utf-8")

@@ -52,7 +52,7 @@ The decisions, read on 2026-11-15:
 | Issuer | Terms | Decision |
 |---|---|---|
 | Vanguard (Europe) | The Irish/Dutch and Swiss websites give a licence "to view, store, download and print" pages for personal, informational and non-commercial use; repeated automated access is forbidden. | Mappings for the holdings and price-history exports (phase 8.2b): `vanguard_holdings.toml`, `vanguard_prices_market_eur.toml`, `vanguard_prices_nav_usd.toml`. |
-| iShares (BlackRock), Italian website | The website is for "personal and internal use", but any copy of information or data needs BlackRock's prior approval, and copying and distribution are forbidden. Downloading for personal use is not expressly allowed. | **No mapping** until the terms are clarified with BlackRock. A file you download yourself can still be read with a mapping you write. |
+| iShares (BlackRock), Italian website | The website is for "personal and internal use", but any copy of information or data needs BlackRock's prior approval, and copying and distribution are forbidden. Downloading for personal use is not expressly allowed. | **The owner's decision of 2026-11-16:** go ahead anyway, with files downloaded by hand for personal analysis (phase 8.2c). Mappings: `ishares_holdings_it.toml`, `ishares_nav.toml`. qrlab still never downloads from iShares and never redistributes its data; whether the terms allow your use is your call. |
 
 **Exchange prices** (Borsa Italiana, Xetra): no free history download with clear terms was
 found, so none is added. A fund's prices come from its issuer's NAV history, downloaded by

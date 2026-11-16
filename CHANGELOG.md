@@ -8,6 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **iShares files as published** (phase 8.2c), on the owner's decision about the website's
+  terms. There are two committed mappings:
+  - `ishares_holdings_it.toml`, for the holdings CSV of the Italian website, with Italian
+    numbers and country names listed explicitly;
+  - `ishares_nav.toml`, for the NAV history of the fund-data file.
+- **XML spreadsheets** (SpreadsheetML 2003, which iShares serves as `.xls`) are a third
+  `file_format`, `"spreadsheetml"`, for price and holdings mappings
+  (`qrlab.data.read_spreadsheetml_rows`). They are read with the standard library, with no
+  new dependency. A file with a DOCTYPE or an entity declaration is refused.
 - **A configurable tax model for other countries** (phase 9.3), `country = "custom"` in
   `[parameters.tax]`, from `qrlab.tax.custom`.
   - **What you state:**
@@ -175,6 +184,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- **Price mappings need `missing_tokens`** (phase 8.2c): cell values that mean "no price",
+  besides an empty cell. Add `missing_tokens = []` to an existing price mapping.
+- **Holdings mappings may use the same character as delimiter and decimal separator** (phase
+  8.2c), because numbers are quoted. An unquoted one changes the field count and is rejected
+  per row.
 - **`[parameters.tax]` needs `country`** (phase 9.1): add `country = "it"` to an existing
   Italian tax table. A missing or unknown country raises with the list of countries.
 - **`build_portfolio_report(tax=...)` takes a `TaxReport`** instead of a `TaxPosition`. Use

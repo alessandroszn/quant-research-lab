@@ -44,7 +44,7 @@ from qrlab.data.open_asset_pricing import (
 )
 from qrlab.data.open_asset_pricing import REVISION as OSAP_REVISION
 from qrlab.data.provenance import Dataset, Provenance, Unit
-from qrlab.data.sheets import FileFormat, read_xlsx_rows
+from qrlab.data.sheets import FileFormat, read_spreadsheetml_rows, read_xlsx_rows
 from qrlab.data.store import RawStore, StoredFile, download
 from qrlab.data.user_csv import (
     ColumnSpec,
@@ -94,5 +94,6 @@ __all__ = [
     "parse_price_csv",
     "parse_signal_doc",
     "parse_yield_curve",
+    "read_spreadsheetml_rows",
     "read_xlsx_rows",
 ]

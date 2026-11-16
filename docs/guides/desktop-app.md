@@ -93,6 +93,22 @@ unchanged, with its provenance. The app never downloads them itself (see
    with `as_of` set to the date in the file's preamble ("As at …"). The price mapping goes in
    `prices_mapping`.
 
+**An iShares fund, step by step** (Italian website; see {doc}`data-sources` about its terms).
+
+1. **Download** two files from the fund's page on ishares.com/it:
+   - *Informazioni dettagliate sulle partecipazioni e dati analitici*, the holdings CSV;
+   - *Scarica*, next to the fund's name, the fund-data file (`.xls`, really an XML
+     spreadsheet, with the NAV history).
+2. **Copy `configs/csv_mappings/ishares_nav.toml`** into your workspace. Replace the made-up
+   ISIN with your fund's, and the currency with your share class's.
+3. **In the report config:**
+   - `ishares_holdings_it.toml` is the fund's `holdings_mapping`, with `as_of` set to the date
+     on the CSV's first line;
+   - the NAV mapping goes in `prices_mapping`.
+
+   A country name the mapping does not list stops the run with its line: add it to the
+   mapping's `country_values`.
+
 ## Things to know
 
 - **One run at a time, and runs cannot be cancelled.** The window stays responsive and shows

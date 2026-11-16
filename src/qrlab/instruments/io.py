@@ -27,7 +27,7 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency, Money
 from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Provenance
-from qrlab.data.sheets import check_affixes, read_xlsx_rows
+from qrlab.data.sheets import check_affixes, read_spreadsheetml_rows, read_xlsx_rows
 from qrlab.data.user_csv import parse_number
 from qrlab.instruments.countries import country_code
 from qrlab.instruments.holdings import HOLDING_COLUMNS, HoldingsSnapshot
@@ -210,6 +210,7 @@ class HoldingsFileFormat(Enum):
 
     CSV = "csv"
     XLSX = "xlsx"  # an Excel workbook, read with openpyxl
+    SPREADSHEETML = "spreadsheetml"  # an XML Spreadsheet 2003 (phase 8.2c)
 
 
 class CountryFormat(Enum):
@@ -297,7 +298,7 @@ class HoldingsCsvMapping:
             self._check_csv()
         else:
             if not isinstance(self.sheet, str) or not self.sheet.strip():
-                raise ValidationError("an xlsx mapping needs a sheet name")
+                raise ValidationError("an xlsx or spreadsheetml mapping needs a sheet name")
             if self.delimiter is not None or self.encoding is not None:
                 raise ValidationError("delimiter and encoding are only for csv files")
         if not isinstance(self.weight_unit, WeightUnit):
@@ -335,10 +336,9 @@ class HoldingsCsvMapping:
             raise ValidationError("sheet is only for xlsx files")
         if self.delimiter not in _DELIMITERS:
             raise ValidationError(f"delimiter {self.delimiter!r} not in {sorted(_DELIMITERS)}")
-        # A thousands separator equal to the delimiter is fine when numbers are quoted
-        # ("1,234.50"); an unquoted one changes the field count and is rejected per row.
-        if self.delimiter == self.decimal_separator:
-            raise ValidationError("delimiter must differ from the decimal separator")
+        # A thousands or decimal separator equal to the delimiter is fine when numbers are
+        # quoted ("1,234.50", or iShares' Italian "5,82" with a comma delimiter, phase 8.2c);
+        # an unquoted one changes the field count and is rejected per row.
         if not isinstance(self.encoding, str):
             raise ValidationError(f"unknown encoding {self.encoding!r}")
         try:
@@ -367,6 +367,11 @@ def parse_holdings_file(
     if mapping.file_format is HoldingsFileFormat.XLSX:
         body = _xlsx_rows(content, mapping)
         source = f"Read sheet {mapping.sheet!r} of an xlsx workbook."
+    elif mapping.file_format is HoldingsFileFormat.SPREADSHEETML:
+        body = read_spreadsheetml_rows(
+            content, sheet=str(mapping.sheet), skip_rows=mapping.skip_rows
+        )
+        source = f"Read sheet {mapping.sheet!r} of an XML spreadsheet (SpreadsheetML)."
     else:
         body = _csv_rows(content, mapping)
         source = None
@@ -430,7 +435,9 @@ def parse_holdings_csv(
 ) -> HoldingsSnapshot:
     """Read a CSV holdings file; see :func:`parse_holdings_file`, which also reads xlsx."""
     if mapping.file_format is not HoldingsFileFormat.CSV:
-        raise ValidationError("this mapping reads an xlsx file: use parse_holdings_file")
+        raise ValidationError(
+            "this mapping reads an xlsx or XML spreadsheet: use parse_holdings_file"
+        )
     return parse_holdings_file(
         content,
         provenance,

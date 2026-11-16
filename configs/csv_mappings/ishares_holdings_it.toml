@@ -1,0 +1,70 @@
+# Mapping for the holdings CSV of an iShares UCITS equity ETF, Italian website (phase 8.2c).
+#
+# The file: "Informazioni dettagliate sulle partecipazioni e dati analitici" (Holdings section)
+# on the fund's page of ishares.com/it, downloaded by you for your own analysis. The website's
+# terms ask for BlackRock's approval for copies of its data; downloading and reading the file
+# is your decision (docs/guides/data-sources.md). Keep it under data/ (git-ignored): it is
+# never committed or redistributed.
+#
+# Layout seen on 2026-11-16 (iShares Core MSCI World, SWDA): UTF-8 with a byte-order mark;
+# line 1 'Al,"13/11/2026"' (the date of the holdings: state it as as_of in the report config),
+# line 2 a non-breaking space, line 3 the header; one row per holding; a non-breaking space at
+# the end. Italian numbers ("5,82", "8.737.131.990,62"). Weights have TWO decimals: holdings
+# below 0.005 % read as 0, and the weights sum to about 100 % give or take rounding. There is
+# no ISIN column, so holdings are keyed by name.
+#
+# Countries are Italian names. Those of this fund are listed below; a name not listed raises
+# with its line: add it with its ISO 3166-1 alpha-2 code.
+
+file_format = "csv"
+skip_rows = 2
+delimiter = ","
+encoding = "utf-8-sig"
+decimal_separator = ","
+thousands_separator = "."
+value_affixes = []
+weight_unit = "percent"
+missing_tokens = ["", "-"]
+asset_class = "column"
+country_format = "name"
+
+[columns]
+name = "Nome"
+weight = "Ponderazione (%)"
+country = "Area Geografica"
+sector = "Settore"
+currency = "Valuta di mercato"
+asset_class = "Asset Class"
+
+[asset_class_values]
+"Azionario" = "equity"
+"Contanti" = "cash"
+"Money Market" = "money_market"
+"Cash Collateral and Margins" = "cash"
+"Futures" = "other"
+
+[country_values]
+"Australia" = "AU"
+"Austria" = "AT"
+"Belgio" = "BE"
+"Canada" = "CA"
+"Danimarca" = "DK"
+"Finlandia" = "FI"
+"Francia" = "FR"
+"Germania" = "DE"
+"Giappone" = "JP"
+"Hong Kong" = "HK"
+"Irlanda" = "IE"
+"Israele" = "IL"
+"Italia" = "IT"
+"Norvegia" = "NO"
+"Nuova Zelanda" = "NZ"
+"Paesi Bassi" = "NL"
+"Portogallo" = "PT"
+"Regno unito" = "GB"
+"Singapore" = "SG"
+"Spagna" = "ES"
+"Stati Uniti" = "US"
+"Svezia" = "SE"
+"Svizzera" = "CH"
+"Unione Europea" = "unknown"   # a supranational line (e.g. a futures contract): no country
