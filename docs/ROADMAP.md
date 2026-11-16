@@ -57,7 +57,7 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 | 6 Product | desktop app, `.exe` and installer, docs, release | **M6 v1.0** | 110–150 |
 | 7 Gap closing | `periods_per_year` check, output notices, returns price type, currencies and look-through in the report kind | — (done) | 15–20 |
 | 8 Real portfolio | first real run, issuer holdings, risk, projection, risk-free rate, Italian tax, Italian report | **M8 Real portfolio** | 38–58 |
-| 9 Tax regimes | a common shape for tax regimes, Switzerland, a configurable model, Germany (optional) | **M9 Tax regimes** | 26–70 |
+| 9 Tax regimes | a common shape for tax regimes, Switzerland, a configurable model (Germany skipped) | **M9 Tax regimes** (done) | 26–40 |
 
 Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 is reached at M6; after
 it, each Level 8 phase is a `v1.N.0`, published in the weekly batches.
@@ -400,7 +400,7 @@ code, and checks its rules against the law in force, with sources.
 - Rates, loss offset and carry, exempt holding period and wealth tax, all stated; labelled as
   a simplified model, not a country's law.
 
-### 9.4 Germany (20–30 h, optional)
+### 9.4 Germany (20–30 h, optional) — skipped on 2026-11-16, in IDEAS
 - Abgeltungsteuer, Teilfreistellung, Vorabpauschale, Sparer-Pauschbetrag, loss pots and FIFO
   cost basis.
 
