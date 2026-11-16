@@ -75,7 +75,10 @@ A model you set up with:
 It is labelled everywhere as "a simplified model you configure, not a country's law". It
 covers a reasonable first view for any country not modelled in detail.
 
-### 9.4 Germany — 20–30 h (if you want an EU country in detail)
+### 9.4 Germany — 20–30 h (if you want an EU country in detail): skipped
+
+*Skipped on 2026-11-16: the configurable model (9.3) gives a first view, and Germany waits in
+`docs/IDEAS.md`.*
 
 - Abgeltungsteuer with the solidarity surcharge, and church tax as an option.
 - Teilfreistellung by fund type, which needs a new instrument field.
