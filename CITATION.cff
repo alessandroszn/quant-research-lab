@@ -11,7 +11,7 @@ authors:
   - family-names: Zanichelli
     given-names: Alessandro
 version: 1.0.0rc1
-date-released: 2026-11-13
+date-released: 2026-11-16
 license: BSD-3-Clause
 repository-code: "https://github.com/alessandroszn/quant-research-lab"
 url: "https://alessandroszn.github.io/quant-research-lab/"

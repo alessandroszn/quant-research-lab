@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.0.0rc1] - 2026-11-16
+
+Release candidate of version 1.0. It was prepared on 2026-11-13 for milestone M6 but not
+published; it now also holds Levels 7 to 10. It brings:
+
+- the desktop app, the Windows program and installer, a frozen public API with a
+  compatibility policy, the documentation site and the release automation (M6, phases 6.1 to
+  6.3c);
+- the working paper on the four studies (6.3d);
+- the gap closing of Level 7: frequency checks, output notices, the returns price type;
+- the report on a portfolio built in the app from public data, with its risk, projection and
+  Italian tax position (M8);
+- tax regimes for Switzerland and a configured country (M9);
+- the local Linux check and the audit before publication (10.1, 10.2).
+
+It is published to TestPyPI to check the release process; 1.0.0 follows with the same code if
+nothing is found. The entries for Levels 7 to 10 come first, then those for M6.
+
 ### Added
 
 - **The history audit reads the commits and tags too** (phase 10.2): author, committer and
@@ -309,10 +327,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
-- **Breaking for 1.0.0rc1 holdings mappings:** `country_format` and `file_format` are now
-  required, with `delimiter` and `encoding` for CSV and `sheet` for xlsx. Add
-  `file_format = "csv"` and `country_format = "iso_alpha2"` to keep the old behaviour. 1.0.0 is
-  not released yet.
+- **Breaking against the M6 code** (never published), **for holdings mappings:**
+  `country_format` and `file_format` are now required, with `delimiter` and `encoding` for CSV
+  and `sheet` for xlsx. Add `file_format = "csv"` and `country_format = "iso_alpha2"` to keep
+  the old behaviour. 1.0.0 is not released yet.
 - The report's overlap table has a new column, "Of which by name", and a note.
 - Look-through and tracking in the `portfolio_report` kind (phase 7.4b), all optional. Without
   them, the existing configs run with byte-identical outputs.
@@ -374,8 +392,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
-- **Breaking for 1.0.0rc1 configs:** the returns files of four kinds must declare whether
-  they include dividends (phase 7.3).
+- **Breaking against the M6 code** (never published), **for configs:** the returns files of
+  four kinds must declare whether they include dividends (phase 7.3).
   - **The new required key:** `returns_price_type` in `backtest`, `optimisation` and
     `risk_report`, and `position_returns_price_type` in `scenario_analysis`. A config without
     it fails validation and names the key.
@@ -429,19 +447,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `pyproject.toml`. It still runs for every release, on PRs that change the packaging, its
   workflow or `uv.lock`, and by hand. This saves Actions minutes: a run takes 6-7 minutes on
   Windows runners.
-
-## [1.0.0rc1] - 2026-11-13
-
-Release candidate of version 1.0 (milestone M6, phases 6.1 to 6.3c). It brings:
-
-- the desktop app;
-- the Windows program and installer;
-- a frozen public API with a compatibility policy;
-- the documentation site;
-- the release automation.
-
-It is published to TestPyPI to check the release process; 1.0.0 follows with the same code if
-nothing is found.
 
 ### Added
 

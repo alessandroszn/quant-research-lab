@@ -421,11 +421,14 @@ note, approved before any code.
 - The quality gate on Linux, Python 3.11 and 3.13, in a WSL Ubuntu installed by the owner (or
   CI, once the minutes return). Every failure fixed with a regression test.
 
-### 10.2 Ready to be read by others (4–8 h)
-- `scripts/audit_history.py` ends with `CLEAN`; README, roadmap, version, screenshots and the
+### 10.2 Ready to be read by others (4–8 h) — done
+- `scripts/audit_history.py` ends with `CLEAN` (one accepted exception, its own test file);
+  README, roadmap, version, screenshots and the
   data-sources table brought up to date; the not-advice notice checked everywhere.
 
-### 10.3 Release 1.0.0 (5–8 h)
+### 10.3 Release 1.0.0 (5–8 h) — in progress
+- The history rewritten with the `noreply` address and published in a new repository (the
+  old one stays private as an archive; design note 10.3).
 - As `docs/project/releasing.md`: the owner's one-time setup, `v1.0.0rc1` on TestPyPI, then
   `v1.0.0` on PyPI with the docs and the Windows installer.
 
