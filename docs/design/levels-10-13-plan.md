@@ -20,10 +20,11 @@ Total: 116–178 h. The items come from `docs/IDEAS.md`; those not listed here s
 
 ## Order and why
 
-1. **Publication first.** `main` is 115 commits past `v0.4.0` and none of them ran on Linux,
-   because the private repository's Actions minutes ran out on 2026-11-13. The batch grows
-   with every phase. A public repository runs standard GitHub-hosted runners at no cost, so
-   publishing also brings CI back for every later level. Nothing in it changes results.
+1. **Publication first.** `main` is 92 commits past the last green CI run (`e729101`,
+   2026-11-13), and none of them ran on Linux, because the private repository's Actions
+   minutes ran out that day. The batch grows with every phase. A public repository runs
+   standard GitHub-hosted runners at no cost, so publishing also brings CI back for every
+   later level. Nothing in it changes results.
 2. **Then the report (11),** because it is a matter of correctness, not polish: today the risk
    section of a distributing fund ignores its distributions.
 3. **Then the app (12),** which shows the report: better to polish it once the report is
@@ -190,7 +191,7 @@ These stay in `docs/IDEAS.md`:
 
 ## Risks
 
-- **The Linux check (10.1)** may find several failures at once, after 115 commits. Each one
+- **The Linux check (10.1)** may find several failures at once, after 92 commits. Each one
   gets its own fix and regression test; publication waits for all of them.
 - **Publishing is one-way.** Once public, the history is public. The audit (10.2) runs over
   every version of every file, not only the current tree.
