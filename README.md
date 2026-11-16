@@ -62,8 +62,11 @@ The figures are drawn from the study records by `scripts/readme_figures.py`.
 ## Install
 
 ```bash
-pip install "quant-research-lab[app,parquet]"
+pip install "quant-research-lab[app,parquet] @ https://github.com/alessandroszn/quant-research-lab/releases/download/v1.0.0/quant_research_lab-1.0.0-py3-none-any.whl"
 ```
+
+Version 1.0.0 is not on PyPI yet: the wheel comes from the GitHub release. A later version
+will be installable as `pip install quant-research-lab`.
 
 The extras:
 

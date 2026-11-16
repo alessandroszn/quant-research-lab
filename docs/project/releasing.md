@@ -1,6 +1,13 @@
 # Releasing
 
-How a version is released (design note 6.3c). The workflows do the building and checking; the
+How a version is released (design note 6.3c).
+
+```{note}
+1.0.0 went out on GitHub only (design note 10.3): the owner had no PyPI account yet, so the
+PyPI and TestPyPI steps below were skipped and the publish jobs were rejected. They apply once
+the accounts exist.
+```
+ The workflows do the building and checking; the
 steps that publish or change settings are done by the owner, on their own accounts.
 
 ## One-time setup (owner)
