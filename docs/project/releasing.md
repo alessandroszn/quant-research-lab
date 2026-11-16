@@ -13,11 +13,20 @@ steps that publish or change settings are done by the owner, on their own accoun
 
    The script scans every file version, every commit and every annotated tag in the history
    (author, committer and tagger e-mails, and messages). It prints only counts, paths and
-   commit hashes, never values. It must end with `CLEAN`, with one accepted exception: its own
-   test file, `tests/unit/scripts/test_audit_history.py`, whose documentation IBAN and invented
-   e-mail addresses exist to test it. The ISIN check is only as good as the folder given:
+   commit hashes, never values. It must end with `CLEAN`, with two accepted exceptions:
+   - its own test file, `tests/unit/scripts/test_audit_history.py`, whose documentation IBAN
+     and invented e-mail addresses exist to test it;
+   - design note 10.2, which quotes one of those invented addresses (on the reserved `.test`
+     domain).
+
+   The ISIN check is only as good as the folder given:
    point it at the folder that holds your real broker exports and holdings. The default is
    `data/`.
+
+   The history was rewritten once, on 2026-11-16, before the first publication (design note
+   10.3): the owner's personal e-mail address became the `noreply` one, and three personal
+   passages were replaced. Every commit kept its tree, except the 55 whose files held one of
+   those passages.
 2. **Make the repository public:** *Settings → General → Danger Zone → Change visibility*.
 3. **Create the protected environments** in *Settings → Environments*:
    - `testpypi`;

@@ -20,7 +20,7 @@ Total: 116–178 h. The items come from `docs/IDEAS.md`; those not listed here s
 
 ## Order and why
 
-1. **Publication first.** `main` is 92 commits past the last green CI run (`e729101`,
+1. **Publication first.** `main` is 92 commits past the last green CI run (`8250b47`,
    2026-11-13), and none of them ran on Linux, because the private repository's Actions
    minutes ran out that day. The batch grows with every phase. A public repository runs
    standard GitHub-hosted runners at no cost, so publishing also brings CI back for every

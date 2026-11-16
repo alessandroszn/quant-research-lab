@@ -6,7 +6,7 @@ before any result was seen: [`docs/design/5.3-study-4-rebalancing.md`](../design
 *Research analytics, not investment or tax advice. Index and constructed-bond returns stand in
 for ETFs.*
 
-*Re-run on 2026-11-13 from a clean checkout of commit 63f808a, with the same data: every
+*Re-run on 2026-11-13 from a clean checkout of commit f8ee46c, with the same data: every
 output was byte-identical.*
 
 ## 1. Question and hypotheses

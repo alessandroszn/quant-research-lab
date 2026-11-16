@@ -209,6 +209,11 @@ nothing is found. The entries for Levels 7 to 10 come first, then those for M6.
 
 ### Changed
 
+- **The history was rewritten before publication** (phase 10.3). Every commit and tag now
+  carries the owner's GitHub `noreply` address, three personal passages in old versions of
+  design notes 8.2, 8.6 and 8.7 are replaced by their current wording, and the subjects of the
+  66 pull-request merges read `Merge pull request N` without `#`. So every commit hash changed;
+  the commit the studies ran on is now `f8ee46c`, with the same files.
 - **`risk_report` writes a notice** (phase 10.2): "Risk estimates from past returns under the
   stated model. Future losses can be larger." followed by the not-advice line, in `NOTICE.txt`
   and the record. It was the only kind whose outputs never said they are not advice, because
@@ -427,7 +432,7 @@ nothing is found. The entries for Levels 7 to 10 come first, then those for M6.
 
 ### Changed
 
-- The four studies were re-run from a clean checkout of commit 63f808a, with the same data
+- The four studies were re-run from a clean checkout of commit f8ee46c, with the same data
   files and trial ledgers: all nine runs gave byte-identical outputs. The paper's reproducibility
   appendix now cites these records, and the reports note the re-run.
 

@@ -5,7 +5,7 @@ before any result was seen: [`docs/design/5.3-study-3-factor-zoo.md`](../design/
 
 *Research analytics, not investment advice. Gross long-short returns of paper portfolios.*
 
-*Re-run on 2026-11-13 from a clean checkout of commit 63f808a, with the same data: every
+*Re-run on 2026-11-13 from a clean checkout of commit f8ee46c, with the same data: every
 output was byte-identical.*
 
 Data: Chen, A. Y. and Zimmermann, T. (2022), *Open Source Cross-Sectional Asset Pricing*,

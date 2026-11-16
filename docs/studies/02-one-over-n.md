@@ -5,7 +5,7 @@ any result was seen: [`docs/design/5.3-study-2-one-over-n.md`](../design/5.3-stu
 
 *Research analytics, not investment advice. Past portfolio returns are not a forecast.*
 
-*Re-run on 2026-11-13 from a clean checkout of commit 63f808a, with the same data: every
+*Re-run on 2026-11-13 from a clean checkout of commit f8ee46c, with the same data: every
 output was byte-identical.*
 
 ## 1. Question and hypotheses
