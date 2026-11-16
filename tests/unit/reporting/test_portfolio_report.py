@@ -99,6 +99,7 @@ def test_sections_and_figures_structure() -> None:
         "Profit and loss breakdown",
         "Income and costs",
         "Charts",
+        "Benchmark",
         "Look-through",
         "Risk and stress tests",
         "Projection",
@@ -369,3 +370,37 @@ def test_every_transaction_kind_has_a_label() -> None:
     for language in Language:
         for kind in TransactionKind:
             assert label(f"kind_{kind.value}", language)
+
+
+# ------------------------------------------------------------------ benchmark (design note 11.2)
+def _benchmark(**changes: object) -> object:
+    from dataclasses import replace
+
+    from qrlab.core.money import Currency
+    from qrlab.reporting import BenchmarkSummary
+
+    base = BenchmarkSummary(
+        name="Example index", currency=Currency("USD"), window_start=D1, window_end=D3,
+        n_periods=3, portfolio_total=0.04, benchmark_total=0.03, tracking_error=None,
+        information_ratio=None, capm=None, on_excess=False,
+        reasons={"tracking_error": "too few", "information_ratio": "too few", "capm": "too few"},
+        carried=(("level", D2, D1), ("USD rate", D3, D2)),
+    )  # fmt: skip
+    return replace(base, **changes)  # type: ignore[arg-type]
+
+
+def test_benchmark_section_without_measures_says_why() -> None:
+    html = render_html(toy_report(Language.EN, benchmark=_benchmark()))
+    assert "Beta</td>" in html or "Beta<" in html
+    assert html.count("not available (too few)") == 3
+    assert "Benchmark: level" in html  # carried values are listed with the data
+    assert "Benchmark: USD rate" in html
+
+
+def test_benchmark_section_without_a_period() -> None:
+    summary = _benchmark(window_start=None, window_end=None, n_periods=0,
+                         portfolio_total=None, benchmark_total=None)  # fmt: skip
+    html = render_html(toy_report(Language.EN, benchmark=summary))
+    assert "There is no period between two valuation dates to compare." in html
+    with pytest.raises(ValidationError, match="both cumulative returns"):
+        toy_report(Language.EN, benchmark=_benchmark(portfolio_total=None))

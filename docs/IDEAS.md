@@ -19,6 +19,10 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Hashes of the wheel and sdist in `SHA256SUMS.txt` | 10.3 | The file lists only the two Windows files, with Windows line endings, so `sha256sum -c` fails on Linux. GitHub shows a SHA-256 for every release file; the wheel is now the install path, so the file should cover it too. |
 | Distributions from the issuers' files | 11.1 | The owner types the distributions or gives a total-return file. Reading them from issuer files needs each source's terms checked first. |
 | Base-currency returns in the diversification checks | 11.1 | They use each position's local-currency returns, while the risk section converts to the base currency. Which one the checks should measure is its own question. |
+| A composite or per-asset-class benchmark | 11.2 | The report takes one total-return series. A weighted benchmark needs its weights, rebalancing rule and dates stated. |
+| The `risk.beta` check on excess returns | 8.5, 11.2 | The check regresses plain returns (2.4); the report's section uses excess returns over the €STR when given. The checks have no risk-free series. |
+| The partial first day in the return checks | 11.2 | With `flow_timing = "start"` the TWR has a return on the first date, from a deposit to that day's close. The benchmark comparison leaves it out; the volatility, drawdown and other return checks still include it when there is no benchmark. |
+| Up and down capture in the report | 11.2 | `qrlab.metrics.up_capture` and `down_capture` exist; they would join the benchmark section. |
 | Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |
 | Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |

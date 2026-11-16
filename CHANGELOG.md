@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **A benchmark in the portfolio report** (phase 11.2): the optional `benchmark` input (one
+  total-return column) with its mapping and `[parameters.benchmark]` (`name`).
+  - **How it is valued:** in the base currency with the ECB rate of each valuation date.
+  - **What it is compared with:** the TWR, on the periods between two valuation dates.
+  - **The measures:** the cumulative returns always; with monthly returns also the tracking
+    error, the information ratio, and beta and alpha with their standard errors. These are on
+    excess returns over the €STR when an `estr` input is given.
+  - **The outputs:** a new "Benchmark" section in English and Italian, `benchmark.csv` and
+    the relative scalars. The `risk.beta` health check now applies.
+- `qrlab.reporting.BenchmarkSummary` and the optional `benchmark` input of
+  `build_portfolio_report`.
+
 - **Total returns in the portfolio report** (phase 11.1). Risk and the diversification checks
   read returns, which can now include the income a fund pays out; valuation keeps the market
   prices. Per fund, optionally:
@@ -33,6 +45,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   distribution. It now follows the distribution policy: it names distributing funds, funds of
   unknown policy, stocks and bonds, each with the reason. It is given whenever risk or a
   diversification check reads returns, not only with risk. No number changes.
+- **The report has a "Benchmark" section** after the charts (phase 11.2). Without a benchmark
+  it says that none was given.
 
 ## [1.0.0] - 2026-11-16
 

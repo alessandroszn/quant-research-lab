@@ -43,6 +43,7 @@ from qrlab.lookthrough.tracking import td_vs_ter, tracking_difference
 from qrlab.metrics.drawdown import drawdown_series, max_drawdown
 from qrlab.metrics.errors import UndefinedMetricError
 from qrlab.metrics.performance import SharpeEstimate, annualised_volatility
+from qrlab.metrics.relative import CapmEstimate
 from qrlab.portfolio.ledger import LedgerHistory, ToBase
 from qrlab.portfolio.performance import (
     FlowTiming,
@@ -85,10 +86,53 @@ from qrlab.tax.regime import (
     TaxTable,
 )
 
-__all__ = ["ReturnSource", "RiskFreeSummary", "build_portfolio_report"]
+__all__ = ["BenchmarkSummary", "ReturnSource", "RiskFreeSummary", "build_portfolio_report"]
 
 ONE_YEAR_DAYS = 365
 TOP_BUCKETS = 10
+
+
+@dataclass(frozen=True)
+class BenchmarkSummary:
+    """The portfolio against a benchmark over the TWR periods (design note 11.2).
+
+    Parameters
+    ----------
+    name
+        Name of the benchmark, as the owner gave it.
+    currency
+        Currency of the benchmark series (converted to the base currency with ECB rates).
+    window_start, window_end, n_periods
+        First and last date of the periods compared, and their number (``None``, ``None``
+        and 0 when there is no period).
+    portfolio_total, benchmark_total
+        Cumulative returns over the periods, or ``None`` without a period.
+    tracking_error, information_ratio
+        Annualised, from monthly periods, or ``None`` (see ``reasons``).
+    capm
+        Alpha and beta with their standard errors, or ``None`` (see ``reasons``).
+    on_excess
+        Whether ``capm`` regresses excess returns over the risk-free rate (else plain returns).
+    reasons
+        Why a measure is ``None``, by measure name (``"tracking_error"``,
+        ``"information_ratio"``, ``"capm"``).
+    carried
+        Benchmark levels and rates carried forward: ``(what, requested date, date used)``.
+    """
+
+    name: str
+    currency: Currency
+    window_start: date | None
+    window_end: date | None
+    n_periods: int
+    portfolio_total: float | None
+    benchmark_total: float | None
+    tracking_error: float | None
+    information_ratio: float | None
+    capm: CapmEstimate | None
+    on_excess: bool
+    reasons: Mapping[str, str]
+    carried: tuple[tuple[str, date, date], ...]
 
 
 class ReturnSource(Enum):
@@ -167,6 +211,7 @@ def build_portfolio_report(
     risk_free: RiskFreeSummary | None,
     tax: TaxReport | None,
     return_sources: Mapping[Isin, ReturnSource] | None = None,
+    benchmark: BenchmarkSummary | None = None,
 ) -> Report:
     """Build the portfolio report.
 
@@ -218,6 +263,9 @@ def build_portfolio_report(
     return_sources
         Which series each held position's returns use for risk (design note 11.1), shown as
         a table in the risk section; ``None`` shows none.
+    benchmark
+        The portfolio against a benchmark (design note 11.2), or ``None``: the report then says
+        that no benchmark was given.
     """
     if generated_at.utcoffset() is None:
         raise ValidationError("generated_at must be timezone-aware")
@@ -231,6 +279,7 @@ def build_portfolio_report(
         risk_free,
         tax,
         return_sources,
+        benchmark,
     ).build()  # fmt: skip
 
 
@@ -258,8 +307,10 @@ class _Builder:
         risk_free: RiskFreeSummary | None,
         tax: TaxReport | None,
         return_sources: Mapping[Isin, ReturnSource] | None,
+        benchmark: BenchmarkSummary | None,
     ) -> None:
         self.return_sources = return_sources
+        self.benchmark = benchmark
         self.risk_free = risk_free
         self.tax = tax
         self.name = name
@@ -325,6 +376,7 @@ class _Builder:
             self._pnl(),
             self._income_costs(),
             self._figures(flows, twr),
+            self._benchmark(),
             self._lookthrough(),
             self._risk(),
             self._projection(),
@@ -617,6 +669,11 @@ class _Builder:
             (currency.code, self.day(requested), self.day(used))
             for currency, requested, used in _fx_stale_uses(self.to_base)
         ]
+        if self.benchmark is not None:
+            carried += [
+                (self.t("benchmark_carried", what=what), self.day(requested), self.day(used))
+                for what, requested, used in self.benchmark.carried
+            ]
         carried_table = Table(
             self.t("carried_forward"),
             ("", self.t("requested_date"), self.t("used_date")),
@@ -631,6 +688,93 @@ class _Builder:
         return Section(
             self.t("data_assumptions"), paragraphs, (sources, assumptions, carried_table), ()
         )
+
+    def _benchmark(self) -> Section:
+        title = self.t("benchmark")
+        b = self.benchmark
+        if b is None:
+            return Section(title, (self.t("benchmark_none"),), (), ())
+        paragraphs = [
+            self.t(
+                "benchmark_intro",
+                name=b.name,
+                currency=b.currency.code,
+                base=self.history.base.code,
+            )
+        ]
+        if b.window_start is None or b.window_end is None:
+            paragraphs.append(self.t("benchmark_no_period"))
+            return Section(title, tuple(paragraphs), (), ())
+        paragraphs.append(
+            self.t(
+                "benchmark_window",
+                start=self.day(b.window_start),
+                end=self.day(b.window_end),
+                n=str(b.n_periods),
+            )
+        )
+        if b.portfolio_total is None or b.benchmark_total is None:
+            raise ValidationError("a benchmark window needs both cumulative returns")
+        rows: list[tuple[str, str]] = [
+            (self.t("benchmark_portfolio_total"), self.pct(b.portfolio_total)),
+            (self.t("benchmark_total"), self.pct(b.benchmark_total)),
+            (self.t("benchmark_difference"), self.pct(b.portfolio_total - b.benchmark_total)),
+        ]
+        number = self._number
+        rows.append(
+            (
+                self.t("tracking_error"),
+                self.t("not_available") if b.tracking_error is None else self.pct(b.tracking_error),
+            )
+        )
+        rows.append(
+            (
+                self.t("information_ratio"),
+                self.t("not_available")
+                if b.information_ratio is None
+                else number(b.information_ratio),
+            )
+        )
+        if b.capm is None:
+            rows.append((self.t("beta"), self.t("not_available")))
+        else:
+            fit = b.capm
+            rows += [
+                (
+                    self.t("beta_excess" if b.on_excess else "beta_plain"),
+                    self.t("with_se", value=number(fit.beta), se=number(fit.se_beta)),
+                ),
+                (
+                    self.t("alpha_annual"),
+                    self.t(
+                        "with_se",
+                        value=self.pct(fit.alpha_annualised),
+                        se=self.pct(fit.se_alpha_annualised),
+                    ),
+                ),
+                (self.t("r_squared"), number(fit.r_squared)),
+                (self.t("observations"), str(fit.n)),
+            ]
+        for measure in ("tracking_error", "information_ratio", "capm"):
+            if measure in b.reasons:
+                paragraphs.append(
+                    self.t(
+                        "benchmark_missing",
+                        measure=self.t(measure if measure != "capm" else "beta"),
+                        reason=translate(b.reasons[measure], self.language),
+                    )
+                )
+        table = Table(
+            self.t("benchmark_measures"),
+            ("", self.t("value")),
+            tuple(rows),
+            ("left", "right"),
+            (self.t("benchmark_conventions"),),
+        )
+        return Section(title, tuple(paragraphs), (table,), ())
+
+    def _number(self, value: float) -> str:
+        return format_number(value, 2, style=self.style)
 
     def _risk(self) -> Section:
         if self.risk is None:

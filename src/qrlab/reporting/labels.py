@@ -340,6 +340,39 @@ _EN = {
     "risk_var_es": "Value at risk and expected shortfall at {confidence}",
     "method": "Method",
     "var_note": "Positive numbers are losses. No method is 'the' VaR: compare them.",
+    "benchmark": "Benchmark",
+    "benchmark_none": "No benchmark was given for this report.",
+    "benchmark_intro": (
+        "Benchmark: {name}, a total-return series in {currency}, valued in {base} with the ECB "
+        "rate of each date."
+    ),
+    "benchmark_no_period": "There is no period between two valuation dates to compare.",
+    "benchmark_window": (
+        "The comparison uses the {n} periods between valuation dates from {start} to {end}; "
+        "a return on the first valuation date (from a deposit to that day's close) is left out."
+    ),
+    "benchmark_measures": "Portfolio against the benchmark",
+    "benchmark_portfolio_total": "Portfolio return over these periods",
+    "benchmark_total": "Benchmark return over these periods",
+    "benchmark_difference": "Difference (percentage points)",
+    "tracking_error": "Tracking error (annualised)",
+    "information_ratio": "Information ratio (annualised)",
+    "beta": "Beta",
+    "beta_excess": "Beta (on excess returns over the risk-free rate)",
+    "beta_plain": "Beta (on returns; no risk-free series given)",
+    "alpha_annual": "Alpha (annualised)",
+    "r_squared": "R squared",
+    "observations": "Observations",
+    "with_se": "{value} (standard error {se})",
+    "benchmark_missing": "{measure}: not available ({reason}).",
+    "benchmark_conventions": (
+        "Simple returns. Active return = portfolio return - benchmark return, per period. "
+        "Annualised from monthly returns with 12 and sqrt(12), which assumes no serial "
+        "correlation. Ordinary least squares with classical standard errors. Descriptive: a "
+        "short window says little about skill. A benchmark of another universe or a price "
+        "index would make these numbers meaningless."
+    ),
+    "benchmark_carried": "Benchmark: {what}",
     "return_sources": "Returns used for risk",
     "return_series": "Series",
     "income_in_returns": "Income paid out",
@@ -792,6 +825,41 @@ _IT = {
     "risk_var_es": "Value at risk ed expected shortfall al {confidence}",
     "method": "Metodo",
     "var_note": "I numeri positivi sono perdite. Nessun metodo è 'il' VaR: vanno confrontati.",
+    "benchmark": "Benchmark",
+    "benchmark_none": "Per questo report non è stato fornito un benchmark.",
+    "benchmark_intro": (
+        "Benchmark: {name}, una serie total return in {currency}, valutata in {base} con il "
+        "cambio BCE di ogni data."
+    ),
+    "benchmark_no_period": "Non c'è alcun periodo fra due date di valutazione da confrontare.",
+    "benchmark_window": (
+        "Il confronto usa i {n} periodi fra date di valutazione dal {start} al {end}; un "
+        "rendimento nella prima data di valutazione (da un versamento alla chiusura del "
+        "giorno) è escluso."
+    ),
+    "benchmark_measures": "Portafoglio rispetto al benchmark",
+    "benchmark_portfolio_total": "Rendimento del portafoglio in questi periodi",
+    "benchmark_total": "Rendimento del benchmark in questi periodi",
+    "benchmark_difference": "Differenza (punti percentuali)",
+    "tracking_error": "Tracking error (annualizzato)",
+    "information_ratio": "Information ratio (annualizzato)",
+    "beta": "Beta",
+    "beta_excess": "Beta (sugli extra-rendimenti rispetto al tasso privo di rischio)",
+    "beta_plain": "Beta (sui rendimenti; nessuna serie priva di rischio fornita)",
+    "alpha_annual": "Alpha (annualizzato)",
+    "r_squared": "R quadro",
+    "observations": "Osservazioni",
+    "with_se": "{value} (errore standard {se})",
+    "benchmark_missing": "{measure}: non disponibile ({reason}).",
+    "benchmark_conventions": (
+        "Rendimenti semplici. Rendimento attivo = rendimento del portafoglio - rendimento del "
+        "benchmark, per periodo. Annualizzato da rendimenti mensili con 12 e radice di 12, "
+        "il che presuppone assenza di autocorrelazione. Minimi quadrati ordinari con errori "
+        "standard classici. Descrittivo: una finestra breve dice poco sull'abilità. Un "
+        "benchmark di un altro universo o un indice di prezzo renderebbero questi numeri "
+        "privi di senso."
+    ),
+    "benchmark_carried": "Benchmark: {what}",
     "return_sources": "Rendimenti usati per il rischio",
     "return_series": "Serie",
     "income_in_returns": "Proventi distribuiti",

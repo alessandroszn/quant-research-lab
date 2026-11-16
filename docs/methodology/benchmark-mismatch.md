@@ -61,6 +61,14 @@ index_eur = convert_return_currency(
 - Changing frequency is an explicit step too: {py:func}`qrlab.core.aggregate_returns` compounds
   returns into the target {py:class}`qrlab.core.Frequency`.
 - `periods_per_year` is a required argument of every annualised relative metric.
+- **The portfolio report's benchmark** (phase 11.2):
+  - **Total return only:** it must be a total-return series, because the portfolio's TWR
+    includes the income received. An accumulating fund's price qualifies and is declared so.
+  - **Currency and dates:** it is valued in the base currency with the ECB rate of each
+    valuation date, and its last level and rate may be no older than the staleness limits.
+  - **The periods:** it is compared on the TWR periods between two valuation dates only.
+  - **What the report shows:** the benchmark's name, the window and the conventions next to
+    the numbers.
 
 ## What guards it
 
@@ -68,6 +76,12 @@ index_eur = convert_return_currency(
   series, different currencies, different hedging and different dates all raise),
   `test_one_year_hand_example`, `test_short_period_is_never_annualised`.
 - `tests/unit/metrics/test_relative.py`: `test_benchmark_must_share_the_index`.
+- `tests/unit/experiments/test_portfolio_benchmark.py`: the three-month hand case, the
+  constant risk-free rate, a USD benchmark valued in EUR, carried and refused values, the
+  cross-check against NumPy.
+- `tests/unit/experiments/test_portfolio_report_risk.py`: `test_benchmark_by_hand` (with the
+  `risk.beta` check), `test_bad_benchmarks_fail_the_run` (two columns, a price index, a
+  foreign currency without rates), `test_the_benchmark_inputs_go_together`.
 - `tests/unit/core/test_series.py`: `test_different_index_raises`,
   `test_tz_mismatch_raises_even_for_same_instants`, `test_naive_vs_aware_raises`.
 - `tests/unit/core/test_returns.py`: `test_convert_return_currency_hand_example`,
