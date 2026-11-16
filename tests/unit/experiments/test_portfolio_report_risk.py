@@ -651,3 +651,121 @@ def test_a_total_return_series_needs_a_price_file(tmp_path: Path) -> None:
     record, _ = _run(_distributing(tmp_path, extra_inputs=inputs))
     assert record["status"] == "failure"
     assert "IE0000000038 has no price file" in str(record["error"])
+
+
+# ------------------------------------------------------------------ benchmark (design note 11.2)
+# 1,000 EUR buys 10 units of fund A on 30/01 at its price that day, so the portfolio's monthly
+# returns are a = (2, -1, 3, 0) % (the start-of-day return on 30/01 is 0 and is left out). The
+# benchmark returns b = (1, 0, 2, 0) %. By hand (n - 1 = 3): active (1, -1, 1, 0) %, mean
+# 0.25 %, variance 2.75 / 3 = 11/12 (%^2), so the tracking error is sqrt(11/12) x sqrt(12) % =
+# sqrt(11) % = 3.316625 % and the information ratio 12 x 0.25 / sqrt(11) = 0.904534; beta =
+# S_xy / S_xx = 5 / 2.75 = 1.818182.
+BENCH_RETURNS = (0.01, 0.0, 0.02, 0.0)
+BENCH = '\n[parameters.benchmark]\nname = "Example index, net total return"\n'
+
+
+def _with_benchmark(tmp: Path, *, parameters: str = BENCH, columns: int = 1,
+                    price_type: str = "total_return", currency: str = "EUR",
+                    files: bool = True) -> Path:  # fmt: skip
+    tmp.mkdir(parents=True, exist_ok=True)
+    a = _backwards(RETURNS_A)
+    prices = _write_prices(
+        tmp, "prices", [(d, [p]) for d, p in zip(MONTH_ENDS, a, strict=True)], [FUND_A]
+    )
+    levels = _backwards(BENCH_RETURNS)
+    rows = [(d, [v] * columns) for d, v in zip(MONTH_ENDS, levels, strict=True)]
+    names = ["INDEX", "OTHER"][:columns]
+    bench = _write_prices(tmp, "bench", rows, names, price_type=price_type, currency=currency)
+    export = (
+        f"t2;30/01/2026;Acquisto;{FUND_A};10;{_number(a[0])};EUR;;;;;;\n"
+        f"t1;30/01/2026;Bonifico in entrata;;;;EUR;{_number(10 * a[0])};;;;;\n"
+    )
+    inputs = (
+        f'benchmark = "{bench[0].as_posix()}"\nbenchmark_mapping = "{bench[1].as_posix()}"\n'
+        if files
+        else ""
+    )
+    config = _config(
+        tmp,
+        export=export,
+        instruments=INSTRUMENT.format(isin=FUND_A, currency="EUR"),
+        prices=prices,
+        extra_inputs=inputs,
+        parameters=parameters,
+    )
+    text = config.read_text(encoding="utf-8")
+    config.write_text(
+        text.replace('return_frequency = "none"', 'return_frequency = "monthly"'),
+        encoding="utf-8",
+    )
+    return config
+
+
+def test_benchmark_by_hand(tmp_path: Path) -> None:
+    record, out = _run(_with_benchmark(tmp_path))
+    assert record["status"] == "success", record["error"]
+    table = pd.read_csv(out / "benchmark.csv", index_col=0)
+    assert table["portfolio"].tolist() == pytest.approx(list(RETURNS_A), abs=1e-10)
+    assert table["benchmark"].tolist() == pytest.approx(list(BENCH_RETURNS), abs=1e-10)
+    assert len(table) == 4  # the start-of-day return on 30/01 is left out
+    assert _scalar(record, "tracking_error") == pytest.approx(0.03316625, abs=1e-8)
+    assert _scalar(record, "information_ratio") == pytest.approx(0.904534, abs=1e-6)
+    assert _scalar(record, "beta") == pytest.approx(5 / 2.75, abs=1e-9)
+    assert _scalar(record, "benchmark_total") == pytest.approx(1.01 * 1.02 - 1.0, abs=1e-10)
+    assert record["outputs"]["benchmark.csv"]["tag"] == "descriptive"  # type: ignore[index]
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Example index, net total return" in html
+    assert "Tracking error (annualised)" in html
+    assert "Beta (on returns; no risk-free series given)" in html
+    # The risk.beta check now has a benchmark: 1.82 is above its critical level of 1.50.
+    findings = pd.read_csv(out / "check_findings.csv")
+    beta = findings[findings["check"] == "risk.beta"]
+    assert beta["severity"].tolist() == ["critical"]
+    assert float(beta["observed"].iloc[0]) == pytest.approx(5 / 2.75, abs=1e-9)
+
+
+def test_without_a_benchmark_the_report_says_so(tmp_path: Path) -> None:
+    record, out = _run(_with_benchmark(tmp_path, parameters="", files=False))
+    assert record["status"] == "success", record["error"]
+    assert not (out / "benchmark.csv").exists()
+    assert "No benchmark was given for this report." in (out / "report.html").read_text(
+        encoding="utf-8"
+    )
+    findings = pd.read_csv(out / "check_findings.csv")
+    assert "risk.beta" not in findings["check"].tolist()  # not applicable, as before
+
+
+def test_the_benchmark_section_in_italian(tmp_path: Path) -> None:
+    config = _with_benchmark(tmp_path)
+    text = config.read_text(encoding="utf-8").replace('language = "en"', 'language = "it"')
+    config.write_text(text, encoding="utf-8")
+    record, out = _run(config)
+    assert record["status"] == "success", record["error"]
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Portafoglio rispetto al benchmark" in html
+    assert "Tracking error (annualizzato)" in html
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"columns": 2}, "exactly one column"),
+        ({"price_type": "price"}, 'price_type = "total_return", not "price"'),
+        ({"currency": "USD"}, "needs an fx input"),
+    ],
+)
+def test_bad_benchmarks_fail_the_run(
+    tmp_path: Path, changes: dict[str, object], message: str
+) -> None:
+    record, _ = _run(_with_benchmark(tmp_path, **changes))  # type: ignore[arg-type]
+    assert record["status"] == "failure"
+    assert message in str(record["error"])
+
+
+@pytest.mark.parametrize(
+    ("parameters", "files"), [(BENCH, False), ("", True), ("benchmark = 1\n", True)]
+)
+def test_the_benchmark_inputs_go_together(tmp_path: Path, parameters: str, files: bool) -> None:
+    config = _with_benchmark(tmp_path, parameters=parameters, files=files)
+    with pytest.raises(ValidationError, match="benchmark"):
+        validate_experiment(config, kinds=KINDS)

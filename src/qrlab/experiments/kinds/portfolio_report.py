@@ -106,6 +106,17 @@ accumulating fund and an ETC. The notice names every other position, with the re
 risk or a diversification check reads returns; with risk the run writes
 ``return_sources.csv`` and the report shows the source of each position's returns.
 
+Benchmark (design note 11.2), optional: ``benchmark`` and ``benchmark_mapping`` (a price file
+with exactly one ``total_return`` column) with ``[parameters.benchmark]`` and its ``name``. On
+each valuation date the benchmark is its last level (within ``max_price_age_days``) times the
+ECB rate (within ``fx_max_age_days``). It is compared with the TWR on the periods between two
+valuation dates: cumulative returns always; with ``return_frequency = "monthly"`` also the
+tracking error, the information ratio and a CAPM regression (on excess returns over the €STR
+with an ``estr`` input, else on returns). The run writes ``benchmark.csv`` and the scalars
+``benchmark_total``, ``active_total``, ``tracking_error``, ``information_ratio``, ``beta``,
+``beta_se``, ``alpha_annual``, ``alpha_annual_se`` and ``r_squared`` when they exist; the
+checks then get both series on those periods, so ``risk.beta`` applies.
+
 Valuation dates are the dates of all price files from the first transaction on. The report is
 descriptive.
 """
@@ -139,6 +150,13 @@ from qrlab.experiments.kinds._params import (
     moment,
     text,
     whole,
+)
+from qrlab.experiments.kinds._portfolio_benchmark import (
+    BenchmarkOutputs,
+    BenchmarkSpec,
+    benchmark_series,
+    compare,
+    parse_benchmark,
 )
 from qrlab.experiments.kinds._portfolio_projection import (
     ProjectionSpec,
@@ -212,6 +230,8 @@ _OPTIONAL_INPUTS = (
     "transactions_mapping",
     "total_returns",
     "total_returns_mapping",
+    "benchmark",
+    "benchmark_mapping",
 )
 _FORMAT_HINT = (
     'transactions_format is required: "mapped" for a broker export read with '
@@ -239,6 +259,7 @@ _OPTIONAL_PARAMETERS = (
     "projection",
     "tax",
     "distributions",
+    "benchmark",
 )
 
 
@@ -268,6 +289,7 @@ class _Parameters:
     holdings: Mapping[Isin, _Holdings]
     index_hedged_to: Mapping[Isin, Currency | None]
     distributions: Mapping[Isin, tuple[Payment, ...]]
+    benchmark: BenchmarkSpec | None
 
 
 def _per_fund(
@@ -346,6 +368,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
             for isin, spec in _per_fund(parameters, "tracking", {"index_hedged_to"}).items()
         },
         distributions=parse_distributions(parameters),
+        benchmark=parse_benchmark(parameters),
     )
 
 
@@ -423,6 +446,9 @@ def _check_inputs(parameters: object, names: frozenset[str]) -> None:
         raise ValidationError("an issuers file is used only with holdings files")
     if ("total_returns" in names) != ("total_returns_mapping" in names):
         raise ValidationError("total_returns and total_returns_mapping go together")
+    benchmark_parts = {"benchmark" in names, "benchmark_mapping" in names, p.benchmark is not None}
+    if len(benchmark_parts) != 1:
+        raise ValidationError("benchmark, benchmark_mapping and [parameters.benchmark] go together")
 
 
 def _converter(
@@ -541,6 +567,39 @@ def _total_returns(context: RunContext) -> tuple[PriceData | None, list[Provenan
     return parse_price_csv(path.read_bytes(), provenance, mapping), [provenance]
 
 
+def _benchmark(
+    context: RunContext,
+    p: _Parameters,
+    dates: list[date],
+    twr_returns: pd.Series,
+    risk_free_table: pd.DataFrame | None,
+    fx_rates: Dataset | None,
+) -> tuple[BenchmarkOutputs | None, list[Provenance]]:
+    """Compare the TWR with the optional benchmark (design note 11.2)."""
+    if p.benchmark is None:
+        return None, []
+    path = context.inputs["benchmark"]
+    provenance = local_provenance(path, dataset="benchmark")
+    data = parse_price_csv(
+        path.read_bytes(), provenance, load_csv_mapping(context.inputs["benchmark_mapping"])
+    )
+    level, currency = benchmark_series(data)
+    outputs = compare(
+        p.benchmark,
+        level=level,
+        currency=currency,
+        base=p.base,
+        fx=fx_rates,
+        fx_max_age_days=p.fx_max_age_days,
+        max_price_age_days=p.max_price_age_days,
+        dates=dates,
+        twr_returns=twr_returns,
+        risk_free=None if risk_free_table is None else risk_free_table["risk_free"],
+        monthly=p.monthly,
+    )
+    return outputs, [provenance]
+
+
 def _risk_free(
     context: RunContext, dates: list[date], twr_returns: pd.Series
 ) -> tuple[RiskFreeSummary | None, pd.DataFrame | None, list[Provenance]]:
@@ -644,6 +703,9 @@ def _run(context: RunContext) -> ExperimentOutput:
     instruments = {i.isin: i for i in load_instruments(files["instruments"])}
     twr = time_weighted_returns(valuation, external_flows_by_date(history), flow_timing=p.timing)
     risk_free, risk_free_table, risk_free_provenance = _risk_free(context, dates, twr.returns)
+    benchmark, benchmark_provenance = _benchmark(
+        context, p, dates, twr.returns, risk_free_table, fx_rates
+    )
     check_context = CheckContext(
         as_of=dates[-1],
         history=history,
@@ -651,8 +713,9 @@ def _run(context: RunContext) -> ExperimentOutput:
         to_base=to_base,
         instruments=instruments,
         prices=prices,
-        portfolio_returns=twr.returns,
-        benchmark_returns=None,
+        # With a benchmark, the checks compare the periods between two valuation dates (11.2).
+        portfolio_returns=twr.returns if benchmark is None else benchmark.portfolio_returns,
+        benchmark_returns=None if benchmark is None else benchmark.benchmark_returns,
         target_weights=p.targets,
         lookthrough=None,
     )
@@ -736,6 +799,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             *fx_provenance,
             *risk_free_provenance,
             *total_returns_provenance,
+            *benchmark_provenance,
         ],
         instruments=instruments,
         import_notes=list(imported.notes),
@@ -747,6 +811,7 @@ def _run(context: RunContext) -> ExperimentOutput:
         risk_free=risk_free,
         tax=tax_position,
         return_sources=None if risk is None else sources.sources,
+        benchmark=None if benchmark is None else benchmark.summary,
     )
     findings = pd.DataFrame(
         [
@@ -781,6 +846,9 @@ def _run(context: RunContext) -> ExperimentOutput:
             name: Tagged(float(value), "descriptive")
             for name, value in tax_position.scalars.items()
         }
+    if benchmark is not None:
+        tables["benchmark"] = Tagged(benchmark.table, "descriptive")
+        scalars |= {name: Tagged(value, "descriptive") for name, value in benchmark.scalars.items()}
     if risk_free is not None and risk_free_table is not None:
         tables["risk_free"] = Tagged(risk_free_table, "descriptive")
         scalars["risk_free_total"] = Tagged(risk_free.total, "descriptive")

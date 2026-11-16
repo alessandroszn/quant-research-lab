@@ -438,6 +438,7 @@ qrlab.portfolio.xirr  function(flows: 'Sequence[tuple[date, Decimal]]') -> 'Xirr
 qrlab.reporting.AxisFormat  enum
 qrlab.reporting.AxisFormat.NUMBER  member = 'number'
 qrlab.reporting.AxisFormat.PERCENT  member = 'percent'
+qrlab.reporting.BenchmarkSummary  class(name: 'str', currency: 'Currency', window_start: 'date | None', window_end: 'date | None', n_periods: 'int', portfolio_total: 'float | None', benchmark_total: 'float | None', tracking_error: 'float | None', information_ratio: 'float | None', capm: 'CapmEstimate | None', on_excess: 'bool', reasons: 'Mapping[str, str]', carried: 'tuple[tuple[str, date, date], ...]') -> None
 qrlab.reporting.EN  constant NumberStyle
 qrlab.reporting.Figure  class(title: 'str', png: 'bytes') -> None
 qrlab.reporting.IT  constant NumberStyle
@@ -462,7 +463,7 @@ qrlab.reporting.RiskFreeSummary  class(source: 'str', total: 'float', sharpe: 'S
 qrlab.reporting.RiskFreeSummary.reason  attribute str = ''
 qrlab.reporting.Section  class(title: 'str', paragraphs: 'tuple[str, ...]', tables: 'tuple[Table, ...]', figures: 'tuple[Figure, ...]') -> None
 qrlab.reporting.Table  class(title: 'str', columns: 'tuple[str, ...]', rows: 'tuple[tuple[str, ...], ...]', align: 'tuple[str, ...]', notes: 'tuple[str, ...]') -> None
-qrlab.reporting.build_portfolio_report  function(*, name: 'str', history: 'LedgerHistory', valuation: 'Valuation', prices: 'Mapping[Isin, PriceSeries]', to_base: 'ToBase', language: 'Language', generated_at: 'datetime', flow_timing: 'FlowTiming', max_price_age_days: 'int', fx_description: 'str', provenance: 'Sequence[Provenance]', instruments: 'Mapping[Isin, Instrument]', import_notes: 'Sequence[str]', return_frequency: 'tuple[Frequency, float] | None', checks: 'CheckResult | None', lookthrough: 'LookThroughInputs | None', risk: 'RiskSummary | None', projection: 'ProjectionResult | None', risk_free: 'RiskFreeSummary | None', tax: 'TaxReport | None', return_sources: 'Mapping[Isin, ReturnSource] | None' = None) -> 'Report'
+qrlab.reporting.build_portfolio_report  function(*, name: 'str', history: 'LedgerHistory', valuation: 'Valuation', prices: 'Mapping[Isin, PriceSeries]', to_base: 'ToBase', language: 'Language', generated_at: 'datetime', flow_timing: 'FlowTiming', max_price_age_days: 'int', fx_description: 'str', provenance: 'Sequence[Provenance]', instruments: 'Mapping[Isin, Instrument]', import_notes: 'Sequence[str]', return_frequency: 'tuple[Frequency, float] | None', checks: 'CheckResult | None', lookthrough: 'LookThroughInputs | None', risk: 'RiskSummary | None', projection: 'ProjectionResult | None', risk_free: 'RiskFreeSummary | None', tax: 'TaxReport | None', return_sources: 'Mapping[Isin, ReturnSource] | None' = None, benchmark: 'BenchmarkSummary | None' = None) -> 'Report'
 qrlab.reporting.escape  function(text: 'str') -> 'str'
 qrlab.reporting.format_date  function(day: 'date', *, language: 'Language') -> 'str'
 qrlab.reporting.format_money  function(amount: 'Money', *, style: 'NumberStyle') -> 'str'

@@ -16,7 +16,7 @@ def test_every_exported_name_is_documented() -> None:
 
 # Inputs added after the 1.0 API freeze default to ``None``, which keeps every earlier call
 # valid (docs/compatibility.md); each one is listed here with its design note.
-ADDED_AFTER_FREEZE = {"return_sources": "11.1"}
+ADDED_AFTER_FREEZE = {"return_sources": "11.1", "benchmark": "11.2"}
 
 
 def test_report_inputs_are_keyword_only_without_defaults() -> None:
