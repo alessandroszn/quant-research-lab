@@ -6,6 +6,34 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- **Total returns in the portfolio report** (phase 11.1). Risk and the diversification checks
+  read returns, which can now include the income a fund pays out; valuation keeps the market
+  prices. Per fund, optionally:
+  - a total-return series: the `total_returns` input and its mapping;
+  - or its distributions: `[parameters.distributions]`, ISIN = list of
+    `{ ex_date, per_unit, currency }`.
+
+  With risk, the report shows the source of each position's returns ("Returns used for
+  risk") and the run writes `return_sources.csv`.
+- `qrlab.core.distribution_adjusted(prices, distributions)`: the total-return index of a price
+  series and its distributions, (P_t + D_t) / P_{t-1} - 1 per period.
+- `qrlab.checks.CheckContext.return_levels` (optional, default `None`): the series the
+  diversification checks read in place of a position's prices.
+- `qrlab.reporting.ReturnSource`, and the optional `return_sources` input of
+  `build_portfolio_report`. Inputs added after the 1.0 freeze default to `None`, so every
+  earlier call stays valid.
+
+### Changed
+
+- **The notice about price returns is corrected** (phase 11.1). It used to name every
+  position whose price file said `price`, including accumulating funds, whose price already
+  holds their income, and to skip distributing funds priced by NAV, which fall by each
+  distribution. It now follows the distribution policy: it names distributing funds, funds of
+  unknown policy, stocks and bonds, each with the reason. It is given whenever risk or a
+  diversification check reads returns, not only with risk. No number changes.
+
 ## [1.0.0] - 2026-11-16
 
 The first stable version: the code of 1.0.0rc1, released on GitHub. It is not on PyPI yet,

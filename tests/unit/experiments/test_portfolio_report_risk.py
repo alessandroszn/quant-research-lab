@@ -228,7 +228,12 @@ def test_two_funds_by_hand(tmp_path: Path) -> None:
     html = (out / "report.html").read_text(encoding="utf-8")
     assert "Fund IE0000000012" in html
     assert "0.59%" in html
-    assert "Risk is computed from price returns" in str(record["notice"])
+    # Two accumulating funds: their prices hold their income, so nothing is named (11.1).
+    assert record["notice"] is None
+    sources = pd.read_csv(out / "return_sources.csv", index_col=0)
+    assert sources["source"].tolist() == ["accumulating", "accumulating"]
+    assert sources["income_included"].tolist() == [True, True]
+    assert "Price of an accumulating fund" in html
 
 
 def test_historical_var_and_es_match_the_portfolio_returns(tmp_path: Path) -> None:
@@ -427,3 +432,222 @@ def test_unit_values_need_fx_and_known_currencies() -> None:
 def test_risk_must_be_a_table(tmp_path: Path, risk: str) -> None:
     with pytest.raises(ValidationError, match=r"\[parameters.risk\] must be a table"):
         validate_experiment(_two_funds(tmp_path, risk=risk), kinds=KINDS)
+
+
+# ------------------------------------------------------------- total returns (design note 11.1)
+# Fund B distributes 2 % of its 27/02 price with ex-date 31/03, so its March return is 1 % + 2 %
+# = 3 % and its returns become b' = (1, 3, -2, 0) %. By hand (n - 1 = 3): var a = 10/3 e-4,
+# var b' = 13/3 e-4, cov = -3 e-4; portfolio variance = 0.25 (10/3 + 13/3) e-4 - 0.5 x 3 e-4 =
+# 5/12 e-4, volatility sqrt(5/12) % = 0.645497 % per month (0.707107 % on prices).
+B_PRICES = _backwards(RETURNS_B)
+PAID = 0.02 * B_PRICES[1]  # 2 % of the 27/02 price, ex-date 31/03
+RETURNS_B_TOTAL = (0.01, 0.03, -0.02, 0.0)
+DISTRIBUTIONS = (
+    "\n[parameters.distributions]\n"
+    f'{FUND_B} = [{{ ex_date = 2026-03-31, per_unit = {PAID!r}, currency = "EUR" }}]\n'
+)
+
+
+def _distributing(tmp: Path, *, parameters: str = "", extra_inputs: str = "",
+                  price_type: str = "price", policy: str = "distributing") -> Path:  # fmt: skip
+    config = _two_funds(tmp, price_type=price_type, extra_inputs=extra_inputs)
+    instruments = tmp / "instruments.toml"
+    text = instruments.read_text(encoding="utf-8")
+    head, tail = text.split(f"[{FUND_B}]")
+    instruments.write_text(
+        head + f"[{FUND_B}]" + tail.replace('"accumulating"', f'"{policy}"'), encoding="utf-8"
+    )
+    config.write_text(
+        config.read_text(encoding="utf-8").replace("\n[output]", parameters + "\n[output]"),
+        encoding="utf-8",
+    )
+    return config
+
+
+def _total_return_file(tmp: Path, *, price_type: str = "total_return",
+                       currency: str = "EUR") -> str:  # fmt: skip
+    """Fund B's total-return index (its prices with the distribution reinvested)."""
+    index = _backwards(RETURNS_B_TOTAL)
+    rows = [(d, [v]) for d, v in zip(MONTH_ENDS, index, strict=True)]
+    csv, mapping = _write_prices(
+        tmp, "total", rows, [FUND_B], price_type=price_type, currency=currency
+    )
+    return f'total_returns = "{csv.as_posix()}"\ntotal_returns_mapping = "{mapping.as_posix()}"\n'
+
+
+def test_distributions_by_hand(tmp_path: Path) -> None:
+    record, out = _run(_distributing(tmp_path, parameters=DISTRIBUTIONS))
+    assert record["status"] == "success", record["error"]
+    returns = pd.read_csv(out / "risk_returns.csv", index_col=0)
+    assert returns[FUND_B].tolist() == pytest.approx(list(RETURNS_B_TOTAL), abs=1e-10)
+    assert returns[FUND_A].tolist() == pytest.approx(list(RETURNS_A), abs=1e-10)
+    assert _scalar(record, "volatility_period") == pytest.approx(0.00645497224, abs=1e-10)
+    sources = pd.read_csv(out / "return_sources.csv", index_col=0)
+    assert sources.loc[FUND_B, "source"] == "distributions"
+    assert bool(sources.loc[FUND_B, "income_included"])
+    assert record["outputs"]["return_sources.csv"]["tag"] == "descriptive"  # type: ignore[index]
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Returns used for risk" in html
+    assert "Price plus the distributions given" in html
+    assert record["notice"] is None  # every position's returns include its income
+
+
+def test_a_total_return_file_gives_the_same_returns(tmp_path: Path) -> None:
+    from_distributions, out_d = _run(_distributing(tmp_path / "d", parameters=DISTRIBUTIONS))
+    (tmp_path / "f").mkdir()
+    file_inputs = _total_return_file(tmp_path / "f")
+    from_file, out_f = _run(_distributing(tmp_path / "f", extra_inputs=file_inputs))
+    assert from_file["status"] == "success", from_file["error"]
+    a = pd.read_csv(out_d / "risk_returns.csv", index_col=0)
+    b = pd.read_csv(out_f / "risk_returns.csv", index_col=0)
+    pd.testing.assert_frame_equal(a, b, atol=1e-12)
+    sources = pd.read_csv(out_f / "return_sources.csv", index_col=0)
+    assert sources.loc[FUND_B, "source"] == "total_return_file"
+    assert "Total-return series given" in (out_f / "report.html").read_text(encoding="utf-8")
+    assert _scalar(from_file, "volatility_period") == pytest.approx(
+        _scalar(from_distributions, "volatility_period"), abs=1e-12
+    )
+
+
+@pytest.mark.parametrize("price_type", ["price", "nav"])
+def test_a_distributing_fund_without_income_is_named(tmp_path: Path, price_type: str) -> None:
+    """A NAV falls by each distribution like a price: both are named (the NAV was not, 8.3)."""
+    record, out = _run(_distributing(tmp_path, price_type=price_type))
+    assert record["status"] == "success", record["error"]
+    notice = str(record["notice"])
+    assert f"Fund {FUND_B} (distributing)" in notice
+    assert f"Fund {FUND_A}" not in notice
+    assert "exclude the income paid out" in notice
+    sources = pd.read_csv(out / "return_sources.csv", index_col=0)
+    assert sources.loc[FUND_B, "source"] == "distributing"
+    assert not bool(sources.loc[FUND_B, "income_included"])
+    assert _scalar(record, "volatility_period") == pytest.approx(0.0070710678, abs=1e-9)
+
+
+def test_the_note_is_given_for_the_checks_alone(tmp_path: Path) -> None:
+    """Without [parameters.risk] the diversification checks still read returns."""
+    config = _distributing(tmp_path)
+    text = config.read_text(encoding="utf-8")
+    config.write_text(
+        text.replace(RISK.format(frequency="monthly", window=4), ""), encoding="utf-8"
+    )
+    record, out = _run(config)
+    assert record["status"] == "success", record["error"]
+    assert f"Fund {FUND_B} (distributing)" in str(record["notice"])
+    assert not (out / "return_sources.csv").exists()  # the table belongs to the risk section
+
+
+def test_the_report_table_in_italian(tmp_path: Path) -> None:
+    config = _distributing(tmp_path, parameters=DISTRIBUTIONS)
+    text = config.read_text(encoding="utf-8").replace('language = "en"', 'language = "it"')
+    config.write_text(text, encoding="utf-8")
+    record, out = _run(config)
+    assert record["status"] == "success", record["error"]
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Rendimenti usati per il rischio" in html
+    assert "Prezzo più le distribuzioni fornite" in html
+    assert "Prezzo di un fondo ad accumulazione" in html
+
+
+def _payments(*entries: str) -> str:
+    return f"\n[parameters.distributions]\n{FUND_B} = [{', '.join(entries)}]\n"
+
+
+@pytest.mark.parametrize(
+    ("parameters", "message"),
+    [
+        (_payments('{ ex_date = 2026-03-31, per_unit = 0.0, currency = "EUR" }'),
+         "per_unit must be positive"),
+        (_payments('{ ex_date = 2026-03-31, per_unit = 1.0, currency = "EUR" }',
+                   '{ ex_date = 2026-03-31, per_unit = 2.0, currency = "EUR" }'),
+         "two distributions on 2026-03-31"),
+        (_payments("{ ex_date = 2026-03-31, per_unit = 1.0 }"), "currency"),
+        (f"\n[parameters.distributions]\n{FUND_B} = []\n", "non-empty list"),
+        (f"\n[parameters.distributions]\n{FUND_B} = [1.0]\n", "every entry must be a table"),
+    ],
+)  # fmt: skip
+def test_bad_distributions_are_refused_when_read(
+    tmp_path: Path, parameters: str, message: str
+) -> None:
+    with pytest.raises(ValidationError, match=message):
+        validate_experiment(_distributing(tmp_path, parameters=parameters), kinds=KINDS)
+
+
+@pytest.mark.parametrize(
+    ("parameters", "message"),
+    [
+        (_payments('{ ex_date = 2026-03-31, per_unit = 1.0, currency = "USD" }'),
+         "USD, its price file in EUR"),
+        (_payments('{ ex_date = 2026-06-30, per_unit = 1.0, currency = "EUR" }'),
+         "after the last price date"),
+        (_payments('{ ex_date = 2026-01-30, per_unit = 1.0, currency = "EUR" }'),
+         "on or before the first price date"),
+    ],
+)  # fmt: skip
+def test_distributions_that_do_not_fit_the_prices_fail_the_run(
+    tmp_path: Path, parameters: str, message: str
+) -> None:
+    record, _ = _run(_distributing(tmp_path, parameters=parameters))
+    assert record["status"] == "failure"
+    assert message in str(record["error"])
+
+
+def test_distributions_must_be_a_table_of_funds(tmp_path: Path) -> None:
+    config = _distributing(tmp_path, parameters="\n[parameters.distributions]\n")
+    with pytest.raises(ValidationError, match="per fund ISIN"):
+        validate_experiment(config, kinds=KINDS)
+
+
+def test_distributions_of_a_fund_not_held_raise(tmp_path: Path) -> None:
+    parameters = (
+        "\n[parameters.distributions]\n"
+        'IE0000000038 = [{ ex_date = 2026-03-31, per_unit = 1.0, currency = "EUR" }]\n'
+    )
+    record, _ = _run(_distributing(tmp_path, parameters=parameters))
+    assert record["status"] == "failure"
+    assert "IE0000000038 is not held" in str(record["error"])
+
+
+def test_a_fund_cannot_have_both_inputs(tmp_path: Path) -> None:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    inputs = _total_return_file(tmp_path)
+    record, _ = _run(_distributing(tmp_path, parameters=DISTRIBUTIONS, extra_inputs=inputs))
+    assert record["status"] == "failure"
+    assert "both a total-return series and distributions" in str(record["error"])
+
+
+@pytest.mark.parametrize(
+    ("price_type", "currency", "message"),
+    [
+        ("nav", "EUR", 'price_type = "total_return", not "nav"'),
+        ("total_return", "USD", "must be in EUR, the same currency as its price file"),
+    ],
+)
+def test_bad_total_return_files_raise(
+    tmp_path: Path, price_type: str, currency: str, message: str
+) -> None:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    inputs = _total_return_file(tmp_path, price_type=price_type, currency=currency)
+    record, _ = _run(_distributing(tmp_path, extra_inputs=inputs))
+    assert record["status"] == "failure"
+    assert message in str(record["error"])
+
+
+def test_a_total_return_file_needs_its_mapping(tmp_path: Path) -> None:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    inputs = _total_return_file(tmp_path).split("\n")[0] + "\n"
+    with pytest.raises(ValidationError, match="go together"):
+        validate_experiment(_distributing(tmp_path, extra_inputs=inputs), kinds=KINDS)
+
+
+def test_a_total_return_series_needs_a_price_file(tmp_path: Path) -> None:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    index = _backwards(RETURNS_B_TOTAL)
+    rows = [(d, [v]) for d, v in zip(MONTH_ENDS, index, strict=True)]
+    csv, mapping = _write_prices(
+        tmp_path, "total", rows, ["IE0000000038"], price_type="total_return"
+    )
+    inputs = f'total_returns = "{csv.as_posix()}"\ntotal_returns_mapping = "{mapping.as_posix()}"\n'
+    record, _ = _run(_distributing(tmp_path, extra_inputs=inputs))
+    assert record["status"] == "failure"
+    assert "IE0000000038 has no price file" in str(record["error"])

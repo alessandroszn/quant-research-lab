@@ -31,6 +31,7 @@ __all__ = [
     "aggregate_returns",
     "compound",
     "convert_return_currency",
+    "distribution_adjusted",
     "excess_returns",
     "log_to_simple",
     "prices_to_returns",
@@ -234,6 +235,67 @@ def wealth_index(returns: _T, *, kind: ReturnKind, initial: float) -> _T:
     if kind is ReturnKind.SIMPLE:
         return initial * (1.0 + valid).cumprod()
     return initial * _ufunc(np.exp, valid.cumsum())
+
+
+def distribution_adjusted(prices: pd.Series, distributions: pd.Series) -> pd.Series:
+    r"""Total-return index of a price series and its distributions (design note 11.1).
+
+    The index starts at the first price and moves by each period's holding-period return:
+
+    .. math::
+
+        I_{t_0} = P_{t_0}, \qquad I_t = I_{t-1} \frac{P_t + D_t}{P_{t-1}}
+
+    where :math:`D_t` is the sum of the distributions whose ex-date falls in
+    :math:`(t-1, t]`, :math:`t-1` being the previous price date. A distribution between two
+    price dates enters the period that contains it.
+
+    Parameters
+    ----------
+    prices
+        At least two strictly positive prices without NaN, on a validated index (market prices
+        or NAVs, in one currency).
+    distributions
+        Amount per unit, in the prices' currency, indexed by ex-date (strictly increasing).
+        Every amount must be positive, and every ex-date after the first price date and on or
+        before the last. May be empty.
+
+    Returns
+    -------
+    pandas.Series
+        The index, on the prices' index and with their name. The inputs are not modified.
+
+    Raises
+    ------
+    ValidationError
+        If either input is invalid, or an ex-date has no period to enter.
+    """
+    valid = validate_series(prices, nan_policy=NanPolicy.RAISE, name="prices")
+    paid = validate_series(distributions, nan_policy=NanPolicy.RAISE, name="distributions")
+    if len(valid) < 2:
+        raise ValidationError("prices: at least two prices are needed")
+    if (valid.to_numpy() <= 0).any():
+        raise ValidationError("prices must be strictly positive")
+    if (paid.to_numpy() <= 0).any():
+        raise ValidationError("distributions: every amount must be positive")
+    dates = valid.index
+    added = np.zeros(len(valid))
+    for stamp, amount in zip(pd.DatetimeIndex(paid.index), paid.to_numpy(), strict=True):
+        if stamp <= dates[0]:
+            raise ValidationError(
+                f"distributions: ex-date {stamp.date()} is on or before the first price date "
+                f"{dates[0].date()}, so no return covers it"
+            )
+        if stamp > dates[-1]:
+            raise ValidationError(
+                f"distributions: ex-date {stamp.date()} is after the last price date "
+                f"{dates[-1].date()}"
+            )
+        added[dates.searchsorted(stamp, side="left")] += float(amount)
+    # I_t = P_t * prod_{s <= t} (1 + D_s / P_s): the same recursion, and exactly the prices
+    # when nothing is paid.
+    level = valid.to_numpy()
+    return pd.Series(level * np.cumprod(1.0 + added / level), index=dates, name=prices.name)
 
 
 def aggregate_returns(

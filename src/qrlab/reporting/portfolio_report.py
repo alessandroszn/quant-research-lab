@@ -16,6 +16,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
+from enum import Enum
 
 import pandas as pd
 
@@ -84,10 +85,41 @@ from qrlab.tax.regime import (
     TaxTable,
 )
 
-__all__ = ["RiskFreeSummary", "build_portfolio_report"]
+__all__ = ["ReturnSource", "RiskFreeSummary", "build_portfolio_report"]
 
 ONE_YEAR_DAYS = 365
 TOP_BUCKETS = 10
+
+
+class ReturnSource(Enum):
+    """Which series a position's returns use for risk and the checks (design note 11.1)."""
+
+    TOTAL_RETURN_FILE = "total_return_file"  # a total-return series given for it
+    DISTRIBUTIONS = "distributions"  # its price adjusted for the distributions given
+    TOTAL_RETURN_PRICES = "total_return_prices"  # its price file is a total-return series
+    ACCUMULATING = "accumulating"  # the price of an accumulating fund holds its income
+    NO_INCOME = "no_income"  # the price of an ETC, which pays no income
+    DISTRIBUTING = "distributing"  # the price of a distributing fund: income excluded
+    POLICY_UNKNOWN = "policy_unknown"  # a fund of unknown policy, or not described
+    STOCK = "stock"  # a stock's price: dividends excluded
+    BOND = "bond"  # a bond's price: coupons excluded
+    OTHER = "other"  # any other type, with no income series
+
+    @property
+    def income_included(self) -> bool:
+        """Whether the returns include the income paid out."""
+        return self in _INCOME_INCLUDED
+
+
+_INCOME_INCLUDED = frozenset(
+    {
+        ReturnSource.TOTAL_RETURN_FILE,
+        ReturnSource.DISTRIBUTIONS,
+        ReturnSource.TOTAL_RETURN_PRICES,
+        ReturnSource.ACCUMULATING,
+        ReturnSource.NO_INCOME,
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -134,6 +166,7 @@ def build_portfolio_report(
     projection: ProjectionResult | None,
     risk_free: RiskFreeSummary | None,
     tax: TaxReport | None,
+    return_sources: Mapping[Isin, ReturnSource] | None = None,
 ) -> Report:
     """Build the portfolio report.
 
@@ -182,6 +215,9 @@ def build_portfolio_report(
         A country's tax analytics of the account (:class:`qrlab.tax.TaxReport`, e.g. from
         :func:`qrlab.tax.italian_tax_report`), or ``None``: the report then has no tax
         section. The section is rendered from the report's description alone (phase 9.1).
+    return_sources
+        Which series each held position's returns use for risk (design note 11.1), shown as
+        a table in the risk section; ``None`` shows none.
     """
     if generated_at.utcoffset() is None:
         raise ValidationError("generated_at must be timezone-aware")
@@ -194,6 +230,7 @@ def build_portfolio_report(
         projection,
         risk_free,
         tax,
+        return_sources,
     ).build()  # fmt: skip
 
 
@@ -220,7 +257,9 @@ class _Builder:
         projection: ProjectionResult | None,
         risk_free: RiskFreeSummary | None,
         tax: TaxReport | None,
+        return_sources: Mapping[Isin, ReturnSource] | None,
     ) -> None:
+        self.return_sources = return_sources
         self.risk_free = risk_free
         self.tax = tax
         self.name = name
@@ -632,6 +671,27 @@ class _Builder:
                     tuple((m, self.pct(v), self.pct(e)) for m, (v, e) in risk.var_es.items()),
                     ("left", "right", "right"),
                     (self.t("var_note"),),
+                )
+            )
+        if self.return_sources:
+            tables.append(
+                Table(
+                    self.t("return_sources"),
+                    (self.t("holding"), self.t("return_series"), self.t("income_in_returns")),
+                    tuple(
+                        (
+                            self._name_of(isin.code),
+                            self.t(f"return_source_{source.value}"),
+                            self.t(
+                                "income_included" if source.income_included else "income_excluded"
+                            ),
+                        )
+                        for isin, source in sorted(
+                            self.return_sources.items(), key=lambda item: item[0].code
+                        )
+                    ),
+                    ("left", "left", "left"),
+                    (self.t("return_sources_note"),),
                 )
             )
         if risk.scenarios:

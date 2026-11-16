@@ -17,6 +17,8 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | Original purchase FX rate on transfers in | 8.8 | A foreign fund's original cost is converted at the transfer date's rate; the rates of the original purchases would give the exact euro cost. |
 | Publish on PyPI | 10.3 | 1.0.0 went out on GitHub only: the owner has no PyPI account yet. With the accounts, add the trusted publishers (`releasing.md`, step 4) and release the next version to PyPI. |
 | Hashes of the wheel and sdist in `SHA256SUMS.txt` | 10.3 | The file lists only the two Windows files, with Windows line endings, so `sha256sum -c` fails on Linux. GitHub shows a SHA-256 for every release file; the wheel is now the install path, so the file should cover it too. |
+| Distributions from the issuers' files | 11.1 | The owner types the distributions or gives a total-return file. Reading them from issuer files needs each source's terms checked first. |
+| Base-currency returns in the diversification checks | 11.1 | They use each position's local-currency returns, while the risk section converts to the base currency. Which one the checks should measure is its own question. |
 | Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |
 | Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |
