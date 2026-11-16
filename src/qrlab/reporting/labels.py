@@ -74,6 +74,35 @@ _EN = {
     "tax_expired": "Expired",
     "tax_remaining": "Remaining",
     "tax_usable_until": "Usable until",
+    "tax_wealth_intro": (
+        "Stamp duty and IVAFE on the value of the securities (rules as checked on {checked}): "
+        "2 per mille a year of the market value, as stamp duty for accounts with an Italian "
+        "intermediary (per statement period, rounded to 10 cents, at least 1 euro) and as IVAFE "
+        "for accounts abroad (per holding, by days held and ownership share, units sold last "
+        "in, first out; 4 per mille from 2024 in states with a privileged tax regime)."
+    ),
+    "tax_wealth_notes": (
+        "An estimate: cash and current accounts (fixed amounts) are not covered, the credit "
+        "for wealth taxes paid abroad is not applied, and foreign values use the ECB rate of "
+        "the day, while the tax return uses the Agenzia's monthly average rates. Only "
+        "complete calendar years are shown."
+    ),
+    "tax_wealth_not_computed": (
+        "Not computed: {years} (rules checked from 2014 to 2026; from 2027 the testo unico "
+        "D.Lgs. 123/2025 applies)."
+    ),
+    "tax_wealth_years": "Stamp duty and IVAFE by year",
+    "tax_wealth_years_note": "The IVAFE is not paid when the year's total is 12 euro or less.",
+    "tax_wealth_items": "Stamp duty by statement and IVAFE by holding",
+    "tax_wealth_stamp_duty": "Stamp duty",
+    "tax_wealth_ivafe": "IVAFE",
+    "tax_ivafe_payable": "IVAFE payable",
+    "tax_wealth_amount": "Tax",
+    "tax_account": "Account",
+    "tax_kind": "Tax",
+    "tax_period_end": "Value on",
+    "tax_days": "Days",
+    "tax_rate": "Rate",
     # --- Switzerland (phase 9.2) ----------------------------------------------------------
     "ch_intro": (
         "Private investor resident in Switzerland. Rules as checked on {checked}. Taxes are "
@@ -556,6 +585,36 @@ _IT = {
     "tax_expired": "Scadute",
     "tax_remaining": "Residue",
     "tax_usable_until": "Utilizzabili fino al",
+    "tax_wealth_intro": (
+        "Imposta di bollo e IVAFE sul valore dei titoli (regole verificate al {checked}): 2 "
+        "per mille annuo del valore di mercato, come bollo per i conti presso un intermediario "
+        "italiano (per periodo di rendicontazione, arrotondato ai 10 centesimi, almeno 1 "
+        "euro) e come IVAFE per i conti all'estero (per titolo, in base ai giorni di "
+        "detenzione e alla quota di possesso, con le quote vendute secondo il LIFO; 4 per "
+        "mille dal 2024 negli Stati a fiscalità privilegiata)."
+    ),
+    "tax_wealth_notes": (
+        "Una stima: liquidità e conti correnti (importi fissi) non sono considerati, il "
+        "credito per le patrimoniali pagate all'estero non è applicato e i valori in valuta "
+        "usano il cambio BCE del giorno, mentre la dichiarazione usa i cambi medi mensili "
+        "dell'Agenzia. Sono mostrati solo gli anni solari completi."
+    ),
+    "tax_wealth_not_computed": (
+        "Non calcolati: {years} (regole verificate dal 2014 al 2026; dal 2027 si applica il "
+        "testo unico D.Lgs. 123/2025)."
+    ),
+    "tax_wealth_years": "Imposta di bollo e IVAFE per anno",
+    "tax_wealth_years_note": "L'IVAFE non si versa se il totale dell'anno non supera 12 euro.",
+    "tax_wealth_items": "Bollo per rendiconto e IVAFE per titolo",
+    "tax_wealth_stamp_duty": "Imposta di bollo",
+    "tax_wealth_ivafe": "IVAFE",
+    "tax_ivafe_payable": "IVAFE da versare",
+    "tax_wealth_amount": "Imposta",
+    "tax_account": "Conto",
+    "tax_kind": "Imposta",
+    "tax_period_end": "Valore al",
+    "tax_days": "Giorni",
+    "tax_rate": "Aliquota",
     # --- Svizzera (fase 9.2) --------------------------------------------------------------
     "ch_intro": (
         "Investitore privato residente in Svizzera. Regole verificate al {checked}. Le imposte "

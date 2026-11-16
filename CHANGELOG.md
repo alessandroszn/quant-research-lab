@@ -8,6 +8,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **Italian stamp duty and IVAFE** (phase 11.3): an optional `custody` key in the Italian
+  `[parameters.tax]` says where each account is held.
+  - **Italy** (`where = "italy"`, with its `statements` periods): the *imposta di bollo* at 2
+    per mille a year of the value at each statement end, by days over 365, rounded to €0.10,
+    at least €1.
+  - **Abroad** (`where = "abroad"` or `"abroad_privileged"`, with the owner's `share`): the
+    IVAFE at 0.20 % (0.40 % from 2024 in privileged tax states) per holding, by days held,
+    units matched LIFO, with the €12 payment threshold.
+  - **Years:** complete calendar years from 2014 to 2026; later years wait for the testo unico
+    D.Lgs. 123/2025 to be checked.
+  - **Outputs:** two tables in the tax section (English and Italian, with sources and the
+    date checked), `wealth_tax_items.csv`, `wealth_tax_years.csv` and two scalars.
+- `qrlab.tax.wealth_taxes`, `Custody`, `Where`, `Statements`, `WealthItem`, `WealthYear`,
+  `WealthTaxes`; the optional `prices` and `max_price_age_days` of `TaxInputs`, the optional
+  `custody` of `ItalianSettings` and the optional `wealth` input of `italian_tax_report`.
+
 - **A benchmark in the portfolio report** (phase 11.2): the optional `benchmark` input (one
   total-return column) with its mapping and `[parameters.benchmark]` (`name`).
   - **How it is valued:** in the base currency with the ECB rate of each valuation date.

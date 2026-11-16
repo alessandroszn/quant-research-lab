@@ -78,7 +78,12 @@ and scalars (:class:`qrlab.tax.TaxReport`). Italy (``country = "it"``): ``regime
 (``amministrato``/``dichiarativo``) and ``public_share`` (a table: ISIN -> share of Italian and
 white-list government bonds, required for every fund and bond sold; 0 for an equity fund);
 it writes ``tax_events.csv``, ``losses_balance.csv`` and the scalars ``tax_due``,
-``tax_withheld`` and ``losses_remaining``. See :mod:`qrlab.tax.italy`. Switzerland
+``tax_withheld`` and ``losses_remaining``. See :mod:`qrlab.tax.italy`. Its optional
+``custody`` (phase 11.3) says where each account is held: ``{ where = "italy", statements =
+"year" | "quarter" | "month" }`` for the stamp duty, ``{ where = "abroad" |
+"abroad_privileged", share }`` for the IVAFE; it adds ``wealth_tax_items.csv``,
+``wealth_tax_years.csv`` and the scalars ``stamp_duty_last_year`` and ``ivafe_last_year``
+(:mod:`qrlab.tax.italy_wealth`). Switzerland
 (``country = "ch"``, phase 9.2, base currency CHF): ``marginal_rate``, ``wealth_tax_rate``,
 ``net_income`` (year = amount), ``debt_financed`` and ``reported_income`` (ISIN = list of
 ``{ date, per_unit, currency }`` from the ESTV price list); it writes ``ch_years.csv``,
@@ -767,6 +772,8 @@ def _run(context: RunContext) -> ExperimentOutput:
                 valuation=valuation,
                 to_base=to_base,
                 as_of=dates[-1],
+                prices=prices,
+                max_price_age_days=p.max_price_age_days,
             ),
             settings,
         )

@@ -82,6 +82,16 @@ and the gap between gross and net compounds.
   - The CSV tables and the report section are written from that description alone. A new
     country adds rules, not presentation code.
   - Italy is the first country (`country = "it"`).
+- **Italian stamp duty and IVAFE** ({py:func}`qrlab.tax.wealth_taxes`, phase 11.3): the
+  yearly tax on the value of the securities, with the optional `custody` key.
+  - **An Italian intermediary:** the stamp duty, 2 per mille a year of the value at the end
+    of each statement period, by days over 365, rounded to €0.10 with a €1 minimum.
+  - **Abroad:** the IVAFE, 0.20 % (0.40 % from 2024 in privileged tax states) per holding, by
+    days held and ownership share, with the units sold matched last in, first out.
+  - **Only complete years from 2014 to 2026** are computed. From 2027 the testo unico
+    D.Lgs. 123/2025 applies, and its articles are still to be checked.
+  - **An estimate:** cash, the foreign wealth-tax credit and the Agenzia's monthly average
+    rates are left out, and the report says so.
 - **Switzerland, private investor** ({py:mod}`qrlab.tax.switzerland`, phase 9.2,
   `country = "ch"`).
   - **Gains are tax-free,** and the five ESTV Circular 36 criteria are checked every year.
@@ -169,7 +179,7 @@ and the gap between gross and net compounds.
     configs do not set it yet; it is listed in `docs/IDEAS.md`.
 - **Limits of the Italian tax analytics.**
   - Dividends and interest are listed with their withheld tax, not recomputed.
-  - Stamp duty and IVAFE are not computed.
+  - Stamp duty and IVAFE cover securities, not cash and current accounts (phase 11.3).
   - Foreign currency held as *redditi diversi* is not treated.
   - There is one account per report.
   - The regime and the government-bond shares are declared by the user, not read from the
