@@ -8,6 +8,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **The CI checks, run locally** (phase 10.1): `scripts/ci_local.sh` runs the steps of
+  `ci.yml` in order on a fresh clone, on Linux (WSL) or on Windows (Git Bash). A test keeps
+  its commands, Python versions and the guide's system libraries equal to the workflow's.
+  Guide: *Running the CI checks locally*.
 - **iShares files as published** (phase 8.2c), on the owner's decision about the website's
   terms. There are two committed mappings:
   - `ishares_holdings_it.toml`, for the holdings CSV of the Italian website, with Italian

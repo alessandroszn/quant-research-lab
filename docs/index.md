@@ -73,6 +73,7 @@ compatibility
 
 project/changelog
 project/releasing
+project/linux-checks
 ARCHITECTURE
 ROADMAP
 IDEAS
