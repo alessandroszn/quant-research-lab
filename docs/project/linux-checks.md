@@ -31,11 +31,16 @@ committed files, as CI does, so it never sees `data/` or files you have not comm
 4. **Clone and run.** Clone into the Linux file system, not under `/mnt/c`:
 
    ```
-   git clone /mnt/c/PATH/TO/YOUR/CHECKOUT ~/qrlab-ci
+   git -c safe.directory='*' clone --upload-pack="git -c safe.directory='*' upload-pack" /mnt/c/PATH/TO/YOUR/CHECKOUT ~/qrlab-ci
    bash ~/qrlab-ci/scripts/ci_local.sh ~/qrlab-ci
    ```
 
-   For a later run, `git -C ~/qrlab-ci pull` first, or delete the folder and clone again.
+   The checkout under `/mnt/c` belongs to your Windows user, so git refuses it as "dubious
+   ownership". The two `safe.directory` settings allow it for this one clone, without
+   changing your git configuration. Both are needed: the clone opens the source itself, and
+   it starts `upload-pack` with the configuration cleared.
+
+   For a later run, delete the folder and clone again.
 
 ## On Windows
 
