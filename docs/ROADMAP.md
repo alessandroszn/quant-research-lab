@@ -58,9 +58,14 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 | 7 Gap closing | `periods_per_year` check, output notices, returns price type, currencies and look-through in the report kind | — (done) | 15–20 |
 | 8 Real portfolio | first real run, issuer holdings, risk, projection, risk-free rate, Italian tax, Italian report | **M8 Real portfolio** | 38–58 |
 | 9 Tax regimes | a common shape for tax regimes, Switzerland, a configurable model (Germany skipped) | **M9 Tax regimes** (done) | 26–40 |
+| 10 Publication | the Linux check, ready for readers, release 1.0.0 | **M10 v1.0 public** | 12–22 |
+| 11 Complete report | total returns, benchmark, stamp duty and IVAFE, VaR backtest and proxies, small items | **M11 Complete report** | 30–48 |
+| 12 Usable app | forms from parameter schemas, cancel and queue, interactive charts, PDF and icon | **M12 App 1.x** | 36–52 |
+| 13 Deeper research | Romano-Wolf and studentized bootstrap, Fama-MacBeth, daily international factors, the factor zoo again | **M13 Research 2** | 38–56 |
 
-Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 is reached at M6; after
-it, each Level 8 phase is a `v1.N.0`, published in the weekly batches.
+Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 was planned at M6; it
+was not cut (the version is `1.0.0rc1`, the last tag `v0.4.0`) and is cut at M10. After it,
+each of Levels 11 to 13 ends in a minor release (`v1.1.0`, `v1.2.0`, `v1.3.0`).
 
 ---
 
@@ -405,6 +410,81 @@ code, and checks its rules against the law in force, with sources.
   cost basis.
 
 **M9 — the tax position of a portfolio in Italy, Switzerland or a configured country.**
+
+## Level 10 — Publication → M10
+
+Plan for Levels 10 to 13: `docs/design/levels-10-13-plan.md`. Each phase has its own design
+note, approved before any code.
+
+### 10.1 The Linux check, locally (3–6 h)
+- The quality gate on Linux, Python 3.11 and 3.13, in a WSL Ubuntu installed by the owner (or
+  CI, once the minutes return). Every failure fixed with a regression test.
+
+### 10.2 Ready to be read by others (4–8 h)
+- `scripts/audit_history.py` ends with `CLEAN`; README, roadmap, version, screenshots and the
+  data-sources table brought up to date; the not-advice notice checked everywhere.
+
+### 10.3 Release 1.0.0 (5–8 h)
+- As `docs/project/releasing.md`: the owner's one-time setup, `v1.0.0rc1` on TestPyPI, then
+  `v1.0.0` on PyPI with the docs and the Windows installer.
+
+**M10 — v1.0, public, with CI green on Linux and Windows.**
+
+## Level 11 — A complete portfolio report → M11
+
+### 11.1 Total returns for distributing funds (8–12 h)
+- An optional total-return series (or the distributions) per fund for risk and the checks;
+  without it, the report says so for each distributing fund.
+
+### 11.2 A benchmark in the report (6–10 h)
+- A benchmark input with dated FX; active return, tracking error, information ratio and beta,
+  also on excess returns over the €STR.
+
+### 11.3 Italian stamp duty and IVAFE (6–10 h)
+- Yearly items in the Italian tax section, checked against the law in force with sources.
+
+### 11.4 VaR backtest and factor proxies in the report (6–10 h)
+- Kupiec and Christoffersen in the risk section; proxies for positions without a long
+  history, labelled as such.
+
+### 11.5 Small open items (4–6 h)
+- Loss-rule keys in the configs; income tax in the `projection` kind; Italian country names.
+
+**M11 — a portfolio report with total returns, a benchmark and the Italian wealth taxes.**
+
+## Level 12 — A usable app → M12
+
+### 12.1 A form for each analysis (14–20 h)
+- Parameter schemas in the kinds, the single source for validation, docs and the app's form;
+  the TOML stays available and always agrees.
+
+### 12.2 Cancelling a run, and a queue (8–12 h)
+- A cancellation hook in the runner; no partial results that look complete.
+
+### 12.3 Interactive charts (8–12 h)
+- Matplotlib's Qt backend on the data files the runner writes; nothing recomputed in the app.
+
+### 12.4 PDF export and an icon (6–8 h)
+- Qt's PDF writer considered before any new dependency.
+
+**M12 — an app where every analysis is a form, can be stopped, and exports to PDF.**
+
+## Level 13 — Deeper research → M13
+
+### 13.1 Inference across many strategies (10–14 h)
+- Romano-Wolf stepdown; the studentized bootstrap for Sharpe differences (Ledoit-Wolf 2008).
+
+### 13.2 Fama-MacBeth regressions (10–14 h)
+- Newey-West standard errors and the Shanken correction, cross-checked on known premia.
+
+### 13.3 Daily international factors (4–6 h)
+- Ken French's daily Developed and Europe factors.
+
+### 13.4 The factor-zoo study, again (14–22 h)
+- Romano-Wolf on the zoo, time effects in the decay regression, decay by category; an honest
+  write-up.
+
+**M13 — research results that hold up under multiple testing and cross-sectional tests.**
 
 ---
 
