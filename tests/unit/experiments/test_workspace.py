@@ -134,3 +134,14 @@ def test_config_template_lists_every_key(tmp_path: Path) -> None:
     for name in kind.parameters:
         assert f"# {name} = FILL-IN" in text
     assert "seed = 1" in config_template(KINDS["projection"])
+
+
+def test_list_runs_skips_staging_and_replaced_folders(tmp_path: Path) -> None:
+    root = create_workspace(tmp_path / "ws")
+    _record(root / "results" / "demo", "demo", "2026-11-10T10:00:00+00:00")
+    _record(root / "results" / ".demo.partial", "demo", "2026-11-11T10:00:00+00:00")
+    _record(root / "results" / ".demo.old", "demo", "2026-11-09T10:00:00+00:00")
+    _record(root / "results" / ".hidden" / "inner", "inner", "2026-11-12T10:00:00+00:00")
+    _record(root / "results" / "set" / "a.b", "dotted", "2026-11-13T10:00:00+00:00")
+    runs = list_runs(root)
+    assert [(r.name, r.output_dir.name) for r in runs] == [("dotted", "a.b"), ("demo", "demo")]

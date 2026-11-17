@@ -1,11 +1,17 @@
 """Validate, hash, run, write: the single entry point used by scripts, the CLI and the app.
 
 ``run_experiment`` checks the config against its kind, hashes every input, runs the kind and
-writes its tables (CSV), figures (PNG), report (HTML) and ``record.json`` into the output folder.
-The record is written last, also when the run fails, so a folder without it is visibly
-incomplete. Each run appends a line to ``trials.jsonl`` in the parent folder; the number of
-configurations tried is the number of distinct config hashes recorded under the experiment's
-name.
+writes its tables (CSV), figures (PNG), report (HTML) and ``record.json``. The record is written
+last, also when the run fails. Each recorded run appends a line to ``trials.jsonl`` in the
+parent folder; the number of configurations tried is the number of distinct config hashes
+recorded under the experiment's name.
+
+Outputs are interruption-safe (design note 12.2): a run writes into the staging folder
+``.<name>.partial`` next to the output folder and replaces the output folder with it only once
+its record is written. A run that is interrupted (Ctrl+C, its process ended) leaves the earlier
+outputs as they were and is not counted as a configuration tried; on ``KeyboardInterrupt`` or
+``SystemExit`` the staging folder is deleted, and a staging folder left by an ended process is
+deleted by the next run. A run that fails is still recorded and replaces the earlier outputs.
 
 The record's ``code`` block says which code ran. From a source checkout the commit comes from
 ``git``; in a frozen (PyInstaller) program it comes from the ``build-info.json`` shipped next to
@@ -38,15 +44,19 @@ from qrlab.experiments.schema import check_parameters
 
 __all__ = [
     "RECORD_FORMAT",
+    "STAGING_SUFFIX",
     "RunResult",
     "configurations_tried",
     "count_trials",
     "run_experiment",
+    "staging_dir",
     "validate_experiment",
 ]
 
 LEDGER = "trials.jsonl"
 RECORD = "record.json"
+STAGING_SUFFIX = ".partial"
+"""A run writes into ``.<name>.partial`` before it replaces the output folder ``<name>``."""
 BUILD_INFO = "build-info.json"
 NOTICE = "NOTICE.txt"
 RECORD_FORMAT = 1
@@ -99,18 +109,47 @@ def validate_experiment(
     return config, kind, parameters
 
 
+def staging_dir(output_dir: Path) -> Path:
+    """Return the folder a run of ``output_dir`` writes into before it replaces it."""
+    output_dir = Path(output_dir)
+    return output_dir.parent / f".{output_dir.name}{STAGING_SUFFIX}"
+
+
 def run_experiment(
     config_path: Path, *, kinds: Mapping[str, ExperimentKind], overwrite: bool
 ) -> RunResult:
-    """Run one config; raise for config and input errors, record run failures."""
+    """Run one config; raise for config and input errors, record run failures.
+
+    The earlier outputs are replaced only when the new record is written (see the module
+    docstring); an interrupted run leaves them unchanged.
+    """
     config, kind, parameters = validate_experiment(config_path, kinds=kinds)
     code = _code_version()  # before writing anything: a broken build is refused up front
     out = config.output_dir
-    if out.exists():
-        if not overwrite:
-            raise ValidationError(f"{out} exists; pass overwrite=True to replace it")
-        shutil.rmtree(out)
-    out.mkdir(parents=True)
+    if out.exists() and not overwrite:
+        raise ValidationError(f"{out} exists; pass overwrite=True to replace it")
+    staging = staging_dir(out)
+    if staging.exists():
+        shutil.rmtree(staging)  # left by a run whose process was ended
+    staging.mkdir(parents=True)
+    try:
+        record = _run_into(staging, config, kind, parameters, code)
+    except BaseException:  # interrupted (KeyboardInterrupt, SystemExit) or a writing error
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+    _replace(out, staging)
+    _append_trial(out.parent, config, str(record["status"]), str(record["finished"]))
+    return RunResult(out, record)
+
+
+def _run_into(
+    out: Path,
+    config: ExperimentConfig,
+    kind: ExperimentKind,
+    parameters: object,
+    code: dict[str, object],
+) -> dict[str, object]:
+    """Run the kind, write its outputs and the record into ``out``; return the record."""
     hashes = {name: file_sha256(path) for name, path in config.inputs.items()}
     started = datetime.now(UTC)
     status, error = "success", None
@@ -128,7 +167,7 @@ def run_experiment(
         status = "failure"
         error = "".join(traceback.format_exception_only(type(exc), exc)).strip()
     finished = datetime.now(UTC)
-    tried = _append_trial(out.parent, config, status, finished)
+    tried = configurations_tried(config.output_dir.parent, config.name, including=config.hash)
     record: dict[str, object] = {
         "format": RECORD_FORMAT,
         "experiment": {"name": config.name, "kind": config.kind, "hypothesis": config.hypothesis},
@@ -158,7 +197,27 @@ def run_experiment(
         encoding="utf-8",
         newline="\n",
     )
-    return RunResult(out, record)
+    return record
+
+
+def _replace(out: Path, staging: Path) -> None:
+    """Put the staging folder in place of ``out``; the earlier ``out`` goes only after."""
+    old = out.parent / f".{out.name}.old"
+    if old.exists():
+        shutil.rmtree(old)
+    moved = False
+    try:
+        if out.exists():
+            out.rename(old)
+            moved = True
+        staging.rename(out)
+    except OSError as exc:
+        if moved:
+            old.rename(out)  # the earlier outputs go back where they were
+        raise ValidationError(
+            f"cannot replace {out}: {exc}; this run's outputs are in {staging}"
+        ) from exc
+    shutil.rmtree(old, ignore_errors=True)  # a locked file only leaves a hidden folder behind
 
 
 def count_trials(ledger_dir: Path, name: str) -> int:
@@ -219,17 +278,15 @@ def _write_outputs(
     return written, scalars
 
 
-def _append_trial(ledger_dir: Path, config: ExperimentConfig, status: str, when: datetime) -> int:
-    ledger_dir.mkdir(parents=True, exist_ok=True)
+def _append_trial(ledger_dir: Path, config: ExperimentConfig, status: str, when: str) -> None:
     entry = {
         "name": config.name,
         "config_sha256": config.hash,
-        "time": when.isoformat(),
+        "time": when,
         "status": status,
     }
     with (ledger_dir / LEDGER).open("a", encoding="utf-8", newline="\n") as handle:
         handle.write(json.dumps(entry, sort_keys=True) + "\n")
-    return count_trials(ledger_dir, config.name)
 
 
 def _code_version() -> dict[str, object]:

@@ -59,7 +59,8 @@ Exit codes:
 
 - 0: the run succeeded;
 - 1: the run failed, and the failure is recorded;
-- 2: the config or its inputs were refused before running.
+- 2: the config or its inputs were refused before running;
+- 130: the run was cancelled with Ctrl+C; the earlier outputs are unchanged.
 
 ## What a run writes
 
@@ -68,7 +69,15 @@ The output folder holds:
 - one CSV file per table;
 - one PNG file per figure;
 - `report.html`, if the kind writes a report;
-- `record.json`, written **last**, so a folder without it is visibly incomplete.
+- `record.json`, written **last**.
+
+**An interrupted run never touches the earlier outputs.** The run writes into a hidden staging
+folder next to the output folder, `.<name>.partial`, and replaces the output folder with it
+only once `record.json` is written. A run stopped before that (Ctrl+C, its process ended, a
+power cut) leaves the earlier outputs as they were, is not recorded, and is not counted in
+the trial ledger. The next run deletes a staging folder left behind. A run that *fails* is
+recorded, and its record replaces the earlier outputs. Folders whose name starts with a dot
+are never listed as runs.
 
 The record contains:
 

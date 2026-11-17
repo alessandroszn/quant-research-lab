@@ -1,7 +1,8 @@
 """Command line: ``qrlab run``, ``qrlab validate`` and ``qrlab kinds``.
 
 Exit codes: 0 success; 2 config or input error (nothing run); 1 run failure (the record is
-still written). The CLI only parses arguments and calls :mod:`qrlab.experiments`.
+still written); 130 cancelled with Ctrl+C (the earlier outputs are unchanged). The CLI only
+parses arguments and calls :mod:`qrlab.experiments`.
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ from qrlab.experiments.kinds import KINDS
 
 __all__ = ["main", "main_entry"]
 
-OK, RUN_FAILED, CONFIG_ERROR = 0, 1, 2
+OK, RUN_FAILED, CONFIG_ERROR, CANCELLED = 0, 1, 2, 130
 
 
 def main(
@@ -57,6 +58,9 @@ def main(
     except QrlabError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return CONFIG_ERROR
+    except KeyboardInterrupt:
+        print("cancelled: the earlier outputs are unchanged", file=sys.stderr)
+        return CANCELLED
     record = result.record
     print(f"output: {result.output_dir}")
     print(f"status: {record['status']}; configurations tried: {record['configurations_tried']}")
