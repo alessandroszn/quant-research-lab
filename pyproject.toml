@@ -58,6 +58,7 @@ parquet = [
 ]
 app = [
     "pyside6-essentials>=6.8",
+    "tomli-w>=1.2",
 ]
 
 [dependency-groups]
@@ -75,6 +76,7 @@ dev = [
     "pyarrow>=18",
     "pyside6-essentials>=6.8",
     "types-openpyxl>=3.1.5.20261017",
+    "tomli-w>=1.2",
 ]
 docs = [
     "myst-parser>=4.0",

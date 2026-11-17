@@ -10,7 +10,7 @@ import qrlab_app
 
 APP_ROOT = Path(qrlab_app.__file__).parent
 ALLOWED_QRLAB = {"experiments", "reporting"}
-ALLOWED_THIRD_PARTY = {"PySide6", "pandas"}
+ALLOWED_THIRD_PARTY = {"PySide6", "pandas", "tomli_w"}  # tomli_w: the form writes TOML (12.1b)
 
 
 def _imports(path: Path) -> set[str]:

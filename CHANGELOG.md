@@ -20,6 +20,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
     key (for example `[parameters.risk.backtest] window`).
   - `docs/guides/kinds.md` is generated from the schemas by `scripts/kinds_guide.py`, with
     every nested key; a test keeps it equal to the generated text.
+- **A form for each analysis in the app** (phase 12.1b): each analysis screen has a *Form*
+  tab, built from the kind's schema, next to the *TOML* tab. Both edit the same config.
+  - Every key is a field with its unit in the label and its help as the tooltip, in the app's
+    language. Optional tables and lists have a tick box; a variant shows the fields of the
+    option chosen; lists, records and maps have *Add* and *Remove*; a matrix is a grid; an
+    input has *Choose…*, which writes the path relative to the config.
+  - Scalars are typed as text, so a value can always be left blank: nothing is filled in.
+    Text that does not read as the field's type is kept as typed, and the schema check names
+    it. After every change the check runs and the field it names is marked.
+  - A config the form cannot show exactly (an unknown key, or a value whose text would not
+    read back as the same value) stays in the *TOML* tab, with the key's path.
+  - The form writes TOML without comments. Saving, validating or running a config whose file
+    has comments asks first, when the form wrote the text.
+- New dependency **tomli-w** (MIT), in the `app` extra, and in the `dev` group for the app's
+  tests. Reason: the form writes the config back as TOML, and escaping strings, dates and
+  nested tables correctly is easy to get subtly wrong; `tomli-w` is the writing half of
+  `tomllib` (the same author's `tomli`), small and pure Python.
 
 ### Fixed
 
