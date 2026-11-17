@@ -469,7 +469,7 @@ note, approved before any code.
 ### 12.2 Cancelling a run, and a queue (8–12 h) — done
 - A cancellation hook in the runner; no partial results that look complete.
 
-### 12.3 Interactive charts (8–12 h)
+### 12.3 Interactive charts (8–12 h) — done
 - Matplotlib's Qt backend on the data files the runner writes; nothing recomputed in the app.
 
 ### 12.4 PDF export and an icon (6–8 h)

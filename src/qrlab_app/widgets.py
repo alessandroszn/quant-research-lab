@@ -33,6 +33,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from qrlab_app.chart_widgets import ChartView
+from qrlab_app.charts import ChartModel
 from qrlab_app.display import cell_text
 from qrlab_app.strings import tr, tr_value
 from qrlab_app.viewmodels import ResultView
@@ -101,7 +103,11 @@ def fill_table(
 
 
 class ResultsPanel(QWidget):
-    """Tables (with their sample tag), scalars, figures and links to the report and folder."""
+    """Tables (with their sample tag), scalars, figures and links to the report and folder.
+
+    A dated table also gets a Chart view next to its Table view (design note 12.3b); the charts
+    of the result shown are in :attr:`charts`.
+    """
 
     def __init__(self, language: str, open_path: Callable[[Path], None]) -> None:
         """Build an empty panel."""
@@ -109,6 +115,7 @@ class ResultsPanel(QWidget):
         self._language = language
         self._open_path = open_path
         self._view: ResultView | None = None
+        self.charts: list[ChartView] = []
         self.title = QLabel("")
         self.notice = QLabel("")
         self.notice.setWordWrap(True)
@@ -131,6 +138,7 @@ class ResultsPanel(QWidget):
         """Display a result, or clear the panel."""
         self._view = view
         self.tabs.clear()
+        self.charts = []
         self.report_button.setEnabled(view is not None and view.report is not None)
         self.folder_button.setEnabled(view is not None)
         self.notice.setText("" if view is None or not view.notice else view.notice)
@@ -140,8 +148,17 @@ class ResultsPanel(QWidget):
         language = self._language
         self.title.setText(f"{view.output_dir.name}: {tr_value('status', view.status, language)}")
         for table in view.tables:
-            widget = QTableView()
-            widget.setModel(FrameModel(table.frame, language))
+            grid = QTableView()
+            grid.setModel(FrameModel(table.frame, language))
+            chart = ChartModel.from_frame(table.frame)
+            widget: QWidget = grid
+            if chart is not None:
+                views = QTabWidget()
+                views.addTab(grid, tr("results.table", language))
+                chart_view = ChartView(chart, language)
+                views.addTab(chart_view, tr("results.chart", language))
+                self.charts.append(chart_view)
+                widget = views
             self.tabs.addTab(widget, f"{table.name} [{tr_value('tag', table.tag, language)}]")
         if view.scalars:
             scalars = QTableWidget()

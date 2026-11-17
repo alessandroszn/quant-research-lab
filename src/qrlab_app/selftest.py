@@ -72,6 +72,8 @@ def _run_one(screen: ExperimentScreen, path: Path) -> bool:
     while screen.model.status in ACTIVE and time.monotonic() < deadline:
         QCoreApplication.processEvents()  # the window's timer runs the queue
         time.sleep(0.02)
+    for chart in screen.results.charts:  # the frozen build must bundle the Qt backend (12.3b)
+        chart.draw()
     return screen.model.status == "done"
 
 

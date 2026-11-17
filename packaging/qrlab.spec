@@ -30,7 +30,6 @@ EXCLUDES = [
     "pytest",
     "sklearn",  # only used by tests, as an independent cross-check
     "matplotlib.backends.backend_tkagg",
-    "matplotlib.backends.backend_qtagg",  # the app shows the PNG files the runner writes
 ]
 
 

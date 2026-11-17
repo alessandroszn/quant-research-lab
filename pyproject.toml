@@ -137,6 +137,12 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 module = ["statsmodels", "statsmodels.*", "sklearn", "sklearn.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# Matplotlib's Qt backend and date helpers have no type hints; only the chart widget calls them
+# (design note 12.3b). Everything else in it stays strict.
+module = ["qrlab_app.chart_widgets"]
+disallow_untyped_calls = false
+
 # --------------------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
 minversion = "8.3"
