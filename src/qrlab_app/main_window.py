@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QTimer
-from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
+from PySide6.QtGui import QCloseEvent, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import QHBoxLayout, QListWidget, QMainWindow, QStackedWidget, QWidget
 
 from qrlab.experiments.registry import ExperimentKind
@@ -32,7 +32,10 @@ from qrlab_app.viewmodels import (
 )
 from qrlab_app.widgets import Dialogs
 
-__all__ = ["ANALYSIS_SCREENS", "QUEUE_TICK_MS", "AppShell", "MainWindow"]
+__all__ = ["ANALYSIS_SCREENS", "ICON", "QUEUE_TICK_MS", "AppShell", "MainWindow"]
+
+ICON = Path(__file__).parent / "resources" / "qrlab.png"
+"""The app's icon (design note 12.4), drawn by ``packaging/make_icon.py``."""
 
 QUEUE_TICK_MS = 200
 """How often the window checks the running run and starts the next one."""
@@ -171,6 +174,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.navigation)
         layout.addWidget(self.stack)
         self.setCentralWidget(central)
+        self.setWindowIcon(QIcon(str(ICON)))
         self.navigation.setCurrentRow(0)
         self.resize(1280, 800)
         if settings.geometry:

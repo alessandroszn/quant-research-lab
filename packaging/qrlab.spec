@@ -19,6 +19,9 @@ ROOT = Path(SPECPATH).parent  # noqa: F821 - SPECPATH is defined by PyInstaller
 # their metadata a frozen run would fail.
 METADATA = ["quant-research-lab", "numpy", "pandas", "scipy", "statsmodels", "matplotlib"]
 datas = [item for name in METADATA for item in copy_metadata(name)]
+# The window's icon (design note 12.4), next to the app's modules as in the source tree.
+datas.append((str(ROOT / "src" / "qrlab_app" / "resources" / "qrlab.png"), "qrlab_app/resources"))
+ICON = str(ROOT / "packaging" / "qrlab.ico")
 
 # Never needed at run time; leaving them out keeps the bundle smaller.
 EXCLUDES = [
@@ -52,6 +55,7 @@ gui_exe = EXE(  # noqa: F821
     [],
     exclude_binaries=True,
     name="QuantResearchLab",
+    icon=ICON,
     console=False,
     upx=False,
 )
@@ -61,6 +65,7 @@ cli_exe = EXE(  # noqa: F821
     [],
     exclude_binaries=True,
     name="qrlab",
+    icon=ICON,
     console=True,
     upx=False,
 )

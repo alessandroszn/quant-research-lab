@@ -472,7 +472,7 @@ note, approved before any code.
 ### 12.3 Interactive charts (8–12 h) — done
 - Matplotlib's Qt backend on the data files the runner writes; nothing recomputed in the app.
 
-### 12.4 PDF export and an icon (6–8 h)
+### 12.4 PDF export and an icon (6–8 h) — done
 - Qt's PDF writer considered before any new dependency.
 
 **M12 — an app where every analysis is a form, can be stopped, and exports to PDF.**

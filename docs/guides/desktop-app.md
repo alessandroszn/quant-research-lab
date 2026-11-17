@@ -63,6 +63,10 @@ Each analysis screen has three columns:
     computed.
   - The scalars and figures are shown below the tables.
   - *Open report* and *Open folder* open them in the system's browser and file manager.
+  - **Export PDF…** prints the report to an A4 PDF where you choose. The PDF is laid out by
+    Qt, not by a browser: the words and numbers are the report's, the style is simpler, and a
+    report with a wide table prints in landscape. For a print exactly as the browser shows it,
+    use *Open report* and the browser's *Save as PDF*.
 
 ## Describing a portfolio (Portfolios)
 
