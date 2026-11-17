@@ -60,13 +60,13 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 | 9 Tax regimes | a common shape for tax regimes, Switzerland, a configurable model (Germany skipped) | **M9 Tax regimes** (done) | 26–40 |
 | 10 Publication | the Linux check, ready for readers, release 1.0.0 | **M10 v1.0 public** (done) | 12–22 |
 | 11 Complete report | total returns, benchmark, stamp duty and IVAFE, VaR backtest and proxies, small items | **M11 Complete report** (done) | 30–48 |
-| 12 Usable app | forms from parameter schemas, cancel and queue, interactive charts, PDF and icon | **M12 App 1.x** | 36–52 |
+| 12 Usable app | forms from parameter schemas, cancel and queue, interactive charts, PDF and icon | **M12 App 1.x** (done) | 36–52 |
 | 13 Deeper research | Romano-Wolf and studentized bootstrap, Fama-MacBeth, daily international factors, the factor zoo again | **M13 Research 2** | 38–56 |
 
 Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 was planned at M6; it
 was cut at M10, on 2026-11-16, on GitHub (PyPI follows once the owner has an account). After
 it, each of Levels 11 to 13 ends in a minor release (`v1.1.0`, `v1.2.0`, `v1.3.0`); `v1.1.0`
-was cut at M11, on 2026-11-17, on GitHub.
+was cut at M11 and `v1.2.0` at M12, both on 2026-11-17, on GitHub.
 
 ---
 
@@ -475,7 +475,7 @@ note, approved before any code.
 ### 12.4 PDF export and an icon (6–8 h) — done
 - Qt's PDF writer considered before any new dependency.
 
-**M12 — an app where every analysis is a form, can be stopped, and exports to PDF.**
+**M12 — an app where every analysis is a form, can be stopped, and exports to PDF (done).**
 
 ## Level 13 — Deeper research → M13
 
