@@ -454,3 +454,49 @@ def test_the_english_portfolio_report_says_it_is_not_advice(tmp_path: Path) -> N
     html = (result.output_dir / "report.html").read_text(encoding="utf-8")
     assert ADVICE["en"] in html
     assert ADVICE["it"] not in html
+
+
+def test_the_report_writes_the_data_behind_its_figures(tmp_path: Path) -> None:
+    """Design note 12.3a, checked by hand on the example portfolio (flows at the start of day).
+
+    02/01: 10 000 in, 100 units bought at 50 with a fee of 10: 4 990 cash + 5 000 = 9 990.
+    30/01: 5 000 in; the units at 55: 9 990 + 5 500 = 15 490.
+    27/02: a dividend of 100; the units at 52: 10 090 + 5 200 = 15 290.
+    31/03: 50 units sold at 54 with a fee of 10: 12 780 + 2 700 = 15 480.
+    TWR: 9 990 / 10 000, 15 490 / 14 990, 15 290 / 15 490, 15 480 / 15 290; the drawdown
+    counts the starting value as the first peak.
+    """
+    result = run_experiment(
+        _localise("example_portfolio_report.toml", tmp_path), kinds=KINDS, overwrite=False
+    )
+    assert result.succeeded, result.record["error"]
+    value = pd.read_csv(result.output_dir / "value.csv", index_col=0)
+    dates = ["2026-01-02", "2026-01-30", "2026-02-27", "2026-03-31"]
+    assert value.index.name == "date"
+    assert list(value.index) == dates
+    assert list(value.columns) == ["value_EUR"]
+    assert value["value_EUR"].tolist() == [9990.0, 15490.0, 15290.0, 15480.0]
+    twr = pd.read_csv(result.output_dir / "twr.csv", index_col=0)
+    assert twr.index.name == "date"
+    assert list(twr.index) == dates
+    assert list(twr.columns) == ["cumulative_twr", "drawdown"]
+    growth = [0.999, 0.999 * 15490 / 14990, 0.999 * 15290 / 14990, 0.999 * 15480 / 14990]
+    assert twr["cumulative_twr"].tolist() == pytest.approx([g - 1 for g in growth], abs=1e-12)
+    assert twr["drawdown"].tolist() == pytest.approx(
+        [-0.001, 0.0, 15290 / 15490 - 1, 15480 / 15490 - 1], abs=1e-12
+    )
+    scalars = result.record["scalars"]
+    assert twr["cumulative_twr"].iloc[-1] == pytest.approx(scalars["twr_total"]["value"])
+    outputs = result.record["outputs"]
+    assert outputs["value.csv"]["tag"] == outputs["twr.csv"]["tag"] == "descriptive"
+
+
+def test_without_periods_there_is_no_twr_table() -> None:
+    from qrlab.experiments.kinds.portfolio_report import _figure_tables
+
+    values = pd.Series([100.0], index=pd.DatetimeIndex(["2026-01-02"]), name="value")
+    tables = _figure_tables(values, "CHF", pd.Series([], dtype=float))
+    assert list(tables) == ["value"]
+    value = tables["value"].value
+    assert isinstance(value, pd.DataFrame)
+    assert list(value.columns) == ["value_CHF"]

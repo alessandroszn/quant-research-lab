@@ -87,7 +87,7 @@ def test_the_native_file_gives_the_same_report_as_the_mapped_export(tmp_path: Pa
     assert b.succeeded, b.record.get("error")
     csvs = sorted(p.name for p in a.output_dir.glob("*.csv"))
     assert csvs == sorted(p.name for p in b.output_dir.glob("*.csv"))
-    assert csvs == ["check_findings.csv", "exposures.csv"]
+    assert csvs == ["check_findings.csv", "exposures.csv", "twr.csv", "value.csv"]
     for name in csvs:
         assert (a.output_dir / name).read_bytes() == (b.output_dir / name).read_bytes(), name
     assert a.record["scalars"] == b.record["scalars"]

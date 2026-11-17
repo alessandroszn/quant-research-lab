@@ -13,6 +13,11 @@ Parameters (required): ``transactions_format``, ``title``, ``base_currency``, ``
 (``monthly``/``none``), ``generated_at`` (date-time with time zone) and ``target_weights`` (a
 table, possibly empty).
 
+Besides ``report.html`` and ``check_findings.csv``, the run writes the series behind the
+report's figures (design note 12.3a): ``value.csv`` (the value in the base currency on each
+valuation date, column ``value_<currency>``) and, when there is at least one period,
+``twr.csv`` (``cumulative_twr`` and ``drawdown`` per period).
+
 Several currencies (phase 7.4a), all optional:
 
 - ``fx``: the ECB ``eurofxref-hist`` zip. Its provenance comes from the raw store's sidecar when
@@ -198,6 +203,7 @@ from qrlab.instruments.master import Instrument
 from qrlab.lookthrough.exposures import UNEXPLAINED, WeightTreatment, look_through
 from qrlab.lookthrough.inputs import LookThroughInputs
 from qrlab.lookthrough.tracking import TrackingSeries, tracking_difference
+from qrlab.metrics.drawdown import drawdown_series
 from qrlab.metrics.errors import UndefinedMetricError
 from qrlab.metrics.performance import SharpeSE, sharpe_ratio
 from qrlab.portfolio.broker_import import load_broker_mapping, parse_broker_csv
@@ -652,6 +658,29 @@ def _benchmark(
     return outputs, [provenance]
 
 
+def _figure_tables(values: pd.Series, currency: str, returns: pd.Series) -> dict[str, Tagged]:
+    r"""Return the series behind the report's figures as tables (design note 12.3a).
+
+    ``value`` holds the value in ``currency`` on each valuation date. ``twr``, only when there
+    is at least one period (as for the figures), holds ``cumulative_twr``,
+    :math:`\prod_{s \le t} (1 + r_s) - 1`, and ``drawdown``, from
+    :func:`qrlab.metrics.drawdown.drawdown_series`.
+    """
+    value = values.to_frame(f"value_{currency}")
+    value.index.name = "date"
+    tables = {"value": Tagged(value, "descriptive")}
+    if len(returns):
+        twr = pd.DataFrame(
+            {
+                "cumulative_twr": (1.0 + returns).cumprod() - 1.0,
+                "drawdown": drawdown_series(returns),
+            }
+        )
+        twr.index.name = "date"
+        tables["twr"] = Tagged(twr, "descriptive")
+    return tables
+
+
 def _risk_free(
     context: RunContext, dates: list[date], twr_returns: pd.Series
 ) -> tuple[RiskFreeSummary | None, pd.DataFrame | None, list[Provenance]]:
@@ -881,7 +910,10 @@ def _run(context: RunContext) -> ExperimentOutput:
         columns=["check", "severity", "subject", "observed", "threshold"],
     )
     end = valuation.totals[dates[-1]]
-    tables = {"check_findings": Tagged(findings, "descriptive")}
+    tables = {
+        "check_findings": Tagged(findings, "descriptive"),
+        **_figure_tables(valuation.series(), p.base.code, twr.returns),
+    }
     scalars = {
         "end_value": Tagged(float(end), "descriptive"),
         "twr_total": Tagged(float(twr.total), "descriptive"),
