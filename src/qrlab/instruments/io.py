@@ -29,7 +29,7 @@ from qrlab.data.errors import ParseError
 from qrlab.data.provenance import Provenance
 from qrlab.data.sheets import check_affixes, read_spreadsheetml_rows, read_xlsx_rows
 from qrlab.data.user_csv import parse_number
-from qrlab.instruments.countries import country_code
+from qrlab.instruments.countries import country_code, country_code_it
 from qrlab.instruments.holdings import HOLDING_COLUMNS, HoldingsSnapshot
 from qrlab.instruments.identifiers import COUNTRIES, Isin, validate_country
 from qrlab.instruments.master import (
@@ -218,6 +218,7 @@ class CountryFormat(Enum):
 
     ISO_ALPHA2 = "iso_alpha2"  # "US"
     NAME = "name"  # "United States", converted with qrlab.instruments.countries
+    NAME_IT = "name_it"  # "Stati Uniti", converted with CLDR's Italian names (11.5)
 
 
 @dataclass(frozen=True)
@@ -404,6 +405,10 @@ def parse_holdings_file(
         notes.append("Weights converted from percent to decimal (divided by 100).")
     if mapping.country_format is CountryFormat.NAME and "country" in mapping.columns:
         notes.append("Country names converted to ISO 3166-1 alpha-2 codes.")
+    if mapping.country_format is CountryFormat.NAME_IT and "country" in mapping.columns:
+        notes.append(
+            "Italian country names converted to ISO 3166-1 alpha-2 codes (Unicode CLDR 49.0.0)."
+        )
     if trailing:
         notes.append(f"Ignored {trailing} line(s) after the first blank line.")
     ignored = [h for h in header if h not in mapping.columns.values()]
@@ -528,6 +533,8 @@ def _country(value: str | None, mapping: HoldingsCsvMapping, line: int) -> str |
     try:
         if mapping.country_format is CountryFormat.NAME:
             return country_code(value)
+        if mapping.country_format is CountryFormat.NAME_IT:
+            return country_code_it(value)
         return validate_country(value)
     except ValidationError as exc:
         raise ParseError(f"line {line}: {exc}") from exc

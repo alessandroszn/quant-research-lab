@@ -243,6 +243,11 @@ _ENTRIES: tuple[tuple[str, str, Mapping[int, Mapping[str, str]]], ...] = (
         {},
     ),
     (
+        r"Italian country names converted to ISO 3166-1 alpha-2 codes \(Unicode CLDR 49\.0\.0\)\.",
+        "Nomi italiani dei paesi convertiti in codici ISO 3166-1 alpha-2 (Unicode CLDR 49.0.0).",
+        {},
+    ),
+    (
         r"Ignored (\d+) line\(s\) after the first blank line\.",
         "Ignorate {0} righe dopo la prima riga vuota.",
         {},

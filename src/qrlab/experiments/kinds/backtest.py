@@ -20,6 +20,10 @@ Strategies (``[parameters.strategy]``, ``name`` plus its own keys):
 Results of ``walk_forward`` are tagged ``out_of_sample`` (each decision uses only past data).
 Rule-based strategies are tagged ``in_sample``: their rules and parameters may have been chosen
 after seeing the same history.
+
+Optional ``[parameters.losses]`` (phase 11.5): ``carry_years`` and ``fund_assets`` (asset
+names), the Italian loss rules of :class:`qrlab.simulation.LossRules` for the capital-gains
+tax.
 """
 
 from __future__ import annotations
@@ -39,7 +43,7 @@ from qrlab.core.series import NanPolicy
 from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._frames import price_type, read_returns, returns_notice
-from qrlab.experiments.kinds._params import choice, number, table, text, whole
+from qrlab.experiments.kinds._params import choice, loss_rules, number, table, text, whole
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.optimization.constraints import Constraints
 from qrlab.optimization.mean_variance import OptimizationResult, equal_weights, minimum_variance
@@ -50,6 +54,7 @@ from qrlab.optimization.risk_based import (
     risk_budgeting,
 )
 from qrlab.risk.covariance import CovarianceEstimate, ledoit_wolf_covariance
+from qrlab.simulation.losses import LossRules
 from qrlab.simulation.plan import TaxModel
 
 __all__ = ["CAVEATS", "KIND", "read_returns"]
@@ -89,7 +94,7 @@ class _Parameters:
 
 
 def _parse(parameters: Mapping[str, object]) -> _Parameters:
-    require_keys(parameters, required=set(_PARAMETERS), optional=set(), where="[parameters]")
+    require_keys(parameters, required=set(_PARAMETERS), optional={"losses"}, where="[parameters]")
     fmt = table(
         parameters,
         "returns_format",
@@ -136,6 +141,7 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
     if not isinstance(weights, dict) or not weights:
         raise ValidationError("initial_weights must be a non-empty table")
     rate = number(parameters, "capital_gains_tax")
+    losses = loss_rules(parameters, where="[parameters]", fund_assets=True)
     return _Parameters(
         returns_format={k: text(fmt, k) if k != "delimiter" else str(fmt[k]) for k in fmt},
         returns_price_type=price_type(parameters, "returns_price_type"),
@@ -143,7 +149,9 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         lag=whole(parameters, "execution_lag", minimum=1),
         policy=policy,
         costs=CostModel(number(costs, "proportional"), number(costs, "fixed")),
-        tax=None if rate == 0.0 else TaxModel(rate, 0.0),
+        tax=None
+        if rate == 0.0
+        else TaxModel(rate, 0.0, losses=None if losses is None else LossRules(*losses)),
         initial_weights=pd.Series({str(k): number(weights, k) for k in weights}),
         initial_value=Money.of(
             str(number(parameters, "initial_value")), text(parameters, "currency")

@@ -962,7 +962,7 @@ class _Builder:
             if plan.rebalance_every is None
             else self.t("rebalance_every", n=str(plan.rebalance_every))
         )
-        assumptions = (
+        assumptions: tuple[tuple[str, str], ...] = (
             (self.t("engine"), summary.engine),
             (self.t("paths"), format_number(summary.n_paths, 0, style=self.style)),
             (self.t("horizon"), self.t("years", n=format_number(years, 1, style=self.style))),
@@ -975,6 +975,19 @@ class _Builder:
             (self.t("capital_gains_tax"), self.pct(plan.taxes.capital_gains_rate)),
             (self.t("wealth_tax"), self.pct(plan.taxes.wealth_tax_rate)),
         )
+        losses = plan.taxes.losses
+        if losses is not None:
+            funds = ", ".join(self._name_of(a) for a in sorted(losses.fund_assets))
+            assumptions += (
+                (
+                    self.t("losses_carried"),
+                    self.t(
+                        "losses_carried_value",
+                        n=str(losses.carry_years),
+                        funds=funds or self.t("none"),
+                    ),
+                ),
+            )
         tables = [
             Table(self.t("assumptions"), ("", self.t("value")), assumptions, ("left", "right"), ())
         ]

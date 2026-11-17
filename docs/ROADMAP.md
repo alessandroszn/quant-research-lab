@@ -59,7 +59,7 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 | 8 Real portfolio | first real run, issuer holdings, risk, projection, risk-free rate, Italian tax, Italian report | **M8 Real portfolio** (done) | 38–58 |
 | 9 Tax regimes | a common shape for tax regimes, Switzerland, a configurable model (Germany skipped) | **M9 Tax regimes** (done) | 26–40 |
 | 10 Publication | the Linux check, ready for readers, release 1.0.0 | **M10 v1.0 public** (done) | 12–22 |
-| 11 Complete report | total returns, benchmark, stamp duty and IVAFE, VaR backtest and proxies, small items | **M11 Complete report** | 30–48 |
+| 11 Complete report | total returns, benchmark, stamp duty and IVAFE, VaR backtest and proxies, small items | **M11 Complete report** (done) | 30–48 |
 | 12 Usable app | forms from parameter schemas, cancel and queue, interactive charts, PDF and icon | **M12 App 1.x** | 36–52 |
 | 13 Deeper research | Romano-Wolf and studentized bootstrap, Fama-MacBeth, daily international factors, the factor zoo again | **M13 Research 2** | 38–56 |
 
@@ -439,25 +439,25 @@ note, approved before any code.
 
 ## Level 11 — A complete portfolio report → M11
 
-### 11.1 Total returns for distributing funds (8–12 h)
+### 11.1 Total returns for distributing funds (8–12 h) — done
 - An optional total-return series (or the distributions) per fund for risk and the checks;
   without it, the report says so for each distributing fund.
 
-### 11.2 A benchmark in the report (6–10 h)
+### 11.2 A benchmark in the report (6–10 h) — done
 - A benchmark input with dated FX; active return, tracking error, information ratio and beta,
   also on excess returns over the €STR.
 
-### 11.3 Italian stamp duty and IVAFE (6–10 h)
+### 11.3 Italian stamp duty and IVAFE (6–10 h) — done
 - Yearly items in the Italian tax section, checked against the law in force with sources.
 
-### 11.4 VaR backtest and factor proxies in the report (6–10 h)
+### 11.4 VaR backtest and factor proxies in the report (6–10 h) — done
 - Kupiec and Christoffersen in the risk section; proxies for positions without a long
   history, labelled as such.
 
-### 11.5 Small open items (4–6 h)
+### 11.5 Small open items (4–6 h) — done
 - Loss-rule keys in the configs; income tax in the `projection` kind; Italian country names.
 
-**M11 — a portfolio report with total returns, a benchmark and the Italian wealth taxes.**
+**M11 — a portfolio report with total returns, a benchmark and the Italian wealth taxes (done).**
 
 ## Level 12 — A usable app → M12
 
