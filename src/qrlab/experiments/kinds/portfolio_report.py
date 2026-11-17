@@ -53,6 +53,13 @@ returns come from the report's own price files and the ECB rates of ``fx``, at t
 see ``qrlab.experiments.kinds._portfolio_risk``. The run then writes ``risk_returns.csv``,
 ``risk_contributions.csv``, ``var_es.csv`` (and ``scenarios.csv``) and the scalars
 ``volatility_period``, ``volatility_annual``, ``var_historical`` and ``es_historical``.
+Optional in ``[parameters.risk]`` (phase 11.4): ``[parameters.risk.backtest]`` (``window``,
+``model``: ``historical``, ``normal`` or ``cornish_fisher``) backtests the VaR model on today's
+weights over the common history (Kupiec, Christoffersen), writing ``var_backtest.csv`` and its
+scalars (``out_of_sample``); ``[parameters.risk.proxies]`` (ISIN = { factor = beta }) with the
+``factors`` and ``factors_mapping`` inputs (total-return factor levels in the proxied
+positions' exposure currency) maps positions without their own history to the factors in the
+stress tests.
 
 Projection (phase 8.4), optional: ``[parameters.projection]`` projects today's portfolio
 (value, weights, date) with stated return assumptions, one table per held position and one for
@@ -145,7 +152,7 @@ from qrlab.data.ecb import FX_DATASET, parse_ecb_fx, parse_estr
 from qrlab.data.ecb import SOURCE as ECB_SOURCE
 from qrlab.data.ecb import TERMS as ECB_TERMS
 from qrlab.data.provenance import Dataset, Provenance
-from qrlab.data.user_csv import PriceData, load_csv_mapping, parse_price_csv
+from qrlab.data.user_csv import PriceData, PriceType, load_csv_mapping, parse_price_csv
 from qrlab.experiments.config import require_keys
 from qrlab.experiments.kinds._frames import ADVICE
 from qrlab.experiments.kinds._params import (
@@ -237,6 +244,8 @@ _OPTIONAL_INPUTS = (
     "total_returns_mapping",
     "benchmark",
     "benchmark_mapping",
+    "factors",
+    "factors_mapping",
 )
 _FORMAT_HINT = (
     'transactions_format is required: "mapped" for a broker export read with '
@@ -451,6 +460,9 @@ def _check_inputs(parameters: object, names: frozenset[str]) -> None:
         raise ValidationError("an issuers file is used only with holdings files")
     if ("total_returns" in names) != ("total_returns_mapping" in names):
         raise ValidationError("total_returns and total_returns_mapping go together")
+    proxies = p.risk is not None and p.risk.proxies is not None
+    if ("factors" in names) != ("factors_mapping" in names) or ("factors" in names) != proxies:
+        raise ValidationError("factors, factors_mapping and [parameters.risk.proxies] go together")
     benchmark_parts = {"benchmark" in names, "benchmark_mapping" in names, p.benchmark is not None}
     if len(benchmark_parts) != 1:
         raise ValidationError("benchmark, benchmark_mapping and [parameters.benchmark] go together")
@@ -570,6 +582,39 @@ def _total_returns(context: RunContext) -> tuple[PriceData | None, list[Provenan
     provenance = local_provenance(path, dataset="total_returns")
     mapping = load_csv_mapping(context.inputs["total_returns_mapping"])
     return parse_price_csv(path.read_bytes(), provenance, mapping), [provenance]
+
+
+def _factor_returns(
+    context: RunContext, check_context: CheckContext, spec: RiskSpec
+) -> pd.DataFrame | None:
+    """Read the factor levels for the stress-test proxies and return their returns (11.4)."""
+    if "factors" not in context.inputs or spec.proxies is None:
+        return None
+    path = context.inputs["factors"]
+    data = parse_price_csv(
+        path.read_bytes(),
+        local_provenance(path, dataset="factors"),
+        load_csv_mapping(context.inputs["factors_mapping"]),
+    )
+    wrong = sorted(c for c, kind in data.price_types.items() if kind is not PriceType.TOTAL_RETURN)
+    if wrong:
+        raise ValidationError(
+            f'factors: {wrong} must declare price_type = "total_return", like the positions\' '
+            "returns"
+        )
+    currency = data.dataset.currency
+    assert currency is not None  # a price mapping always has a currency
+    for isin in sorted(spec.proxies, key=lambda i: i.code):
+        if isin not in check_context.position_weights():
+            continue  # compute_risk names proxies of positions not held
+        exposure = check_context.exposure_currency(isin)
+        if exposure != currency:
+            raise ValidationError(
+                f"factors are in {currency.code}, {isin.code} is exposed to {exposure.code}: "
+                "a proxy maps factor returns in the position's exposure currency"
+            )
+    levels = data.dataset.data.astype("float64")
+    return levels.pct_change(fill_method=None).iloc[1:]
 
 
 def _benchmark(
@@ -760,6 +805,7 @@ def _run(context: RunContext) -> ExperimentOutput:
             fx=fx_rates,
             scenarios=load_scenarios(files["scenarios"]) if "scenarios" in files else (),
             levels=sources.levels,
+            factors=_factor_returns(context, check_context, p.risk),
         )
     tax_position = None
     if p.tax is not None:
@@ -807,6 +853,11 @@ def _run(context: RunContext) -> ExperimentOutput:
             *risk_free_provenance,
             *total_returns_provenance,
             *benchmark_provenance,
+            *(
+                [local_provenance(files["factors"], dataset="factors")]
+                if "factors" in files
+                else []
+            ),
         ],
         instruments=instruments,
         import_notes=list(imported.notes),

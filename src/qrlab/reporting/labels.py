@@ -369,6 +369,33 @@ _EN = {
     "risk_var_es": "Value at risk and expected shortfall at {confidence}",
     "method": "Method",
     "var_note": "Positive numbers are losses. No method is 'the' VaR: compare them.",
+    "backtest": "Backtest of the VaR model",
+    "backtest_forecasts": "Forecasts",
+    "backtest_exceedances": "Exceedances",
+    "backtest_expected": "Expected exceedances",
+    "backtest_hit_rate": "Exceedance rate",
+    "kupiec_pvalue": "Kupiec test, p-value (coverage)",
+    "independence_pvalue": "Christoffersen test, p-value (independence)",
+    "conditional_coverage_pvalue": "Conditional coverage, p-value",
+    "backtest_note": (
+        "Each forecast is the {model} VaR at {confidence} of the {window} returns before it. It "
+        "checks the model on today's weights held constant over the past: not a record of past "
+        "risk, and weights chosen today carry hindsight. A test can only reject; not rejecting "
+        "does not prove the model right."
+    ),
+    "backtest_low_power": (
+        "Fewer than 5 exceedances are expected: the tests have little power on this history."
+    ),
+    "backtest_model_historical": "historical",
+    "backtest_model_normal": "normal",
+    "backtest_model_cornish_fisher": "Cornish-Fisher",
+    "proxies": "Factor proxies in the stress tests",
+    "factor": "Factor",
+    "proxies_note": (
+        "A position without its own returns over a scenario's window is mapped to the factors "
+        "with these betas: a linear map with no residual, which understates its own risk. "
+        "Betas are assumptions given in the report's settings."
+    ),
     "benchmark": "Benchmark",
     "benchmark_none": "No benchmark was given for this report.",
     "benchmark_intro": (
@@ -884,6 +911,33 @@ _IT = {
     "risk_var_es": "Value at risk ed expected shortfall al {confidence}",
     "method": "Metodo",
     "var_note": "I numeri positivi sono perdite. Nessun metodo è 'il' VaR: vanno confrontati.",
+    "backtest": "Backtest del modello di VaR",
+    "backtest_forecasts": "Previsioni",
+    "backtest_exceedances": "Superamenti",
+    "backtest_expected": "Superamenti attesi",
+    "backtest_hit_rate": "Frequenza dei superamenti",
+    "kupiec_pvalue": "Test di Kupiec, p-value (copertura)",
+    "independence_pvalue": "Test di Christoffersen, p-value (indipendenza)",
+    "conditional_coverage_pvalue": "Copertura condizionata, p-value",
+    "backtest_note": (
+        "Ogni previsione è il VaR {model} al {confidence} dei {window} rendimenti precedenti. "
+        "Verifica il modello sui pesi di oggi tenuti costanti nel passato: non è il rischio "
+        "corso in passato, e i pesi scelti oggi contengono il senno di poi. Un test può solo "
+        "rifiutare; non rifiutare non dimostra che il modello sia giusto."
+    ),
+    "backtest_low_power": (
+        "Si attendono meno di 5 superamenti: su questa storia i test hanno poca potenza."
+    ),
+    "backtest_model_historical": "storico",
+    "backtest_model_normal": "normale",
+    "backtest_model_cornish_fisher": "Cornish-Fisher",
+    "proxies": "Proxy fattoriali negli stress test",
+    "factor": "Fattore",
+    "proxies_note": (
+        "Una posizione senza rendimenti propri nella finestra di uno scenario è rappresentata "
+        "dai fattori con questi beta: una mappa lineare senza residuo, che ne sottostima il "
+        "rischio proprio. I beta sono ipotesi indicate nelle impostazioni del report."
+    ),
     "benchmark": "Benchmark",
     "benchmark_none": "Per questo report non è stato fornito un benchmark.",
     "benchmark_intro": (

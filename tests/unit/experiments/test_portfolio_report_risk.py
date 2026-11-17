@@ -769,3 +769,230 @@ def test_the_benchmark_inputs_go_together(tmp_path: Path, parameters: str, files
     config = _with_benchmark(tmp_path, parameters=parameters, files=files)
     with pytest.raises(ValidationError, match="benchmark"):
         validate_experiment(config, kinds=KINDS)
+
+
+# ------------------------------------------- VaR backtest and factor proxies (design note 11.4)
+# Two funds with the same returns, at 0.5 / 0.5, give portfolio returns
+# (1, -1, 2, 0, -5, 1, 3, -4) %. With a window of 4 and the normal model at 95 %, the forecasts
+# are 1.6235, 5.8423, 5.6141 and 5.8481 %: only -5 % exceeds its forecast. n = 4, x = 1,
+# expected 0.2, Kupiec LR = -2 [3 ln 0.95 + ln 0.05 - 3 ln 0.75 - ln 0.25] = 1.8005, p 0.1796.
+BACKTEST_RETURNS = (0.01, -0.01, 0.02, 0.0, -0.05, 0.01, 0.03, -0.04)
+BACKTEST = '\n[parameters.risk.backtest]\nwindow = {window}\nmodel = "{model}"\n'
+
+
+def _backtested(
+    tmp: Path, *, window: int = 4, model: str = "normal", repeat: int = 1, confidence: str = "0.95"
+) -> Path:
+    tmp.mkdir(parents=True, exist_ok=True)
+    returns = BACKTEST_RETURNS * repeat
+    # business month ends, so the last five are MONTH_ENDS, the dates of TWO_FUNDS_EXPORT
+    ends = pd.date_range(end="2026-05-29", periods=len(returns) + 1, freq="BME")
+    days = [d.strftime("%d/%m/%Y") for d in ends]
+    path = _backwards(returns)
+    rows = [(d, [p, p]) for d, p in zip(days, path, strict=True)]
+    prices = _write_prices(tmp, "prices", rows, [FUND_A, FUND_B])
+    instruments = (
+        INSTRUMENT.format(isin=FUND_A, currency="EUR")
+        + "\n"
+        + INSTRUMENT.format(isin=FUND_B, currency="EUR")
+    )
+    risk = RISK.format(frequency="monthly", window=4).replace("0.95", confidence)
+    risk += BACKTEST.format(window=window, model=model)
+    return _config(tmp, export=TWO_FUNDS_EXPORT, instruments=instruments, prices=prices,
+                   parameters=risk)  # fmt: skip
+
+
+def test_var_backtest_by_hand(tmp_path: Path) -> None:
+    record, out = _run(_backtested(tmp_path))
+    assert record["status"] == "success", record["error"]
+    path = pd.read_csv(out / "var_backtest.csv", index_col=0)
+    assert path["return"].tolist() == pytest.approx(list(BACKTEST_RETURNS[4:]), abs=1e-10)
+    assert path["var"].tolist() == pytest.approx([0.016235, 0.058423, 0.056141, 0.058481], abs=1e-6)
+    assert path["exceedance"].tolist() == [True, False, False, False]
+    assert _scalar(record, "backtest_exceedances") == 1.0
+    assert _scalar(record, "backtest_expected") == pytest.approx(0.2)
+    assert _scalar(record, "kupiec_pvalue") == pytest.approx(0.1796, abs=1e-4)
+    assert record["outputs"]["var_backtest.csv"]["tag"] == "out_of_sample"  # type: ignore[index]
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Backtest of the VaR model" in html
+    assert "Fewer than 5 exceedances are expected" in html
+
+
+@pytest.mark.parametrize(
+    ("model", "window", "confidence"),
+    [("normal", 6, 0.95), ("historical", 5, 0.8)],
+)
+def test_var_backtest_matches_the_library(
+    tmp_path: Path, model: str, window: int, confidence: float
+) -> None:
+    from qrlab.metrics.risk import historical_var, parametric_var
+    from qrlab.risk.var_backtest import var_backtest, var_forecasts
+
+    record, out = _run(
+        _backtested(tmp_path, window=window, model=model, repeat=4, confidence=str(confidence))
+    )
+    assert record["status"] == "success", record["error"]
+    models = {
+        "normal": lambda r: parametric_var(r, confidence=confidence),
+        "historical": lambda r: historical_var(r, confidence=confidence),
+    }
+    index = pd.date_range(end="2026-05-31", periods=32, freq="ME")
+    series = pd.Series(BACKTEST_RETURNS * 4, index=index)
+    forecasts = var_forecasts(series, window=window, model=models[model])
+    test = var_backtest(series.loc[forecasts.index], forecasts, confidence=confidence)
+    path = pd.read_csv(out / "var_backtest.csv", index_col=0)
+    assert path["var"].tolist() == pytest.approx(forecasts.tolist(), abs=1e-10)
+    assert _scalar(record, "conditional_coverage_pvalue") == pytest.approx(
+        test.conditional_coverage_pvalue, abs=1e-10
+    )
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert ("Fewer than 5 exceedances are expected" in html) == (test.expected < 5)
+
+
+def test_the_cornish_fisher_model_is_the_library_one(rng: np.random.Generator) -> None:
+    """Cornish-Fisher is often undefined on short windows (as in risk_report): checked directly."""
+    from qrlab.experiments.kinds._portfolio_risk import _var_model
+    from qrlab.risk.var_methods import cornish_fisher
+
+    index = pd.date_range("2016-01-31", periods=120, freq="ME")
+    returns = pd.Series(0.005 + 0.02 * rng.standard_t(5, 120), index=index)
+    model = _var_model("cornish_fisher", 0.95)
+    assert model(returns) == cornish_fisher(returns, confidence=0.95).var
+
+
+def test_a_backtest_needs_two_forecasts(tmp_path: Path) -> None:
+    record, _ = _run(_backtested(tmp_path, window=7))
+    assert record["status"] == "failure"
+    assert "8 monthly returns at today's weights give fewer than 2 forecasts" in str(
+        record["error"]
+    )
+
+
+def test_the_backtest_table_in_italian(tmp_path: Path) -> None:
+    config = _backtested(tmp_path)
+    config.write_text(
+        config.read_text(encoding="utf-8").replace('language = "en"', 'language = "it"'),
+        encoding="utf-8",
+    )
+    record, out = _run(config)
+    assert record["status"] == "success", record["error"]
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Backtest del modello di VaR" in html
+    assert "Test di Kupiec, p-value (copertura)" in html
+
+
+# Fund A's prices start on 30/01/2026; a historical scenario in early 2025 covers only fund B,
+# whose price is flat then (a window is covered by a series with a return dated on or before
+# its start, hence the prices of 29/11/2024). A factor returns -10 % then +5 %: with beta 0.8
+# the proxy gives (1 - 0.08)(1 + 0.04) - 1 = -4.32 %, so the portfolio, at 0.5 / 0.5, loses
+# 2.16 %. A hypothetical factor shock of -20 % gives -16 % for fund A.
+EARLY_2025 = ("29/11/2024", "31/12/2024", "31/01/2025", "28/02/2025", "31/03/2025", "30/04/2025",
+              "30/05/2025", "30/06/2025", "31/07/2025", "29/08/2025", "30/09/2025",
+              "31/10/2025", "28/11/2025", "31/12/2025")  # fmt: skip
+PROXIES = f'\n[parameters.risk.proxies."{FUND_A}"]\nWorld = 0.8\n'
+SCENARIOS = (
+    '[early_2025]\nkind = "historical"\ndescription = "Early 2025"\n'
+    "start = 2024-12-31\nend = 2025-02-28\n\n"
+    '[world_down]\nkind = "hypothetical"\ndescription = "World -20 %"\n'
+    "factors = { World = -0.20 }\npositions = {}\ncurrencies = {}\n"
+)
+
+
+def _proxied(tmp: Path, *, proxies: str = PROXIES, factors: bool = True,
+             price_type: str = "total_return", currency: str = "EUR") -> Path:  # fmt: skip
+    tmp.mkdir(parents=True, exist_ok=True)
+    a, b = _backwards(RETURNS_A), _backwards(RETURNS_B)
+    lines = [f"{d};;{_number(100.0)}" for d in EARLY_2025]
+    lines += [
+        f"{d};{_number(pa)};{_number(pb)}" for d, pa, pb in zip(MONTH_ENDS, a, b, strict=True)
+    ]
+    prices = tmp / "prices.csv"
+    prices.write_text(f"Data;{FUND_A};{FUND_B}\n" + "\n".join(lines) + "\n", encoding="utf-8")
+    mapping = tmp / "prices_mapping.toml"
+    columns = "\n".join(COLUMN.format(isin=i, price_type="price") for i in (FUND_A, FUND_B))
+    mapping.write_text(
+        PRICE_MAPPING.format(currency="EUR", frequency="monthly", columns=columns),
+        encoding="utf-8",
+    )
+    scenarios = tmp / "scenarios.toml"
+    scenarios.write_text(SCENARIOS, encoding="utf-8")
+    rows = [("29/11/2024", [100.0]), ("31/12/2024", [100.0]), ("31/01/2025", [90.0]),
+            ("28/02/2025", [94.5])]  # fmt: skip
+    factor_files = _write_prices(tmp, "factors", rows, ["World"], price_type=price_type,
+                                 currency=currency)  # fmt: skip
+    extra = f'scenarios = "{scenarios.as_posix()}"\n'
+    if factors:
+        extra += (
+            f'factors = "{factor_files[0].as_posix()}"\n'
+            f'factors_mapping = "{factor_files[1].as_posix()}"\n'
+        )
+    instruments = (
+        INSTRUMENT.format(isin=FUND_A, currency="EUR")
+        + "\n"
+        + INSTRUMENT.format(isin=FUND_B, currency="EUR")
+    )
+    return _config(tmp, export=TWO_FUNDS_EXPORT, instruments=instruments,
+                   prices=(prices, mapping), extra_inputs=extra,
+                   parameters=RISK.format(frequency="monthly", window=4) + proxies)  # fmt: skip
+
+
+def test_a_factor_proxy_by_hand(tmp_path: Path) -> None:
+    record, out = _run(_proxied(tmp_path))
+    assert record["status"] == "success", record["error"]
+    table = pd.read_csv(out / "scenarios.csv", index_col=0)
+    assert table.loc["early_2025", "portfolio_return"] == pytest.approx(0.5 * -0.0432, abs=1e-12)
+    assert table.loc["early_2025", "not_covered_weight"] == pytest.approx(0.0)
+    assert table.loc["world_down", "portfolio_return"] == pytest.approx(0.5 * -0.16, abs=1e-12)
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert "Factor proxies in the stress tests" in html
+    assert "Factor proxy" in html  # the method of fund A in the scenario detail
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"proxies": ""}, "factors, factors_mapping and [parameters.risk.proxies] go together"),
+        ({"factors": False}, "go together"),
+        ({"price_type": "price"}, 'must declare price_type = "total_return"'),
+        ({"currency": "USD"}, "factors are in USD, IE0000000012 is exposed to EUR"),
+        ({"proxies": '\n[parameters.risk.proxies."IE0000000038"]\nWorld = 1.0\n'},
+         "are not held"),
+        ({"proxies": f'\n[parameters.risk.proxies."{FUND_A}"]\nEurope = 1.0\n'},
+         "no factor returns for ['Europe']"),
+        ({"proxies": f'\n[parameters.risk.proxies."{FUND_A}"]\nWorld = "one"\n'},
+         "World must be a finite number"),
+        ({"proxies": f'\n[parameters.risk.proxies."{FUND_A}"]\n'},
+         "must be a non-empty table"),
+        ({"proxies": "\n[parameters.risk.proxies]\n"}, "per ISIN, a table of factor = beta"),
+    ],
+)  # fmt: skip
+def test_proxy_errors(tmp_path: Path, changes: dict[str, object], message: str) -> None:
+    config = _proxied(tmp_path, **changes)  # type: ignore[arg-type]
+    try:
+        validate_experiment(config, kinds=KINDS)
+    except ValidationError as error:
+        assert message in str(error)  # noqa: PT017 - refused when the config is read
+        return
+    record, _ = _run(config)
+    assert record["status"] == "failure"
+    assert message in str(record["error"])
+
+
+@pytest.mark.parametrize(
+    ("backtest", "message"),
+    [
+        (BACKTEST.format(window=1, model="normal"), "window"),
+        (BACKTEST.format(window=4, model="garch"), "model"),
+        ("\n[parameters.risk]\nbacktest = 1\n", "must be a table"),
+    ],
+)
+def test_backtest_settings_are_checked(tmp_path: Path, backtest: str, message: str) -> None:
+    config = _two_funds(tmp_path)
+    text = config.read_text(encoding="utf-8")
+    if backtest.startswith("\n[parameters.risk]\n"):
+        text = text.replace("confidence = 0.95\n", "confidence = 0.95\nbacktest = 1\n")
+    else:
+        text = text.replace("\n[output]", backtest + "\n[output]")
+    config.write_text(text, encoding="utf-8")
+    with pytest.raises(ValidationError, match=message):
+        validate_experiment(config, kinds=KINDS)

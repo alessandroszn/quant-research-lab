@@ -14,7 +14,7 @@ implement them are not.
 
 *HTML portfolio report with health checks from a broker export or a native transactions file (descriptive).*
 
-- Inputs: `transactions`, `prices`, `prices_mapping`, `instruments`, `checks`; optional: `fx`, `issuers`, `scenarios`, `estr`, `transactions_mapping`, `total_returns`, `total_returns_mapping`, `benchmark`, `benchmark_mapping`
+- Inputs: `transactions`, `prices`, `prices_mapping`, `instruments`, `checks`; optional: `fx`, `issuers`, `scenarios`, `estr`, `transactions_mapping`, `total_returns`, `total_returns_mapping`, `benchmark`, `benchmark_mapping`, `factors`, `factors_mapping`
 - Optional input groups: `extra_prices`, `extra_prices_mapping`, `holdings`, `holdings_mapping`, `tracking`, `tracking_mapping`
 - Parameters: `transactions_format`, `title`, `base_currency`, `language`, `flow_timing`, `max_price_age_days`, `return_frequency`, `generated_at`, `target_weights`; optional: `fx_max_age_days`, `lookthrough_treatment`, `holdings`, `tracking`, `risk`, `projection`, `tax`, `distributions`, `benchmark`
 - Seed: not used

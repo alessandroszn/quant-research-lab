@@ -13,6 +13,7 @@ from datetime import date
 
 from qrlab.core.errors import ValidationError
 from qrlab.risk.decomposition import RiskContributions
+from qrlab.risk.var_backtest import VarBacktest
 from qrlab.scenarios.engine import ScenarioResult
 
 __all__ = ["RiskSummary"]
@@ -38,6 +39,13 @@ class RiskSummary:
         ``(VaR, ES)`` as positive losses by method name, in display order.
     scenarios
         Results of :func:`qrlab.scenarios.run_scenario`, in display order.
+    backtest
+        A backtest of the VaR model on these weights (design note 11.4), or ``None``.
+    backtest_window, backtest_model
+        The returns per forecast and the model of ``backtest`` (``0`` and ``""`` without one).
+    proxies
+        Betas of the positions proxied by factors in the stress tests: ISIN code -> factor ->
+        beta (design note 11.4), or ``None``.
     """
 
     as_of: date
@@ -49,6 +57,10 @@ class RiskSummary:
     volatility: RiskContributions
     var_es: Mapping[str, tuple[float, float]]
     scenarios: tuple[ScenarioResult, ...]
+    backtest: VarBacktest | None = None
+    backtest_window: int = 0
+    backtest_model: str = ""
+    proxies: Mapping[str, Mapping[str, float]] | None = None
 
     def __post_init__(self) -> None:
         """Validate the window, the confidence and the figures."""

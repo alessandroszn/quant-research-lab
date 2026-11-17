@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 
+import numpy as np
 import pandas as pd
 
 from qrlab.core.calendar import CONVENTIONAL_PERIODS_PER_YEAR, Frequency, infer_frequency
@@ -30,6 +31,7 @@ from qrlab.metrics.errors import UndefinedMetricError
 from qrlab.metrics.risk import historical_es, historical_var, parametric_es, parametric_var
 from qrlab.portfolio.valuation import PriceSeries
 from qrlab.risk.decomposition import volatility_contributions
+from qrlab.risk.var_backtest import VarBacktest, var_backtest, var_forecasts
 from qrlab.risk.var_methods import cornish_fisher
 from qrlab.scenarios.definitions import HistoricalScenario, Scenario
 from qrlab.scenarios.engine import (
@@ -41,7 +43,15 @@ from qrlab.scenarios.engine import (
 )
 from qrlab.scenarios.summary import RiskSummary
 
-__all__ = ["RiskOutputs", "RiskSpec", "compute_risk", "parse_risk", "unit_values"]
+__all__ = [
+    "BACKTEST_MODELS",
+    "BacktestSpec",
+    "RiskOutputs",
+    "RiskSpec",
+    "compute_risk",
+    "parse_risk",
+    "unit_values",
+]
 
 _FREQUENCIES = {"weekly": Frequency.WEEKLY, "monthly": Frequency.MONTHLY}
 # Price-file frequencies fine enough for each risk frequency.
@@ -53,15 +63,31 @@ _PERIOD = {Frequency.WEEKLY: "W-FRI", Frequency.MONTHLY: "M"}
 _EUR = Currency("EUR")
 
 
+BACKTEST_MODELS = ("historical", "normal", "cornish_fisher")
+
+
+@dataclass(frozen=True)
+class BacktestSpec:
+    """``[parameters.risk.backtest]``: returns per forecast and the VaR model (11.4)."""
+
+    window: int
+    model: str
+
+
 @dataclass(frozen=True)
 class RiskSpec:
-    """``[parameters.risk]``: frequency, window, confidence and covariance estimator."""
+    """``[parameters.risk]``: frequency, window, confidence and covariance estimator.
+
+    Optional (design note 11.4): ``backtest`` and ``proxies`` (ISIN -> factor -> beta).
+    """
 
     name: str
     frequency: Frequency
     window: int
     confidence: float
     covariance: Mapping[str, object]
+    backtest: BacktestSpec | None = None
+    proxies: Mapping[Isin, Mapping[str, float]] | None = None
 
 
 @dataclass(frozen=True)
@@ -83,7 +109,7 @@ def parse_risk(parameters: Mapping[str, object]) -> RiskSpec | None:
     require_keys(
         spec,
         required={"frequency", "window", "confidence", "covariance"},
-        optional=set(),
+        optional={"backtest", "proxies"},
         where="[parameters.risk]",
     )
     name = choice(spec, "frequency", set(_FREQUENCIES))
@@ -96,7 +122,40 @@ def parse_risk(parameters: Mapping[str, object]) -> RiskSpec | None:
         window=whole(spec, "window", minimum=2),
         confidence=confidence,
         covariance=covariance_spec(spec),
+        backtest=_parse_backtest(spec),
+        proxies=_parse_proxies(spec),
     )
+
+
+def _parse_backtest(spec: Mapping[str, object]) -> BacktestSpec | None:
+    if "backtest" not in spec:
+        return None
+    table = spec["backtest"]
+    if not isinstance(table, dict):
+        raise ValidationError("[parameters.risk.backtest] must be a table with window and model")
+    require_keys(
+        table, required={"window", "model"}, optional=set(), where="[parameters.risk.backtest]"
+    )
+    return BacktestSpec(
+        window=whole(table, "window", minimum=2), model=choice(table, "model", set(BACKTEST_MODELS))
+    )
+
+
+def _parse_proxies(spec: Mapping[str, object]) -> dict[Isin, dict[str, float]] | None:
+    if "proxies" not in spec:
+        return None
+    table = spec["proxies"]
+    if not isinstance(table, dict) or not table:
+        raise ValidationError(
+            "[parameters.risk.proxies] must hold, per ISIN, a table of factor = beta"
+        )
+    out: dict[Isin, dict[str, float]] = {}
+    for code, betas in table.items():
+        where = f"[parameters.risk.proxies.{code}]"
+        if not isinstance(betas, dict) or not betas:
+            raise ValidationError(f"{where} must be a non-empty table of factor = beta")
+        out[Isin(code)] = {str(factor): number(betas, factor) for factor in betas}
+    return out
 
 
 def unit_values(fx: Dataset | None, base: Currency, currencies: set[Currency]) -> pd.DataFrame:
@@ -134,12 +193,14 @@ def compute_risk(
     fx: Dataset | None,
     scenarios: Sequence[Scenario],
     levels: Mapping[Isin, pd.Series] | None = None,
+    factors: pd.DataFrame | None = None,
 ) -> RiskOutputs:
     """Build the risk summary of today's portfolio from its price files.
 
     ``levels`` gives, by ISIN, the series whose returns a position uses in place of its prices
     (design note 11.1: a total-return series, or the prices adjusted for distributions), in
-    the price file's currency.
+    the price file's currency. ``factors`` gives factor returns (columns are factor names) for
+    the proxies of ``spec`` (design note 11.4).
     """
     held = sorted((i for i, w in position_weights.items() if w != 0.0), key=lambda i: i.code)
     foreign = sorted(
@@ -170,7 +231,8 @@ def compute_risk(
     for currency in foreign:
         unit = units[currency.code].dropna().resample(rule).last()
         periodic[f"cash {currency.code}"] = unit.pct_change(fill_method=None)
-    returns = _window(pd.DataFrame(periodic), spec, as_of)
+    frame = pd.DataFrame(periodic)
+    returns = _window(frame, spec, as_of)
     weights = pd.Series(
         {i.code: position_weights[i] for i in held}
         | {f"cash {c.code}": cash_weights[c] for c in foreign}
@@ -178,10 +240,13 @@ def compute_risk(
     volatility = volatility_contributions(estimate_covariance(returns, spec.covariance), weights)
     portfolio = (returns * weights).sum(axis=1).rename("portfolio")
     var_es, notes = _var_es(portfolio, spec.confidence)
+    betas = _betas(spec, held, factors)
     market = MarketData(
         positions={i: PositionSeries(local[i], prices[i].currency) for i in held},
-        factors=pd.DataFrame(index=pd.DatetimeIndex([], name="date")),
-        betas=None,
+        factors=pd.DataFrame(index=pd.DatetimeIndex([], name="date"))
+        if factors is None
+        else factors,
+        betas=betas,
         fx={
             Currency(str(code)): units[code].dropna().pct_change(fill_method=None).iloc[1:]
             for code in units.columns
@@ -195,6 +260,7 @@ def compute_risk(
         exposure_currencies={i: exposure_currencies[i] for i in held},
     )
     results = tuple(run_scenario(s, stress, market) for s in scenarios)
+    backtest = _backtest(spec, frame, weights, as_of)
     summary = RiskSummary(
         as_of=as_of,
         frequency=spec.name,
@@ -205,6 +271,12 @@ def compute_risk(
         volatility=volatility,
         var_es={m: v for m, v in var_es.items() if m not in notes},
         scenarios=results,
+        backtest=None if backtest is None else backtest[0],
+        backtest_window=0 if spec.backtest is None else spec.backtest.window,
+        backtest_model="" if spec.backtest is None else spec.backtest.model,
+        proxies=None
+        if spec.proxies is None
+        else {i.code: dict(betas) for i, betas in spec.proxies.items()},
     )
     contributions = pd.DataFrame(
         {"weight": weights, "contribution": volatility.component, "share": volatility.share}
@@ -231,10 +303,84 @@ def compute_risk(
         "volatility_period": Tagged(volatility.total, "descriptive"),
         "volatility_annual": Tagged(volatility.total * annual, "descriptive"),
     }
+    if backtest is not None:
+        test, path = backtest
+        tables["var_backtest"] = Tagged(path, "out_of_sample")
+        scalars |= {
+            "backtest_exceedances": Tagged(float(test.exceedances), "out_of_sample"),
+            "backtest_expected": Tagged(test.expected, "out_of_sample"),
+            "kupiec_pvalue": Tagged(test.kupiec_pvalue, "out_of_sample"),
+            "independence_pvalue": Tagged(test.independence_pvalue, "out_of_sample"),
+            "conditional_coverage_pvalue": Tagged(
+                test.conditional_coverage_pvalue, "out_of_sample"
+            ),
+        }
     if "historical" not in notes:
         scalars["var_historical"] = Tagged(var_es["historical"][0], "descriptive")
         scalars["es_historical"] = Tagged(var_es["historical"][1], "descriptive")
     return RiskOutputs(summary, tables, scalars)
+
+
+def _betas(
+    spec: RiskSpec, held: Sequence[Isin], factors: pd.DataFrame | None
+) -> pd.DataFrame | None:
+    """Return the proxies' betas, positions by factors (a factor not listed has beta 0)."""
+    if spec.proxies is None:
+        return None
+    assert factors is not None  # the kind requires a factors input with proxies
+    not_held = sorted(i.code for i in spec.proxies if i not in held)
+    if not_held:
+        raise ValidationError(f"[parameters.risk.proxies]: {not_held} are not held")
+    names = sorted({f for betas in spec.proxies.values() for f in betas})
+    absent = sorted(set(names) - {str(c) for c in factors.columns})
+    if absent:
+        raise ValidationError(f"[parameters.risk.proxies]: no factor returns for {absent}")
+    return pd.DataFrame(
+        [[spec.proxies[i].get(f, 0.0) for f in names] for i in spec.proxies],
+        index=pd.Index([i.code for i in spec.proxies]),
+        columns=pd.Index(names),
+        dtype="float64",
+    )
+
+
+def _backtest(
+    spec: RiskSpec, frame: pd.DataFrame, weights: pd.Series, as_of: date
+) -> tuple[VarBacktest, pd.DataFrame] | None:
+    """Backtest the VaR model on today's weights over the common history (design note 11.4).
+
+    The history is the last run of periods, up to the period of ``as_of``, in which every
+    holding has a return; rows are never joined across a gap.
+    """
+    if spec.backtest is None:
+        return None
+    end = pd.Timestamp(as_of).to_period(_PERIOD[spec.frequency]).end_time.normalize()
+    history = frame.loc[frame.index <= end, list(weights.index)]
+    complete = history.notna().all(axis=1).to_numpy()
+    trailing = np.cumprod(complete[::-1])[::-1].astype(bool)  # the last run of complete rows
+    history = history.loc[trailing]
+    portfolio = (history * weights).sum(axis=1).rename("portfolio")
+    window, model = spec.backtest.window, _var_model(spec.backtest.model, spec.confidence)
+    where = "[parameters.risk.backtest]"
+    if len(portfolio) < window + 2:
+        raise ValidationError(
+            f"{where}: {len(portfolio)} {spec.name} returns at today's weights give fewer than "
+            f"2 forecasts after a window of {window}; give longer price files or a shorter window"
+        )
+    forecasts = var_forecasts(portfolio, window=window, model=model)
+    realised = portfolio.loc[forecasts.index]
+    test = var_backtest(realised, forecasts, confidence=spec.confidence)
+    path = pd.DataFrame(
+        {"return": realised, "var": forecasts, "exceedance": realised < -forecasts}
+    ).rename_axis("period")
+    return test, path
+
+
+def _var_model(name: str, confidence: float) -> Callable[[pd.Series], float]:
+    if name == "historical":
+        return lambda r: historical_var(r, confidence=confidence)
+    if name == "normal":
+        return lambda r: parametric_var(r, confidence=confidence)
+    return lambda r: cornish_fisher(r, confidence=confidence).var
 
 
 def _window(periodic: pd.DataFrame, spec: RiskSpec, as_of: date) -> pd.DataFrame:
