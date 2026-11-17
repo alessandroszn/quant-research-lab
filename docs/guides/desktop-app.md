@@ -34,13 +34,15 @@ no logs outside `results/`.
 | Optimiser | `optimisation` |
 | Backtests & studies | `backtest` and the four studies |
 | Data | the raw store: source, dataset, download date, age, size, hash and terms of each file; *Import a downloaded file* |
+| Queue | the runs of this session: waiting, running and finished, with *Cancel*, *Open folder* and *Clear finished* |
 | History | every run, newest first, with status, configurations tried and errors |
 | Settings | language, recent workspaces, version information and the settings file |
 
 Each analysis screen has three columns:
 
 - **Left:** the configs of its kinds, with *New from template* and *Duplicate*.
-- **Centre:** the config in two tabs, *Form* and *TOML*, with *Save*, *Validate* and *Run*.
+- **Centre:** the config in two tabs, *Form* and *TOML*, with *Save*, *Validate*, *Run* and
+  *Cancel*.
   Validation shows the runner's messages unchanged.
   - **Form** is built from the kind's schema (the same keys as {doc}`kinds`). Each key's
     tooltip is its help, and its label carries its unit. Values are typed as text and can be
@@ -120,8 +122,19 @@ unchanged, with its provenance. The app never downloads them itself (see
 
 ## Things to know
 
-- **One run at a time, and runs cannot be cancelled.** The window stays responsive and shows
-  the elapsed time. Closing the app during a run is refused.
+- **Runs wait in a queue and run one at a time.** *Run* saves, validates and adds the config
+  to the queue; the screen shows its place in line, then the seconds it has run. Runs of
+  several screens line up in the order they were added.
+  - Each run starts its own process, so it can be cancelled at once, whatever it is
+    computing. Starting the process takes a few seconds, before the run itself.
+  - *Cancel* (on the screen, or on the Queue screen) removes a waiting run, or ends a running
+    one. The earlier results stay as they were; a cancelled run is not recorded and not
+    counted as a configuration tried.
+  - What was queued is what runs: a config that changed after it was queued is not run. Two
+    runs that would write the same output folder cannot wait together.
+  - The queue lasts for the session; *History* is the lasting record. Closing the app, or
+    opening another workspace, with runs waiting or running asks whether to cancel them. The
+    language cannot change until the queue is empty.
 - **Unsaved edits are never lost silently.** Changing config or portfolio, opening another
   workspace, changing language or closing the window first asks *Save / Discard / Cancel*. A
   portfolio that does not validate is not saved: the app stays on it and shows the problem.
@@ -137,6 +150,7 @@ unchanged, with its provenance. The app never downloads them itself (see
 ## Self-test
 
 `QuantResearchLab.exe --self-test WORKSPACE` (or `qrlab-app --self-test WORKSPACE`) runs every
-config of a workspace through the real window, without showing it. It exits with code 0 only if
+config of a workspace through the real window and its queue, each in its own process, without
+showing the window. It exits with code 0 only if
 every run succeeds; a workspace without configs fails. The Windows build uses it in CI, also on
 an installed copy.

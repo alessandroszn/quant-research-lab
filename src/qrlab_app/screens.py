@@ -1,14 +1,13 @@
-"""The app's screens: Home, the analysis screens, Data, History and Settings."""
+"""The app's screens: Home, the analysis screens, Data, Queue, History and Settings."""
 
 from __future__ import annotations
 
 import platform
-import time
 from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QThreadPool, QTimer, qVersion
+from PySide6.QtCore import Qt, qVersion
 from PySide6.QtGui import QFontDatabase, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QComboBox,
@@ -25,10 +24,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from qrlab.experiments import RunResult
 from qrlab_app.display import date_text, timestamp_text
 from qrlab_app.form import FormModel
 from qrlab_app.form_widgets import FormView
+from qrlab_app.runs import ACTIVE, CANCELLED, RUNNING, WAITING, QueueEntry, RunQueue
 from qrlab_app.strings import LANGUAGES, tr, tr_value
 from qrlab_app.viewmodels import (
     AppError,
@@ -38,13 +37,14 @@ from qrlab_app.viewmodels import (
     SettingsViewModel,
     WorkspaceViewModel,
 )
-from qrlab_app.widgets import Dialogs, ResultsPanel, RunWorker, fill_table
+from qrlab_app.widgets import Dialogs, ResultsPanel, fill_table
 
 __all__ = [
     "DataScreen",
     "ExperimentScreen",
     "HistoryScreen",
     "HomeScreen",
+    "QueueScreen",
     "SettingsScreen",
     "app_version",
 ]
@@ -162,15 +162,20 @@ class ExperimentScreen(QWidget):
         model: ExperimentViewModel,
         dialogs: Dialogs,
         language: str,
-        pool: QThreadPool,
+        queue: RunQueue,
+        on_queue: Callable[[list[QueueEntry]], None],
     ) -> None:
-        """Build the screen around its view-model."""
+        """Build the screen around its view-model.
+
+        *Run* adds the selected config to ``queue`` (design 12.2b); ``on_queue`` is called
+        with the entries this screen changed, so the window can start the next run.
+        """
         super().__init__()
         self.model = model
         self.dialogs = dialogs
         self.language = language
-        self.pool = pool
-        self._started = 0.0
+        self.queue = queue
+        self.on_queue = on_queue
         self._loading = False
         self.configs = QListWidget()
         self.configs.itemClicked.connect(self._selected)
@@ -192,18 +197,17 @@ class ExperimentScreen(QWidget):
         self.save_button = QPushButton(tr("screen.save", language))
         self.validate_button = QPushButton(tr("screen.validate", language))
         self.run_button = QPushButton(tr("screen.run", language))
+        self.cancel_button = QPushButton(tr("screen.cancel", language))
         self.save_button.clicked.connect(self._save)
         self.validate_button.clicked.connect(self._validate)
         self.run_button.clicked.connect(self._run)
+        self.cancel_button.clicked.connect(self._cancel)
         self.save_shortcut = QShortcut(QKeySequence.StandardKey.Save, self)
         self.save_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.save_shortcut.activated.connect(self._save)
         self.message = QLabel("")
         self.message.setWordWrap(True)
         self.results = ResultsPanel(language, dialogs.open_path)
-        self.timer = QTimer(self)
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(self._tick)
 
         left = QWidget()
         left_layout = QVBoxLayout(left)
@@ -217,6 +221,7 @@ class ExperimentScreen(QWidget):
         row = QHBoxLayout()
         for button in (self.save_button, self.validate_button, self.run_button):
             row.addWidget(button)
+        row.addWidget(self.cancel_button)
         centre_layout.addLayout(row)
         centre_layout.addWidget(self.message)
         splitter = QSplitter()
@@ -336,7 +341,7 @@ class ExperimentScreen(QWidget):
         self.message.setText("")
         self._show_text(self.model.select(path))
         self.results.show_result(self.model.result)
-        self._enable()
+        self.show_state()
 
     def _new(self) -> None:
         if not self.confirm_discard():
@@ -370,7 +375,7 @@ class ExperimentScreen(QWidget):
         self.results.show_result(self.model.result)
 
     def _save(self) -> None:
-        if self.model.selected is not None and self.model.status != "running" and self._may_save():
+        if self.model.selected is not None and not self._active() and self._may_save():
             self.model.save()
 
     def _validate(self) -> None:
@@ -392,52 +397,150 @@ class ExperimentScreen(QWidget):
             if not self.dialogs.confirm(question):
                 return
         try:
-            job = self.model.start_run()
+            entry = self.queue.add(self.model.prepare_run())
         except AppError as exc:
+            self.model.status = "idle"
             self.message.setText(exc.text(self.language))
+            self._enable()
             return
-        worker = RunWorker(job)
-        worker.signals.finished.connect(self._finished)
-        worker.signals.failed.connect(self._failed)
-        self._started = time.monotonic()
-        self.timer.start()
-        self._tick()
+        self.on_queue([entry])
+
+    def _cancel(self) -> None:
+        entry = self._entry()
+        if entry is not None and entry.state in ACTIVE:
+            self.queue.cancel(entry)
+            self.on_queue([entry])
+
+    # ------------------------------------------------------------------------ the queue
+    def queue_changed(self, changed: list[QueueEntry]) -> None:
+        """Follow the queue: show how a run of the selected config ended, or its state."""
+        selected = self.model.selected
+        ended = [e for e in changed if e.state not in ACTIVE and e.kind in self.model.kind_names]
+        for entry in ended:
+            if entry.config == selected:
+                self._ended(entry)
+        if ended:
+            self.refresh()
+        self.show_state()
+
+    def show_state(self) -> None:
+        """Show the place in line, or the seconds run, of the selected config's entry."""
+        entry = self._entry()
+        if entry is not None and entry.state == WAITING:
+            self.model.status = WAITING
+            position = self.queue.position(entry)
+            self.message.setText(tr("screen.waiting", self.language, position=position))
+        elif entry is not None and entry.state == RUNNING:
+            self.model.status = RUNNING
+            seconds = self.queue.elapsed(entry)
+            self.message.setText(tr("screen.running", self.language, seconds=seconds))
         self._enable()
-        self.pool.start(worker)
 
-    def _tick(self) -> None:
-        seconds = int(time.monotonic() - self._started)
-        self.message.setText(tr("screen.running", self.language, seconds=seconds))
-
-    def _finished(self, result: object) -> None:
-        self.timer.stop()
-        if not isinstance(result, RunResult):  # pragma: no cover - the job returns RunResult
-            self._failed(f"unexpected result {result!r}")
-            return
-        view = self.model.finish(result)
-        self.results.show_result(view)
-        if self.model.status == "done":
-            status = tr_value("status", view.status, self.language)
-            self.message.setText(tr("screen.done", self.language, status=status))
+    def _ended(self, entry: QueueEntry) -> None:
+        if entry.result is not None:
+            view = self.model.finish(entry.result)
+            self.results.show_result(view)
+            if self.model.status == "done":
+                status = tr_value("status", view.status, self.language)
+                text = tr("screen.done", self.language, status=status)
+                text = f"{text} {entry.note_text(self.language)}".strip()  # e.g. cancelled too late
+            else:
+                text = tr("screen.failed", self.language, error=self.model.error)
+            self.message.setText(text)
+        elif entry.state == CANCELLED:
+            self.model.status = CANCELLED
+            self.message.setText(entry.note_text(self.language))
         else:
+            self.model.fail(entry.note_text(self.language))
             self.message.setText(tr("screen.failed", self.language, error=self.model.error))
-        self.refresh()
 
-    def _failed(self, message: str) -> None:
-        self.timer.stop()
-        self.model.fail(message)
-        self.message.setText(tr("screen.failed", self.language, error=message))
-        self._enable()
+    def _entry(self) -> QueueEntry | None:
+        selected = self.model.selected
+        return None if selected is None else self.queue.latest(selected)
+
+    def _active(self) -> bool:
+        entry = self._entry()
+        return entry is not None and entry.state in ACTIVE
 
     def _enable(self) -> None:
         selected = self.model.selected is not None
-        idle = self.model.status != "running"
+        idle = not self._active()
         for button in (self.save_button, self.validate_button, self.duplicate_button):
             button.setEnabled(selected and idle)
         self.run_button.setEnabled(selected and idle)
-        self.new_button.setEnabled(idle and self.model.workspace.root is not None)
+        self.cancel_button.setEnabled(not idle)
+        self.new_button.setEnabled(self.model.workspace.root is not None)
         self.editor.setReadOnly(not idle or not selected)
         self.form.setEnabled(idle and selected)
+
+
+class QueueScreen(QWidget):
+    """The session's runs: waiting, running and finished, with *Cancel* (design 12.2b)."""
+
+    def __init__(
+        self,
+        queue: RunQueue,
+        dialogs: Dialogs,
+        language: str,
+        on_queue: Callable[[list[QueueEntry]], None],
+    ) -> None:
+        """Build the screen; ``on_queue`` is called with the entries it cancelled."""
+        super().__init__()
+        self.queue = queue
+        self.dialogs = dialogs
+        self.language = language
+        self.on_queue = on_queue
+        self.table = QTableWidget()
+        self.cancel_button = QPushButton(tr("queue.cancel", language))
+        self.open_button = QPushButton(tr("queue.open", language))
+        self.clear_button = QPushButton(tr("queue.clear", language))
+        self.cancel_button.clicked.connect(self._cancel)
+        self.open_button.clicked.connect(self._open)
+        self.clear_button.clicked.connect(self._clear)
+        buttons = QHBoxLayout()
+        for button in (self.cancel_button, self.open_button, self.clear_button):
+            buttons.addWidget(button)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.table)
+        layout.addLayout(buttons)
+
+    def refresh(self) -> None:
+        """Show every entry with its state, time and note; the selected row stays."""
+        row = self.table.currentRow()
+        lang = self.language
+        rows = [
+            (
+                e.number,
+                e.config.name,
+                e.kind,
+                tr_value("state", e.state, lang),
+                self.queue.elapsed(e),
+                e.note_text(lang),
+            )
+            for e in self.queue.entries
+        ]
+        fill_table(self.table, tr("queue.columns", lang).split("|"), rows, lang)
+        if 0 <= row < len(rows):
+            self.table.setCurrentCell(row, 0)
+
+    def _selected(self) -> QueueEntry | None:
+        row = self.table.currentRow()
+        return self.queue.entries[row] if 0 <= row < len(self.queue.entries) else None
+
+    def _cancel(self) -> None:
+        entry = self._selected()
+        if entry is not None and entry.state in ACTIVE:
+            self.queue.cancel(entry)
+            self.on_queue([entry])
+
+    def _open(self) -> None:
+        entry = self._selected()
+        if entry is not None and entry.output_dir.is_dir():
+            self.dialogs.open_path(entry.output_dir)
+
+    def _clear(self) -> None:
+        self.queue.clear_finished()
+        self.refresh()
 
 
 class HistoryScreen(QWidget):

@@ -7,11 +7,12 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from PySide6.QtCore import QLocale, QThreadPool
+from PySide6.QtCore import QLocale
 from PySide6.QtWidgets import QApplication
 
 from qrlab.experiments.kinds import KINDS
 from qrlab_app.main_window import AppShell
+from qrlab_app.runs import ProcessStarter
 from qrlab_app.selftest import self_test
 from qrlab_app.viewmodels import SettingsViewModel
 from qrlab_app.widgets import QtSettingsStore, default_dialogs
@@ -43,7 +44,7 @@ def _open_window() -> int:  # pragma: no cover - starts the event loop; the smok
         dialogs=default_dialogs(None),
         settings=SettingsViewModel(store, system_language=QLocale.system().name()),
         now=lambda: datetime.now(UTC),
-        pool=QThreadPool.globalInstance(),
+        starter=ProcessStarter(),
         settings_file=store.file_name,
     )
     shell.window.show()

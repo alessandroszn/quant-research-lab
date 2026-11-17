@@ -11,7 +11,7 @@ from typing import Protocol
 
 import pandas as pd
 
-from qrlab.experiments import RunResult, load_config, run_experiment, validate_experiment
+from qrlab.experiments import RunResult, load_config, validate_experiment
 from qrlab.experiments.portfolios import import_downloaded_file
 from qrlab.experiments.registry import ExperimentKind
 from qrlab.experiments.workspace import (
@@ -313,17 +313,17 @@ class ExperimentViewModel:
             return False
 
     # ------------------------------------------------------------------------- run
-    def start_run(self) -> Callable[[], RunResult]:
-        """Validate and return the job for a worker thread; the state becomes running."""
-        if self.status == "running":
-            raise AppError("screen.busy")
+    def prepare_run(self) -> Path:
+        """Save and validate; return the config to put in the run queue (design 12.2b).
+
+        The status becomes ``waiting``; the screen follows the queue from there.
+        """
         ok, message = self.validate()
         if not ok:
             raise AppError("screen.invalid", error=message)
-        path, kinds = self._require_selected(), self.kinds
-        self.status = "running"
+        self.status = "waiting"
         self.error = None
-        return lambda: run_experiment(path, kinds=kinds, overwrite=True)
+        return self._require_selected()
 
     def finish(self, result: RunResult) -> ResultView:
         """Record a finished run (success or recorded failure) and load its outputs."""

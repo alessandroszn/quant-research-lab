@@ -11,7 +11,7 @@ import pytest
 
 from qrlab.data.provenance import Provenance
 from qrlab.data.store import RawStore
-from qrlab.experiments import RunResult
+from qrlab.experiments import RunResult, run_experiment
 from qrlab.experiments.kinds import KINDS
 from qrlab_app.strings import LANGUAGES, STRINGS, tr
 from qrlab_app.viewmodels import (
@@ -94,11 +94,10 @@ def test_run_state_machine(tmp_path: Path) -> None:
     screen = _screen(ws)
     screen.select(tmp_path / "ws" / "configs" / "projection.toml")
     assert not screen.output_exists()
-    job = screen.start_run()
-    assert screen.status == "running"
-    with pytest.raises(AppError, match="Another run"):
-        screen.start_run()
-    result = screen.finish(job())
+    config = screen.prepare_run()  # saved and valid: ready for the queue
+    assert config == tmp_path / "ws" / "configs" / "projection.toml"
+    assert screen.status == "waiting"
+    result = screen.finish(run_experiment(config, kinds=KINDS, overwrite=True))
     assert screen.status == "done"
     assert screen.error is None
     assert {t.name for t in result.tables} >= {"fan_real", "terminal"}
@@ -127,7 +126,7 @@ def test_invalid_config_does_not_start(tmp_path: Path) -> None:
     screen.select(tmp_path / "ws" / "configs" / "projection.toml")
     screen.set_text("kind = 1")
     with pytest.raises(AppError, match="ValidationError"):
-        screen.start_run()
+        screen.prepare_run()
     assert screen.status == "idle"
     assert not screen.output_exists()
 
@@ -175,7 +174,7 @@ def test_history_and_data(tmp_path: Path) -> None:
     ws = _workspace(tmp_path)
     screen = _screen(ws)
     screen.select(tmp_path / "ws" / "configs" / "projection.toml")
-    screen.finish(screen.start_run()())
+    screen.finish(run_experiment(screen.prepare_run(), kinds=KINDS, overwrite=True))
     runs = HistoryViewModel(ws).refresh()
     assert [r.kind for r in runs] == ["projection"]
     content = b"raw"

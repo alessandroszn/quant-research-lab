@@ -31,6 +31,7 @@ _EN = {
     "nav.optimiser": "Optimiser",
     "nav.backtests": "Backtests & studies",
     "nav.data": "Data",
+    "nav.queue": "Queue",
     "nav.history": "History",
     "nav.settings": "Settings",
     "home.open": "Open workspace…",
@@ -58,7 +59,8 @@ _EN = {
     "screen.failed": "Failed: {error}",
     "screen.valid": "Valid: {name} ({kind}).",
     "screen.invalid": "Not valid: {error}",
-    "screen.busy": "Another run is in progress.",
+    "screen.cancel": "Cancel",
+    "screen.waiting": "Waiting: number {position} in line.",
     "results.scalars": "Scalars",
     "results.figures": "Figures",
     "results.scalar_columns": "Name|Value|Sample",
@@ -73,10 +75,33 @@ _EN = {
     "settings.about": "About",
     "settings.version": "Quant Research Lab {version} — Python {python}, Qt {qt}",
     "settings.file": "Settings are saved in {path}.",
-    "settings.busy": "The language cannot change while a run is in progress.",
-    "close.busy": (
-        "A run is in progress and cannot be stopped. Wait for it to finish, then close the app."
+    "settings.busy": (
+        "The language cannot change while runs are waiting or running. Cancel them on the "
+        "Queue screen first."
     ),
+    "queue.leave": "Runs waiting or running: {count}. Cancel them and go on?",
+    "queue.columns": "#|Config|Kind|State|Time (s)|Note",
+    "queue.cancel": "Cancel",
+    "queue.open": "Open folder",
+    "queue.clear": "Clear finished",
+    "queue.unreadable": "The config cannot be queued: {error}",
+    "queue.same_output": (
+        "{other} is already in line and writes the same output folder. Wait for it or cancel it."
+    ),
+    "queue.cancelled_waiting": "Cancelled before it started.",
+    "queue.too_late": "It finished before it could be cancelled.",
+    "queue.cancelled_kept": "Cancelled; the earlier results are unchanged.",
+    "queue.cancelled_none": "Cancelled; there were no earlier results.",
+    "queue.changed": "Not run: the config changed after it was queued.",
+    "queue.not_started": "Not run: its process could not start ({error}).",
+    "queue.run_failed": "The run failed: {error}",
+    "queue.died": "The run's process ended unexpectedly (exit code {code}).",
+    "queue.refused": "Refused before running: {error}",
+    "state.waiting": "waiting",
+    "state.running": "running",
+    "state.done": "done",
+    "state.failed": "failed",
+    "state.cancelled": "cancelled",
     "tag.in_sample": "in-sample",
     "tag.out_of_sample": "out-of-sample",
     "tag.descriptive": "descriptive",
@@ -185,6 +210,7 @@ _IT = {
     "nav.optimiser": "Ottimizzatore",
     "nav.backtests": "Backtest e studi",
     "nav.data": "Dati",
+    "nav.queue": "Coda",
     "nav.history": "Cronologia",
     "nav.settings": "Impostazioni",
     "home.open": "Apri workspace…",
@@ -214,7 +240,8 @@ _IT = {
     "screen.failed": "Non riuscita: {error}",
     "screen.valid": "Valida: {name} ({kind}).",
     "screen.invalid": "Non valida: {error}",
-    "screen.busy": "È già in corso un'altra esecuzione.",
+    "screen.cancel": "Annulla",
+    "screen.waiting": "In attesa: numero {position} in coda.",
     "results.scalars": "Valori",
     "results.figures": "Grafici",
     "results.scalar_columns": "Nome|Valore|Campione",
@@ -231,11 +258,34 @@ _IT = {
     "settings.about": "Informazioni",
     "settings.version": "Quant Research Lab {version} — Python {python}, Qt {qt}",
     "settings.file": "Le impostazioni sono salvate in {path}.",
-    "settings.busy": "Non si può cambiare lingua durante un'esecuzione.",
-    "close.busy": (
-        "È in corso un'esecuzione che non si può interrompere. Attendi che finisca, poi "
-        "chiudi l'app."
+    "settings.busy": (
+        "Non si può cambiare lingua mentre ci sono esecuzioni in attesa o in corso. Annullale "
+        "prima nella schermata Coda."
     ),
+    "queue.leave": "Esecuzioni in attesa o in corso: {count}. Annullarle e continuare?",
+    "queue.columns": "#|Configurazione|Tipo|Stato|Tempo (s)|Nota",
+    "queue.cancel": "Annulla",
+    "queue.open": "Apri cartella",
+    "queue.clear": "Togli le terminate",
+    "queue.unreadable": "La configurazione non può entrare in coda: {error}",
+    "queue.same_output": (
+        "{other} è già in coda e scrive nella stessa cartella dei risultati. Attendi che finisca "
+        "o annullala."
+    ),
+    "queue.cancelled_waiting": "Annullata prima di partire.",
+    "queue.too_late": "È terminata prima che si potesse annullarla.",
+    "queue.cancelled_kept": "Annullata; i risultati precedenti sono invariati.",
+    "queue.cancelled_none": "Annullata; non c'erano risultati precedenti.",
+    "queue.changed": "Non eseguita: la configurazione è cambiata dopo l'ingresso in coda.",
+    "queue.not_started": "Non eseguita: il suo processo non è partito ({error}).",
+    "queue.run_failed": "L'esecuzione non è riuscita: {error}",
+    "queue.died": "Il processo dell'esecuzione si è chiuso inaspettatamente (codice {code}).",
+    "queue.refused": "Rifiutata prima dell'esecuzione: {error}",
+    "state.waiting": "in attesa",
+    "state.running": "in corso",
+    "state.done": "terminata",
+    "state.failed": "non riuscita",
+    "state.cancelled": "annullata",
     "tag.in_sample": "in campione",
     "tag.out_of_sample": "fuori campione",
     "tag.descriptive": "descrittivo",
