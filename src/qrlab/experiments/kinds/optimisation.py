@@ -29,6 +29,7 @@ from qrlab.core.calendar import require_periods_per_year
 from qrlab.core.errors import ValidationError
 from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as f
 from qrlab.experiments.kinds._frames import (
     covariance_spec,
     estimate_covariance,
@@ -39,6 +40,7 @@ from qrlab.experiments.kinds._frames import (
 )
 from qrlab.experiments.kinds._params import choice, number, table, whole
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
+from qrlab.experiments.schema import KindSchema
 from qrlab.optimization.constraints import Constraints
 from qrlab.optimization.mean_variance import (
     OptimizationResult,
@@ -55,7 +57,7 @@ from qrlab.optimization.risk_based import (
 from qrlab.risk.covariance import CovarianceEstimate
 from qrlab.risk.decomposition import effective_number_of_bets, volatility_contributions
 
-__all__ = ["CAVEATS", "KIND", "METHODS"]
+__all__ = ["CAVEATS", "KIND", "METHODS", "SCHEMA"]
 
 CAVEATS = (
     "In-sample weights: what this method does with these estimates. Not a forecast and not a "
@@ -180,6 +182,72 @@ def _run(context: RunContext) -> ExperimentOutput:
     )
 
 
+SCHEMA = KindSchema(
+    inputs=(
+        f.file(
+            "returns",
+            "CSV of simple returns, one column per asset, read with returns_format.",
+            "CSV di rendimenti semplici, una colonna per attivo, letto con returns_format.",
+        ),
+    ),
+    parameters=(
+        f.RETURNS_FORMAT,
+        f.RETURNS_PRICE_TYPE,
+        f.variant(
+            "method",
+            "The construction method, chosen by name.",
+            "Il metodo di costruzione, scelto per nome.",
+            "name",
+            {
+                "equal_weights": (),
+                "minimum_variance": (),
+                "mean_variance": (
+                    f.number(
+                        "risk_aversion",
+                        "Weight of variance against the mean return in the objective.",
+                        "Peso della varianza rispetto al rendimento medio nell'obiettivo.",
+                    ),
+                ),
+                "maximum_sharpe": (
+                    f.number(
+                        "risk_free_per_period",
+                        "Risk-free return per period, subtracted from the mean returns.",
+                        "Rendimento privo di rischio per periodo, sottratto ai rendimenti medi.",
+                        unit="fraction",
+                    ),
+                ),
+                "risk_parity": (),
+                "maximum_diversification": (),
+                "hrp": (),
+            },
+        ),
+        f.COVARIANCE,
+        f.table(
+            "bounds",
+            "Lowest and highest weight of every asset (long-only when min >= 0).",
+            "Peso minimo e massimo di ogni attivo (solo posizioni lunghe se min >= 0).",
+            (
+                f.number(
+                    "min",
+                    "Lowest weight of an asset, at most max.",
+                    "Peso minimo di un attivo, non oltre max.",
+                    unit="fraction",
+                ),
+                f.number(
+                    "max",
+                    "Highest weight of an asset, above 0.",
+                    "Peso massimo di un attivo, maggiore di 0.",
+                    minimum=0.0,
+                    open_minimum=True,
+                    unit="fraction",
+                ),
+            ),
+        ),
+        f.PERIODS_PER_YEAR,
+    ),
+)
+"""What ``optimisation`` accepts (design note 12.1)."""
+
 KIND = ExperimentKind(
     name="optimisation",
     description="Portfolio weights by a construction method, in sample (not a forecast)",
@@ -188,4 +256,5 @@ KIND = ExperimentKind(
     parameters=_PARAMETERS,
     parse=_parse,
     run=_run,
+    schema=SCHEMA,
 )

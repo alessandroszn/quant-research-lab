@@ -22,6 +22,7 @@ import pandas as pd
 from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as f
 from qrlab.experiments.kinds._params import (
     boolean,
     choice,
@@ -33,6 +34,7 @@ from qrlab.experiments.kinds._params import (
     whole,
 )
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
+from qrlab.experiments.schema import Field, FieldKind, KindSchema
 from qrlab.reporting.figures import AxisFormat, line_figure
 from qrlab.reporting.formatting import Language, style_for
 from qrlab.simulation.engines import (
@@ -59,7 +61,16 @@ SCENARIOS = (
 NO_SENSITIVITY = "No sensitivity analysis was run for this projection."
 ADVICE = "Research analytics, not investment advice."
 
-__all__ = ["KIND", "PlanRun", "parse_engine", "parse_flows", "run_plan"]
+__all__ = [
+    "ENGINE",
+    "FLOWS",
+    "KIND",
+    "SCHEMA",
+    "PlanRun",
+    "parse_engine",
+    "parse_flows",
+    "run_plan",
+]
 
 _PARAMETERS = (
     "assets",
@@ -334,6 +345,270 @@ def _run(context: RunContext) -> ExperimentOutput:
     )
 
 
+ENGINE = f.variant(
+    "engine",
+    "The distribution of the simulated log returns, chosen by name.",
+    "La distribuzione dei rendimenti logaritmici simulati, scelta per nome.",
+    "name",
+    {
+        "normal": (),
+        "student_t": (
+            f.number(
+                "dof",
+                "Degrees of freedom of the Student t (above 2 for a finite variance).",
+                "Gradi di libertà della t di Student (sopra 2 per una varianza finita).",
+            ),
+        ),
+    },
+)
+"""What :func:`parse_engine` accepts."""
+
+FLOWS = f.records(
+    "flows",
+    "Contributions and withdrawals of the plan; an empty list for none.",
+    "Versamenti e prelievi del piano; una lista vuota se non ce ne sono.",
+    (
+        f.choice(
+            "kind",
+            "Whether money goes in (contribution) or out (withdrawal).",
+            "Se il denaro entra (contribution) o esce (withdrawal).",
+            ("contribution", "withdrawal"),
+        ),
+        f.number(
+            "amount",
+            "Amount of each flow, in today's money when indexed.",
+            "Importo di ogni flusso, in moneta di oggi se indicizzato.",
+            minimum=0.0,
+            open_minimum=True,
+            unit="currency units",
+        ),
+        f.integer(
+            "first",
+            "First period of the flow, counted from 0.",
+            "Primo periodo del flusso, contando da 0.",
+            minimum=0,
+            unit="periods",
+        ),
+        f.integer(
+            "last",
+            "Last period of the flow, included.",
+            "Ultimo periodo del flusso, incluso.",
+            minimum=0,
+            unit="periods",
+        ),
+        f.boolean(
+            "indexed",
+            "Whether the amount grows with inflation.",
+            "Se l'importo cresce con l'inflazione.",
+        ),
+    ),
+    allow_empty=True,
+)
+"""What :func:`parse_flows` accepts."""
+
+
+def _rate(key: str, en: str, it: str, *, required: bool = True) -> Field:
+    """Describe a yearly rate in [0, 1), as :class:`TaxModel` and :class:`Plan` require."""
+    return f.number(
+        key,
+        en,
+        it,
+        minimum=0.0,
+        maximum=1.0,
+        open_maximum=True,
+        unit="fraction",
+        required=required,
+    )
+
+
+SCHEMA = KindSchema(
+    inputs=(),
+    parameters=(
+        f.mapping(
+            "assets",
+            "Return assumptions and weight of each asset, by asset name.",
+            "Ipotesi di rendimento e peso di ogni attivo, per nome dell'attivo.",
+            FieldKind.TEXT,
+            f.table(
+                "asset",
+                "One asset's assumptions.",
+                "Le ipotesi di un attivo.",
+                (
+                    f.number(
+                        "mean",
+                        "Mean log return per period.",
+                        "Rendimento logaritmico medio per periodo.",
+                        unit="fraction",
+                    ),
+                    f.number(
+                        "volatility",
+                        "Volatility of the log return per period.",
+                        "Volatilità del rendimento logaritmico per periodo.",
+                        unit="fraction",
+                    ),
+                    f.number(
+                        "weight",
+                        "Target weight of the asset; the weights sum to 1.",
+                        "Peso obiettivo dell'attivo; i pesi sommano a 1.",
+                        minimum=0.0,
+                        unit="fraction",
+                    ),
+                ),
+            ),
+        ),
+        f.matrix(
+            "correlation",
+            "Correlation matrix of the log returns, one row per asset in the order of assets.",
+            "Matrice di correlazione dei rendimenti logaritmici, una riga per attivo nell'ordine "
+            "di assets.",
+        ),
+        ENGINE,
+        f.table(
+            "plan",
+            "The savings or withdrawal plan: wealth, currency, timing, costs and taxes.",
+            "Il piano di accumulo o di prelievo: patrimonio, valuta, tempi, costi e imposte.",
+            (
+                f.number(
+                    "initial_wealth",
+                    "Wealth at the start.",
+                    "Patrimonio all'inizio.",
+                    minimum=0.0,
+                    unit="currency units",
+                ),
+                f.currency("currency", "Currency of the plan.", "Valuta del piano."),
+                f.PERIODS_PER_YEAR,
+                f.choice(
+                    "flow_timing",
+                    "Whether flows happen at the start or the end of each period.",
+                    "Se i flussi avvengono all'inizio o alla fine di ogni periodo.",
+                    ("start", "end"),
+                ),
+                f.integer(
+                    "rebalance_every",
+                    "Periods between two rebalancings to the weights; 0 means never.",
+                    "Periodi tra due ribilanciamenti ai pesi; 0 significa mai.",
+                    minimum=0,
+                    unit="periods",
+                ),
+                _rate(
+                    "annual_cost",
+                    "Yearly cost as a fraction of wealth.",
+                    "Costo annuo come frazione del patrimonio.",
+                ),
+                f.number(
+                    "inflation",
+                    "Yearly inflation rate, used for real values and indexed flows.",
+                    "Tasso di inflazione annuo, usato per i valori reali e i flussi indicizzati.",
+                    minimum=-1.0,
+                    maximum=1.0,
+                    open_minimum=True,
+                    open_maximum=True,
+                    unit="fraction",
+                ),
+                _rate(
+                    "capital_gains_tax",
+                    "Tax rate on realised gains; 0 means no tax.",
+                    "Aliquota sulle plusvalenze realizzate; 0 significa nessuna imposta.",
+                ),
+                _rate(
+                    "wealth_tax",
+                    "Yearly tax rate on wealth; 0 means no tax.",
+                    "Aliquota annua sul patrimonio; 0 significa nessuna imposta.",
+                ),
+                _rate(
+                    "income_tax_rate",
+                    "Tax rate on the taxable yield, given with taxable_yield. Absent: no "
+                    "income tax.",
+                    "Aliquota sul rendimento imponibile, insieme a taxable_yield. Assente: "
+                    "nessuna imposta sul reddito.",
+                    required=False,
+                ),
+                _rate(
+                    "taxable_yield",
+                    "Yearly taxable yield on wealth, given with income_tax_rate. Absent: no "
+                    "income tax.",
+                    "Rendimento annuo imponibile sul patrimonio, insieme a income_tax_rate. "
+                    "Assente: nessuna imposta sul reddito.",
+                    required=False,
+                ),
+                f.table(
+                    "losses",
+                    "Italian loss rules for the capital-gains tax. Absent: no loss rules.",
+                    "Regole italiane sulle minusvalenze per l'imposta sulle plusvalenze. "
+                    "Assente: nessuna regola sulle minusvalenze.",
+                    (
+                        f.integer(
+                            "carry_years",
+                            "Years in which a realised loss can offset later gains.",
+                            "Anni in cui una minusvalenza realizzata può compensare plusvalenze "
+                            "successive.",
+                            minimum=0,
+                            unit="years",
+                        ),
+                        f.listing(
+                            "fund_assets",
+                            "Assets that are funds, whose gains cannot absorb losses.",
+                            "Attivi che sono fondi, le cui plusvalenze non assorbono minusvalenze.",
+                            f.text(
+                                "asset",
+                                "An asset name, a key of assets.",
+                                "Il nome di un attivo, una chiave di assets.",
+                            ),
+                            allow_empty=True,
+                        ),
+                    ),
+                    required=False,
+                ),
+            ),
+        ),
+        FLOWS,
+        f.integer(
+            "paths",
+            "Number of simulated paths.",
+            "Numero di percorsi simulati.",
+            minimum=10,
+        ),
+        f.integer(
+            "periods",
+            "Length of the projection.",
+            "Durata della proiezione.",
+            minimum=1,
+            unit="periods",
+        ),
+        f.day(
+            "start",
+            "Date at the start of the projection.",
+            "Data all'inizio della proiezione.",
+        ),
+        f.number(
+            "goal_real",
+            "Target terminal wealth in today's money.",
+            "Patrimonio finale obiettivo in moneta di oggi.",
+            unit="currency units",
+        ),
+        f.listing(
+            "percentiles",
+            "Percentiles of wealth to report, increasing, between 0 and 100.",
+            "Percentili del patrimonio da riportare, crescenti, tra 0 e 100.",
+            f.number("percentile", "A percentile.", "Un percentile."),
+            allow_empty=True,
+        ),
+        f.integer(
+            "early_periods",
+            "Periods of the early window, where an early depletion is counted.",
+            "Periodi della finestra iniziale, in cui si conta un esaurimento precoce.",
+            minimum=1,
+            unit="periods",
+        ),
+        f.boolean(
+            "sensitivity",
+            "Whether to run the sensitivity analysis.",
+            "Se eseguire l'analisi di sensitività.",
+        ),
+    ),
+)
+"""What ``projection`` accepts (design note 12.1)."""
+
 KIND = ExperimentKind(
     name="projection",
     description="Monte Carlo projection of a savings or withdrawal plan (descriptive)",
@@ -342,4 +617,5 @@ KIND = ExperimentKind(
     parameters=_PARAMETERS,
     parse=_parse,
     run=_run,
+    schema=SCHEMA,
 )

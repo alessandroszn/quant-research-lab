@@ -175,11 +175,41 @@ qrlab.data.read_spreadsheetml_rows  function(content: 'bytes', *, sheet: 'str', 
 qrlab.data.read_xlsx_rows  function(content: 'bytes', *, sheet: 'str', skip_rows: 'int') -> 'list[list[object]]'
 qrlab.experiments.ExperimentConfig  class(path: 'Path', name: 'str', kind: 'str', hypothesis: 'str', seed: 'int | None', inputs: 'Mapping[str, Path]', given_inputs: 'Mapping[str, str]', parameters: 'Mapping[str, object]', output_dir: 'Path', raw: 'Mapping[str, object]', hash: 'str', input_groups: 'frozenset[str]' = frozenset()) -> None
 qrlab.experiments.ExperimentConfig.input_groups  attribute frozenset = []
-qrlab.experiments.ExperimentKind  class(name: 'str', description: 'str', inputs: 'tuple[str, ...]', needs_seed: 'bool', parameters: 'tuple[str, ...]', parse: 'Callable[[Mapping[str, object]], object]', run: 'Callable[[RunContext], ExperimentOutput]', optional_inputs: 'tuple[str, ...]' = (), input_groups: 'tuple[str, ...]' = (), optional_parameters: 'tuple[str, ...]' = (), check_inputs: 'Callable[[object, frozenset[str]], None] | None' = None) -> None
+qrlab.experiments.ExperimentKind  class(name: 'str', description: 'str', inputs: 'tuple[str, ...]', needs_seed: 'bool', parameters: 'tuple[str, ...]', parse: 'Callable[[Mapping[str, object]], object]', run: 'Callable[[RunContext], ExperimentOutput]', optional_inputs: 'tuple[str, ...]' = (), input_groups: 'tuple[str, ...]' = (), optional_parameters: 'tuple[str, ...]' = (), check_inputs: 'Callable[[object, frozenset[str]], None] | None' = None, schema: 'KindSchema | None' = None) -> None
 qrlab.experiments.ExperimentKind.input_groups  attribute tuple = []
 qrlab.experiments.ExperimentKind.optional_inputs  attribute tuple = []
 qrlab.experiments.ExperimentKind.optional_parameters  attribute tuple = []
 qrlab.experiments.ExperimentOutput  class(tables: 'Mapping[str, Tagged]' = <factory>, scalars: 'Mapping[str, Tagged]' = <factory>, figures: 'Mapping[str, bytes]' = <factory>, report_html: 'str | None' = None, notice: 'str | None' = None) -> None
+qrlab.experiments.Field  class(key: 'str', kind: 'FieldKind', help: 'Help', required: 'bool' = True, unit: 'str | None' = None, choices: 'tuple[str, ...]' = (), minimum: 'float | None' = None, maximum: 'float | None' = None, open_minimum: 'bool' = False, open_maximum: 'bool' = False, item: 'Field | None' = None, fields: 'tuple[Field, ...]' = (), key_kind: 'FieldKind | None' = None, selector: 'str | None' = None, variants: 'Mapping[str, tuple[Field, ...]]' = <factory>, allow_empty: 'bool' = False, also: 'tuple[str, ...]' = (), allow_inf: 'bool' = False) -> None
+qrlab.experiments.Field.allow_empty  attribute bool = False
+qrlab.experiments.Field.allow_inf  attribute bool = False
+qrlab.experiments.Field.also  attribute tuple = []
+qrlab.experiments.Field.choices  attribute tuple = []
+qrlab.experiments.Field.fields  attribute tuple = []
+qrlab.experiments.Field.open_maximum  attribute bool = False
+qrlab.experiments.Field.open_minimum  attribute bool = False
+qrlab.experiments.Field.required  attribute bool = True
+qrlab.experiments.FieldKind  enum
+qrlab.experiments.FieldKind.TEXT  member = 'text'
+qrlab.experiments.FieldKind.INTEGER  member = 'integer'
+qrlab.experiments.FieldKind.NUMBER  member = 'number'
+qrlab.experiments.FieldKind.BOOLEAN  member = 'boolean'
+qrlab.experiments.FieldKind.DATE  member = 'date'
+qrlab.experiments.FieldKind.DATETIME  member = 'datetime'
+qrlab.experiments.FieldKind.CHOICE  member = 'choice'
+qrlab.experiments.FieldKind.CURRENCY  member = 'currency'
+qrlab.experiments.FieldKind.ISIN  member = 'isin'
+qrlab.experiments.FieldKind.LIST  member = 'list'
+qrlab.experiments.FieldKind.MATRIX  member = 'matrix'
+qrlab.experiments.FieldKind.TABLE  member = 'table'
+qrlab.experiments.FieldKind.MAP  member = 'map'
+qrlab.experiments.FieldKind.RECORDS  member = 'records'
+qrlab.experiments.FieldKind.VARIANT  member = 'variant'
+qrlab.experiments.Help  class(en: 'str', it: 'str') -> None
+qrlab.experiments.InputSpec  class(name: 'str', help: 'Help', required: 'bool' = True, group: 'bool' = False) -> None
+qrlab.experiments.InputSpec.group  attribute bool = False
+qrlab.experiments.InputSpec.required  attribute bool = True
+qrlab.experiments.KindSchema  class(inputs: 'tuple[InputSpec, ...]', parameters: 'tuple[Field, ...]') -> None
 qrlab.experiments.RECORD_FORMAT  constant int = 1
 qrlab.experiments.RunContext  class(config: 'ExperimentConfig', parameters: 'object', inputs: 'Mapping[str, Path]', seed: 'int | None') -> None
 qrlab.experiments.RunContext.group  method(name: 'str') -> 'dict[str, Path]'
@@ -187,6 +217,7 @@ qrlab.experiments.RunResult  class(output_dir: 'Path', record: 'Mapping[str, Any
 qrlab.experiments.RunResult.succeeded  property
 qrlab.experiments.TAGS  constant frozenset = ['descriptive', 'in_sample', 'out_of_sample']
 qrlab.experiments.Tagged  class(value: 'pd.DataFrame | float | str', tag: 'str') -> None
+qrlab.experiments.check_parameters  function(schema: 'KindSchema', parameters: 'Mapping[str, object]') -> 'None'
 qrlab.experiments.config_hash  function(raw: 'Mapping[str, object]') -> 'str'
 qrlab.experiments.configurations_tried  function(ledger_dir: 'Path', name: 'str', *, including: 'str') -> 'int'
 qrlab.experiments.count_trials  function(ledger_dir: 'Path', name: 'str') -> 'int'

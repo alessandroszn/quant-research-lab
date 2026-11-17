@@ -6,6 +6,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- **Parameter schemas** (phase 12.1a): every experiment kind describes its inputs and every
+  key of its `[parameters]`, at every level, as data (`qrlab.experiments.schema`: `Field`,
+  `FieldKind`, `Help`, `InputSpec`, `KindSchema`, `check_parameters`).
+  - Each key has its type, whether it is required, its unit, choices or range, and a help
+    text in English and Italian. There are no defaults: an absent optional key switches its
+    feature off.
+  - `ExperimentKind` gains the optional `schema`; every registered kind has one (277 fields).
+  - `validate_experiment` checks the parameters against the schema after the kind's own
+    `parse`, whose messages stay the first; the schema check names the full path of a wrong
+    key (for example `[parameters.risk.backtest] window`).
+  - `docs/guides/kinds.md` is generated from the schemas by `scripts/kinds_guide.py`, with
+    every nested key; a test keeps it equal to the generated text.
+
+### Fixed
+
+- **`backtest` declares its optional `losses`** (phase 12.1a): `parse` accepted it since 11.5,
+  but the registry did not list it, so `config_template` refused it.
+- **Wrong types that `parse` let through are now refused at validation** by the schema check,
+  for example a text instead of a list for the momentum strategy's `assets` (read before as
+  its characters), or a text percentile in a projection.
+
 ## [1.1.0] - 2026-11-17
 
 Milestone M11, *a complete portfolio report* (phases 11.1 to 11.5): total returns for risk
