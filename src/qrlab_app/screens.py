@@ -20,12 +20,15 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSplitter,
     QTableWidget,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
 from qrlab.experiments import RunResult
 from qrlab_app.display import date_text, timestamp_text
+from qrlab_app.form import FormModel
+from qrlab_app.form_widgets import FormView
 from qrlab_app.strings import LANGUAGES, tr, tr_value
 from qrlab_app.viewmodels import (
     AppError,
@@ -144,7 +147,15 @@ class HomeScreen(QWidget):
 
 
 class ExperimentScreen(QWidget):
-    """Configs of some kinds, a TOML editor with Validate and Run, and the results panel."""
+    """Configs of some kinds, the Form and TOML tabs with Validate and Run, and the results.
+
+    Both tabs edit the same text (design 12.1b). Opening the Form tab reads the text; a text
+    the form cannot show stays in the TOML tab with the reason. Every change in the form writes
+    the text again, as TOML without comments: saving it asks first when the file has comments.
+    """
+
+    FORM_TAB = 0
+    TOML_TAB = 1
 
     def __init__(
         self,
@@ -173,6 +184,11 @@ class ExperimentScreen(QWidget):
         self.editor.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         self.editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         self.editor.textChanged.connect(self._edited)
+        self.form = FormView(language, dialogs.pick_file, self._form_changed)
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.form, tr("screen.form", language))
+        self.tabs.addTab(self.editor, tr("screen.toml", language))
+        self.tabs.currentChanged.connect(self._tab_changed)
         self.save_button = QPushButton(tr("screen.save", language))
         self.validate_button = QPushButton(tr("screen.validate", language))
         self.run_button = QPushButton(tr("screen.run", language))
@@ -197,7 +213,7 @@ class ExperimentScreen(QWidget):
             left_layout.addWidget(button)
         centre = QWidget()
         centre_layout = QVBoxLayout(centre)
-        centre_layout.addWidget(self.editor)
+        centre_layout.addWidget(self.tabs)
         row = QHBoxLayout()
         for button in (self.save_button, self.validate_button, self.run_button):
             row.addWidget(button)
@@ -235,9 +251,9 @@ class ExperimentScreen(QWidget):
         if not self.confirm_discard():
             return
         self.refresh()
+        self.message.setText("")
         self._show_text(self.model.select(path))
         self.results.show_result(self.model.result)
-        self.message.setText("")
         self.refresh()
 
     def reset(self) -> None:
@@ -256,6 +272,8 @@ class ExperimentScreen(QWidget):
             tr("screen.unsaved", self.language, name=self.model.selected.name)
         )
         if answer == "save":
+            if not self._may_save():
+                return False
             self.model.save()
         elif answer == "discard":
             self._show_text(self.model.revert())
@@ -265,6 +283,44 @@ class ExperimentScreen(QWidget):
         self._loading = True
         self.editor.setPlainText(text)
         self._loading = False
+        if self.tabs.currentIndex() == self.FORM_TAB:
+            self._load_form()
+
+    def _load_form(self) -> None:
+        """Show the text in the form, or go to the TOML tab with the reason it cannot."""
+        if self.model.selected is None:
+            self.form.show_model(None)
+            return
+        try:
+            form = FormModel.from_text(self.model.text, self.model.kinds)
+        except AppError as exc:
+            self.form.show_model(None)
+            self.tabs.blockSignals(True)
+            self.tabs.setCurrentIndex(self.TOML_TAB)
+            self.tabs.blockSignals(False)
+            self.message.setText(exc.text(self.language))
+            return
+        self.form.show_model(form, self.model.selected)
+
+    def _tab_changed(self, index: int) -> None:
+        if index == self.FORM_TAB:
+            self.message.setText("")
+            self._load_form()
+
+    def _form_changed(self) -> None:
+        form = self.form.model
+        assert form is not None  # the form changes only while it shows a config
+        self.model.set_form_text(form.to_text())
+        self._loading = True
+        self.editor.setPlainText(self.model.text)
+        self._loading = False
+
+    def _may_save(self) -> bool:
+        """Ask before a save that drops the file's comments; ``False`` means do not save."""
+        if not self.model.loses_comments or self.model.selected is None:
+            return True
+        name = self.model.selected.name
+        return self.dialogs.confirm(tr("screen.comments", self.language, name=name))
 
     def _edited(self) -> None:
         if not self._loading:
@@ -277,9 +333,9 @@ class ExperimentScreen(QWidget):
         if not self.confirm_discard():
             self.refresh()  # the highlight goes back to the config being edited
             return
+        self.message.setText("")
         self._show_text(self.model.select(path))
         self.results.show_result(self.model.result)
-        self.message.setText("")
         self._enable()
 
     def _new(self) -> None:
@@ -314,10 +370,12 @@ class ExperimentScreen(QWidget):
         self.results.show_result(self.model.result)
 
     def _save(self) -> None:
-        if self.model.selected is not None and self.model.status != "running":
+        if self.model.selected is not None and self.model.status != "running" and self._may_save():
             self.model.save()
 
     def _validate(self) -> None:
+        if not self._may_save():
+            return
         ok, message = self.model.validate()
         if ok:
             name, _, kind = message.rpartition(" (")
@@ -327,6 +385,8 @@ class ExperimentScreen(QWidget):
         self.message.setText(text)
 
     def _run(self) -> None:
+        if not self._may_save():
+            return
         if self.model.output_exists() and self.model.selected is not None:
             question = tr("screen.overwrite", self.language, name=self.model.selected.name)
             if not self.dialogs.confirm(question):
@@ -377,6 +437,7 @@ class ExperimentScreen(QWidget):
         self.run_button.setEnabled(selected and idle)
         self.new_button.setEnabled(idle and self.model.workspace.root is not None)
         self.editor.setReadOnly(not idle or not selected)
+        self.form.setEnabled(idle and selected)
 
 
 class HistoryScreen(QWidget):

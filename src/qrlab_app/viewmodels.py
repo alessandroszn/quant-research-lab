@@ -39,6 +39,7 @@ __all__ = [
     "TableView",
     "WorkspaceViewModel",
     "check_file_name",
+    "has_comments",
     "load_result",
 ]
 
@@ -70,6 +71,36 @@ def check_file_name(text: str) -> str:
     if not name or any(c in name for c in '/\\:*?"<>|') or name.startswith("."):
         raise AppError("error.bad_name", name=repr(text))
     return name
+
+
+def has_comments(text: str) -> bool:
+    """Whether TOML ``text`` has a comment (a ``#`` outside strings)."""
+    index = 0
+    while index < len(text):
+        if text[index] == "#":
+            return True
+        for quote in ('"""', "'''", '"', "'"):
+            if text.startswith(quote, index):
+                index = _string_end(text, index + len(quote), quote)
+                break
+        else:
+            index += 1
+    return False
+
+
+def _string_end(text: str, index: int, quote: str) -> int:
+    """Return the index after the string that started before ``index``."""
+    while index < len(text):
+        if quote[0] == '"' and text[index] == "\\":
+            index += 2
+        elif text.startswith(quote, index):
+            index += len(quote)
+            while len(quote) == 3 and text.startswith(quote[0], index):
+                index += 1  # a multi-line string may end with one or two more quotes
+            return index
+        else:
+            index += 1
+    return index
 
 
 @dataclass(frozen=True)
@@ -176,6 +207,7 @@ class ExperimentViewModel:
         self.selected: Path | None = None
         self.text = ""
         self.saved_text = ""
+        self.form_wrote = False
         self.status = "idle"
         self.result: ResultView | None = None
         self.error: str | None = None
@@ -196,6 +228,7 @@ class ExperimentViewModel:
         self.selected = Path(path)
         self.text = self.selected.read_text(encoding="utf-8")
         self.saved_text = self.text
+        self.form_wrote = False
         self.error = None
         self.status = "idle"
         self.result = self._existing_result()
@@ -204,6 +237,16 @@ class ExperimentViewModel:
     def set_text(self, text: str) -> None:
         """Replace the editor text (not yet saved)."""
         self.text = text
+
+    def set_form_text(self, text: str) -> None:
+        """Replace the text with what the form wrote (TOML without comments; not yet saved)."""
+        self.text = text
+        self.form_wrote = True
+
+    @property
+    def loses_comments(self) -> bool:
+        """Whether saving now drops comments of the saved file, because the form wrote the text."""
+        return self.form_wrote and self.dirty and has_comments(self.saved_text)
 
     @property
     def dirty(self) -> bool:
@@ -215,11 +258,13 @@ class ExperimentViewModel:
         path = self._require_selected()
         path.write_text(self.text, encoding="utf-8", newline="\n")
         self.saved_text = self.text
+        self.form_wrote = False
         return path
 
     def revert(self) -> str:
         """Drop unsaved edits; return the text last loaded or saved."""
         self.text = self.saved_text
+        self.form_wrote = False
         return self.text
 
     def clear(self) -> None:
@@ -227,6 +272,7 @@ class ExperimentViewModel:
         self.entries = []
         self.selected = None
         self.text = self.saved_text = ""
+        self.form_wrote = False
         self.status = "idle"
         self.result = None
         self.error = None

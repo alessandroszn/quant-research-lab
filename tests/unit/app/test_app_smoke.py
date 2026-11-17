@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+import tomllib
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from PySide6.QtCore import QCoreApplication, QModelIndex, QSettings, Qt, QThreadPool
-from PySide6.QtWidgets import QApplication, QComboBox, QTableWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QLineEdit, QTableWidget
 
 from qrlab.data.provenance import Provenance
 from qrlab.data.store import RawStore
@@ -21,10 +22,11 @@ from qrlab.experiments.kinds import KINDS
 from qrlab.instruments import INSTRUMENT_FIELDS
 from qrlab.portfolio import NATIVE_COLUMNS
 from qrlab_app.app import main as app_main
+from qrlab_app.form import FormModel
 from qrlab_app.main_window import ANALYSIS_SCREENS, AppShell, MainWindow
 from qrlab_app.portfolio_screen import KIND_COLUMN
 from qrlab_app.screens import ExperimentScreen
-from qrlab_app.viewmodels import ResultView, SettingsViewModel, TableView
+from qrlab_app.viewmodels import ResultView, SettingsViewModel, TableView, has_comments
 from qrlab_app.widgets import Dialogs, FrameModel, QtSettingsStore, ResultsPanel, RunWorker
 
 ROOT = Path(__file__).parents[3]
@@ -799,4 +801,90 @@ def test_the_data_screen_imports_a_downloaded_file(qapp: QApplication, tmp_path:
     user.texts = ["../up"]
     screen.import_button.click()
     assert screen.message.text() == "'../up' is not a valid file name."
+    window.close()
+
+
+def _form_model(screen: ExperimentScreen) -> FormModel | None:
+    """Return the model the form shows, read afresh."""
+    return screen.form.model
+
+
+def _loses_comments(screen: ExperimentScreen) -> bool:
+    """Return whether saving would drop comments, read afresh."""
+    return screen.model.loses_comments
+
+
+def test_the_form_and_toml_tabs_edit_the_same_config(qapp: QApplication, tmp_path: Path) -> None:
+    root = _workspace(tmp_path)
+    path = root / "configs" / "projection.toml"
+    original = path.read_text(encoding="utf-8")
+    assert has_comments(original)
+    broken = root / "configs" / "unknown_key.toml"
+    broken.write_text(original.replace("[parameters]", "[parameters]\nnope = 1"), "utf-8")
+    user = FakeUser(root)
+    window = _window(user, QThreadPool())
+    window.home.open_button.click()
+    screen = window.screen_for("projection")
+    form_tab, toml_tab = ExperimentScreen.FORM_TAB, ExperimentScreen.TOML_TAB
+    assert screen.tabs.currentIndex() == form_tab
+    assert _form_model(screen) is None
+    assert not screen.form.isEnabled()  # nothing selected
+
+    # The form shows the selected config; an edit there writes the TOML tab's text.
+    screen.open_config(path)
+    assert screen.form.isEnabled()
+    edit = screen.form.editors[("parameters", "paths")]
+    assert isinstance(edit, QLineEdit)
+    edit.setText("60")
+    edit.textEdited.emit("60")
+    assert tomllib.loads(screen.editor.toPlainText())["parameters"]["paths"] == 60
+    assert screen.model.dirty
+    assert _loses_comments(screen) is True
+
+    # Saving, validating and running ask first, because the comments would be lost.
+    question = "Saving from the form writes projection.toml without its comments. Save anyway?"
+    user.confirm_answer = False
+    screen.save_button.click()
+    screen.validate_button.click()
+    screen.run_button.click()
+    user.save_answer = "save"
+    assert not screen.confirm_discard()  # Save, then No to the comments: nothing happens
+    assert user.confirmed == [question] * 4
+    assert path.read_text(encoding="utf-8") == original
+    user.confirm_answer = True
+    screen.save_button.click()
+    saved = path.read_text(encoding="utf-8")
+    assert saved == screen.editor.toPlainText()
+    assert not has_comments(saved)
+    assert tomllib.loads(saved) == {**tomllib.loads(original), "parameters": {
+        **tomllib.loads(original)["parameters"], "paths": 60}}  # fmt: skip
+
+    # The TOML tab and back: the form reads the text as edited.
+    screen.tabs.setCurrentIndex(toml_tab)
+    screen.editor.setPlainText(saved.replace("paths = 60", "paths = 70"))
+    screen.tabs.setCurrentIndex(form_tab)
+    shown = _form_model(screen)
+    assert shown is not None
+    assert shown.value(("parameters", "paths")) == 70
+    assert _loses_comments(screen) is False  # the saved file has no comments any more
+
+    # Text the form cannot show stays in the TOML tab, with the reason.
+    screen.tabs.setCurrentIndex(toml_tab)
+    screen.editor.setPlainText("[parameters\n")
+    screen.tabs.setCurrentIndex(form_tab)
+    assert screen.tabs.currentIndex() == toml_tab
+    assert screen.message.text().startswith("The form needs valid TOML")
+    user.save_answer = "discard"
+    screen.open_config(broken)  # opened in the TOML tab, where it stays
+    assert screen.model.selected == broken
+    screen.tabs.setCurrentIndex(form_tab)
+    assert screen.tabs.currentIndex() == toml_tab
+    assert screen.message.text() == (
+        "The form cannot show this config, so it stays in the TOML tab: "
+        "[parameters]: unknown keys ['nope']"
+    )
+    assert _form_model(screen) is None
+    screen.reset()
+    screen.tabs.setCurrentIndex(form_tab)
+    assert _form_model(screen) is None
     window.close()

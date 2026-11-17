@@ -462,7 +462,7 @@ note, approved before any code.
 
 ## Level 12 — A usable app → M12
 
-### 12.1 A form for each analysis (14–20 h)
+### 12.1 A form for each analysis (14–20 h) — done
 - Parameter schemas in the kinds, the single source for validation, docs and the app's form;
   the TOML stays available and always agrees.
 

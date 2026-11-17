@@ -40,8 +40,17 @@ no logs outside `results/`.
 Each analysis screen has three columns:
 
 - **Left:** the configs of its kinds, with *New from template* and *Duplicate*.
-- **Centre:** a TOML editor with *Save*, *Validate* and *Run*. Validation shows the runner's
-  messages unchanged.
+- **Centre:** the config in two tabs, *Form* and *TOML*, with *Save*, *Validate* and *Run*.
+  Validation shows the runner's messages unchanged.
+  - **Form** is built from the kind's schema (the same keys as {doc}`kinds`). Each key's
+    tooltip is its help, and its label carries its unit. Values are typed as text and can be
+    left blank: the form fills nothing in. Optional tables and lists have a tick box, lists
+    and maps have *Add* and *Remove*, and an input has *Choose…*. After each change the
+    schema check runs, and the field it names is marked in red.
+  - **TOML** is the file as text. A config the form cannot show exactly, such as one with an
+    unknown key, stays here with the reason.
+  - **Comments:** the form writes TOML without comments. When the file has comments and the
+    form changed it, *Save* (and *Validate* or *Run*, which save first) asks before writing.
 - **Right:** the results.
   - Each table carries its sample tag (in-sample, out-of-sample or descriptive).
   - The scalars and figures are shown below the tables.
