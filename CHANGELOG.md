@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-17
+
+Milestone M11, *a complete portfolio report* (phases 11.1 to 11.5): total returns for risk
+and the checks, a benchmark, the Italian stamp duty and IVAFE, a VaR backtest and factor
+proxies, and the small open items. Every change to the public API is an addition with a
+default (docs/compatibility.md). Released on GitHub only, like 1.0.0.
+
 ### Added
 
 - **Loss rules in the configs** (phase 11.5): `[parameters.losses]` in `backtest` and
@@ -1019,7 +1026,8 @@ Milestones M1 (Analytics core) and M2 (Portfolio X-ray): phases 1.1 to 2.5.
 - GitHub Actions CI on Linux and Windows for Python 3.11 and 3.13.
 - Project documentation: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
 
-[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0rc1...v1.0.0
 [1.0.0rc1]: https://github.com/alessandroszn/quant-research-lab/compare/v0.4.0...v1.0.0rc1
 [0.4.0]: https://github.com/alessandroszn/quant-research-lab/compare/v0.3.0...v0.4.0

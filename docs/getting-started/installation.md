@@ -5,11 +5,11 @@ desktop app is packaged for Windows only, as an installer.
 
 ## As a library
 
-Version 1.0.0 is installed from the wheel attached to its GitHub release; it is not on PyPI
+Version 1.1.0 is installed from the wheel attached to its GitHub release; it is not on PyPI
 yet.
 
 ```bash
-pip install "quant-research-lab @ https://github.com/alessandroszn/quant-research-lab/releases/download/v1.0.0/quant_research_lab-1.0.0-py3-none-any.whl"
+pip install "quant-research-lab @ https://github.com/alessandroszn/quant-research-lab/releases/download/v1.1.0/quant_research_lab-1.1.0-py3-none-any.whl"
 ```
 
 There are two optional extras:
@@ -20,7 +20,7 @@ There are two optional extras:
 | `parquet` | pyarrow | reading Parquet files (study 3, Open Source Asset Pricing data) |
 
 ```bash
-pip install "quant-research-lab[app,parquet] @ https://github.com/alessandroszn/quant-research-lab/releases/download/v1.0.0/quant_research_lab-1.0.0-py3-none-any.whl"
+pip install "quant-research-lab[app,parquet] @ https://github.com/alessandroszn/quant-research-lab/releases/download/v1.1.0/quant_research_lab-1.1.0-py3-none-any.whl"
 ```
 
 The import name is `qrlab`. Two commands are installed:

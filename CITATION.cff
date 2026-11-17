@@ -10,9 +10,9 @@ abstract: >-
 authors:
   - family-names: Zanichelli
     given-names: Alessandro
-version: 1.0.0
-doi: 10.5281/zenodo.24289229  # every version; 1.0.0 alone is 10.5281/zenodo.24289230
-date-released: 2026-11-16
+version: 1.1.0
+doi: 10.5281/zenodo.24289229  # every version
+date-released: 2026-11-17
 license: BSD-3-Clause
 repository-code: "https://github.com/alessandroszn/quant-research-lab"
 url: "https://alessandroszn.github.io/quant-research-lab/"
