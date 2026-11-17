@@ -65,7 +65,8 @@ by layer, and no layer starts before the one below it is tested and reviewed.
 
 Releases: each phase ends with a SemVer minor release (`v0.N.0`). v1.0 was planned at M6; it
 was cut at M10, on 2026-11-16, on GitHub (PyPI follows once the owner has an account). After
-it, each of Levels 11 to 13 ends in a minor release (`v1.1.0`, `v1.2.0`, `v1.3.0`).
+it, each of Levels 11 to 13 ends in a minor release (`v1.1.0`, `v1.2.0`, `v1.3.0`); `v1.1.0`
+was cut at M11, on 2026-11-17, on GitHub.
 
 ---
 

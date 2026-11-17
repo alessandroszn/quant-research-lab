@@ -6,8 +6,8 @@ reproducibility and methodological rigour come before speed or feature count.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24289229.svg)](https://doi.org/10.5281/zenodo.24289229)
 
-> **Status:** version 1.0.0, released on 2026-11-16
-> ([release](https://github.com/alessandroszn/quant-research-lab/releases/tag/v1.0.0)). The
+> **Status:** version 1.1.0, released on 2026-11-17
+> ([release](https://github.com/alessandroszn/quant-research-lab/releases/tag/v1.1.0)). The
 > public API is frozen ([compatibility policy](https://github.com/alessandroszn/quant-research-lab/blob/main/docs/compatibility.md)). See [`CHANGELOG.md`](https://github.com/alessandroszn/quant-research-lab/blob/main/CHANGELOG.md) and the
 > [roadmap](https://github.com/alessandroszn/quant-research-lab/blob/main/docs/ROADMAP.md).
 
@@ -65,10 +65,10 @@ The figures are drawn from the study records by `scripts/readme_figures.py`.
 ## Install
 
 ```bash
-pip install "quant-research-lab[app,parquet] @ https://github.com/alessandroszn/quant-research-lab/releases/download/v1.0.0/quant_research_lab-1.0.0-py3-none-any.whl"
+pip install "quant-research-lab[app,parquet] @ https://github.com/alessandroszn/quant-research-lab/releases/download/v1.1.0/quant_research_lab-1.1.0-py3-none-any.whl"
 ```
 
-Version 1.0.0 is not on PyPI yet: the wheel comes from the GitHub release. A later version
+Version 1.1.0 is not on PyPI yet: the wheel comes from the GitHub release. A later version
 will be installable as `pip install quant-research-lab`.
 
 The extras:
