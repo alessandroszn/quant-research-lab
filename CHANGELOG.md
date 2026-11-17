@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **The portfolio report writes the data behind its figures** (phase 12.3a): `value.csv`
+  (the value in the base currency on each valuation date, column `value_<currency>`) and
+  `twr.csv` (`cumulative_twr` and `drawdown` per period), the series its "value over time",
+  TWR and drawdown figures draw. Every other output is byte-identical; the records list the
+  two new files. They let the app draw these charts without computing anything (12.3b).
 - **Parameter schemas** (phase 12.1a): every experiment kind describes its inputs and every
   key of its `[parameters]`, at every level, as data (`qrlab.experiments.schema`: `Field`,
   `FieldKind`, `Help`, `InputSpec`, `KindSchema`, `check_parameters`).
