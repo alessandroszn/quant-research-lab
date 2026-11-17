@@ -18,9 +18,10 @@ Quant Research Lab reads public data and your own files. Its rules for data:
 | Kenneth R. French Data Library | Fama-French factors, momentum, portfolios, international factors | Copyright Eugene F. Fama and Kenneth R. French; no licence published. Used locally for research with citation; raw files are not redistributed. |
 | European Central Bank (ECB Data Portal) | Euro reference FX rates, €STR, euro-area HICP, AAA government yield curve | Free reuse if reproduced accurately, with the ECB cited as source. |
 | Open Source Asset Pricing (Chen and Zimmermann) | Long-short returns of published predictors and their documentation, release 2026.10 at a pinned revision | CC BY 4.0. Cite Chen and Zimmermann (2022), *Critical Finance Review*. Raw files are not redistributed. |
+| Unicode CLDR 49.0.0 (npm `cldr-localenames-full`, `main/it/territories.json`) | Italian country names, for `country_format = "name_it"` (phase 11.5) | Unicode License v3: use, copy and distribution allowed with the copyright and permission notice, which ships as `src/qrlab/instruments/CLDR-LICENSE.txt`. The file was read once to generate the table; it is not downloaded at run time. |
 
-The terms were checked on 2026-11-10 (Kenneth R. French, ECB) and 2026-11-12 (Open Source
-Asset Pricing), and the issuers' on 2026-11-15 (below). Terms change: check them again before
+The terms were checked on 2026-11-10 (Kenneth R. French, ECB), 2026-11-12 (Open Source
+Asset Pricing) and 2026-11-17 (Unicode CLDR), and the issuers' on 2026-11-15 (below). Terms change: check them again before
 relying on a source for something new.
 
 **Excluded:** FRED. Its terms prohibit storing or caching data without written consent, and

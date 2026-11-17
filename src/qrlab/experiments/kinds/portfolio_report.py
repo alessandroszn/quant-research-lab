@@ -101,8 +101,9 @@ configurable model (``country = "custom"``, phase 9.3, any base currency): ``des
 ``custom_years.csv`` and, with netted losses, ``custom_losses.csv``, and adds a sentence to
 the notice. See :mod:`qrlab.tax.custom`.
 
-The projection may add ``income_tax_rate`` and ``taxable_yield`` (both or neither, phase
-9.2): a yearly tax of their product on value.
+The projection may add ``losses = { carry_years }`` (phase 11.5: the held ETFs and funds of
+the instruments file are the fund assets) and ``income_tax_rate`` and ``taxable_yield`` (both
+or neither, phase 9.2): a yearly tax of their product on value.
 
 Income in the returns (design note 11.1), all optional. Risk and the diversification checks
 read returns; valuation keeps the market prices. Per held position, by ISIN:

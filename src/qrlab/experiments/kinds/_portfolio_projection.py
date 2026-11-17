@@ -18,11 +18,12 @@ import pandas as pd
 from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency
 from qrlab.experiments.config import require_keys
-from qrlab.experiments.kinds._params import choice, number, table, whole
+from qrlab.experiments.kinds._params import choice, loss_rules, number, table, whole
 from qrlab.experiments.kinds.projection import PlanRun, parse_engine, parse_flows, run_plan
 from qrlab.instruments.identifiers import Isin
-from qrlab.instruments.master import Instrument
+from qrlab.instruments.master import Instrument, InstrumentType
 from qrlab.simulation.engines import LogMoments
+from qrlab.simulation.losses import LossRules
 from qrlab.simulation.plan import Flow, Plan, TaxModel
 
 __all__ = ["CASH", "ProjectionSpec", "parse_projection", "project_portfolio"]
@@ -55,6 +56,7 @@ class ProjectionSpec:
     capital_gains_tax: float
     wealth_tax: float
     income_tax: tuple[float, float] | None  # (income_tax_rate, taxable_yield), phase 9.2
+    loss_carry_years: int | None  # [parameters.projection.losses], phase 11.5
     flows: tuple[Flow, ...]
     assets: Mapping[str, tuple[float, float]]  # ISIN code or "cash" -> (mean, volatility)
     correlations: Mapping[frozenset[str], float]
@@ -70,7 +72,7 @@ def parse_projection(parameters: Mapping[str, object]) -> ProjectionSpec | None:
     require_keys(
         spec,
         required=_KEYS,
-        optional={"cash", "correlations", "income_tax_rate", "taxable_yield"},
+        optional={"cash", "correlations", "income_tax_rate", "taxable_yield", "losses"},
         where="[parameters.projection]",
     )
     engine, dof = parse_engine(spec)
@@ -111,6 +113,9 @@ def parse_projection(parameters: Mapping[str, object]) -> ProjectionSpec | None:
         inflation=number(spec, "inflation"),
         capital_gains_tax=number(spec, "capital_gains_tax"),
         wealth_tax=number(spec, "wealth_tax"),
+        loss_carry_years=None
+        if (losses := loss_rules(spec, where="[parameters.projection]", fund_assets=False)) is None
+        else losses[0],
         income_tax=(number(spec, "income_tax_rate"), number(spec, "taxable_yield"))
         if income_keys
         else None,
@@ -204,6 +209,9 @@ def project_portfolio(
         taxes=TaxModel(
             spec.capital_gains_tax,
             spec.wealth_tax,
+            losses=None
+            if spec.loss_carry_years is None
+            else LossRules(spec.loss_carry_years, _fund_assets(names, instruments)),
             income_tax_rate=0.0 if spec.income_tax is None else spec.income_tax[0],
             taxable_yield=0.0 if spec.income_tax is None else spec.income_tax[1],
         ),
@@ -223,6 +231,18 @@ def project_portfolio(
         with_sensitivity=True,
     )
     return run, cost
+
+
+def _fund_assets(names: list[str], instruments: Mapping[Isin, Instrument]) -> frozenset[str]:
+    """Return the held ETFs and funds: their gains are capital income (the rule of 8.6)."""
+    funds = {InstrumentType.ETF, InstrumentType.FUND}
+    return frozenset(
+        code
+        for code in names
+        if code != CASH
+        and (instrument := instruments.get(Isin(code))) is not None
+        and instrument.instrument_type in funds
+    )
 
 
 def _weighted_ter(weights: Mapping[str, float], instruments: Mapping[Isin, Instrument]) -> float:

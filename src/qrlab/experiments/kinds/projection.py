@@ -4,6 +4,10 @@ No input files: the return assumptions are stated in the config, as per-period l
 and volatilities per asset plus a correlation matrix (``[parameters.assets]``,
 ``[parameters.correlation]``). The plan follows phase 3.3. Results are descriptive: scenarios
 from assumptions, not forecasts.
+
+Optional in ``[parameters.plan]`` (phase 11.5): ``income_tax_rate`` and ``taxable_yield`` (both
+or neither, a yearly tax of their product on value, as in the report since 9.2), and
+``losses`` (``carry_years`` and ``fund_assets``, :class:`qrlab.simulation.LossRules`).
 """
 
 from __future__ import annotations
@@ -18,7 +22,16 @@ import pandas as pd
 from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency
 from qrlab.experiments.config import require_keys
-from qrlab.experiments.kinds._params import boolean, choice, day, number, table, text, whole
+from qrlab.experiments.kinds._params import (
+    boolean,
+    choice,
+    day,
+    loss_rules,
+    number,
+    table,
+    text,
+    whole,
+)
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.reporting.figures import AxisFormat, line_figure
 from qrlab.reporting.formatting import Language, style_for
@@ -29,6 +42,7 @@ from qrlab.simulation.engines import (
     normal_returns,
     student_t_returns,
 )
+from qrlab.simulation.losses import LossRules
 from qrlab.simulation.outcomes import (
     ProjectionResult,
     SensitivityRow,
@@ -113,8 +127,14 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
             "capital_gains_tax",
             "wealth_tax",
         },
-        optional=set(),
+        optional={"income_tax_rate", "taxable_yield", "losses"},
     )
+    income = {"income_tax_rate", "taxable_yield"} & set(plan_table)
+    if len(income) == 1:
+        raise ValidationError(
+            "[parameters.plan] income_tax_rate and taxable_yield go together (phase 9.2)"
+        )
+    losses = loss_rules(plan_table, where="[parameters.plan]", fund_assets=True)
     rebalance = whole(plan_table, "rebalance_every", minimum=0)
     plan = Plan(
         initial_wealth=number(plan_table, "initial_wealth"),
@@ -126,7 +146,13 @@ def _parse(parameters: Mapping[str, object]) -> _Parameters:
         rebalance_every=rebalance or None,
         annual_cost=number(plan_table, "annual_cost"),
         inflation=number(plan_table, "inflation"),
-        taxes=TaxModel(number(plan_table, "capital_gains_tax"), number(plan_table, "wealth_tax")),
+        taxes=TaxModel(
+            number(plan_table, "capital_gains_tax"),
+            number(plan_table, "wealth_tax"),
+            losses=None if losses is None else LossRules(*losses),
+            income_tax_rate=number(plan_table, "income_tax_rate") if income else 0.0,
+            taxable_yield=number(plan_table, "taxable_yield") if income else 0.0,
+        ),
     )
     levels = parameters["percentiles"]
     if not isinstance(levels, list):

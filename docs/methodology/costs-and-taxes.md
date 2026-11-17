@@ -175,8 +175,10 @@ and the gap between gross and net compounds.
     shares, bonds or ETCs.
   - **With `LossRules`,** the 48.08 % share of government bonds is not applied: it is an
     analytics input of the tax position, not a projection assumption.
-  - **`LossRules` is a library option only.** The `backtest`, `projection` and report
-    configs do not set it yet; it is listed in `docs/IDEAS.md`.
+  - **The configs set it** (phase 11.5): `[parameters.losses]` in `backtest`,
+    `[parameters.plan.losses]` in `projection`, both with `carry_years` and `fund_assets`, and
+    `[parameters.projection.losses]` in the report, with `carry_years` only: there the held
+    ETFs and funds of the instruments file are the fund assets.
 - **Limits of the Italian tax analytics.**
   - Dividends and interest are listed with their withheld tax, not recomputed.
   - Stamp duty and IVAFE cover securities, not cash and current accounts (phase 11.3).

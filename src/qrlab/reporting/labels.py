@@ -322,6 +322,10 @@ _EN = {
     "inflation": "Inflation (a year)",
     "capital_gains_tax": "Capital-gains tax",
     "wealth_tax": "Wealth tax (a year)",
+    "losses_carried": "Losses",
+    "losses_carried_value": (
+        "netted and carried {n} years; gains of these funds taxed in full: {funds}"
+    ),
     "terminal_wealth": "Terminal wealth",
     "percentile": "Percentile",
     "real": "Real (today's money)",
@@ -863,6 +867,10 @@ _IT = {
     "inflation": "Inflazione (annua)",
     "capital_gains_tax": "Imposta sulle plusvalenze",
     "wealth_tax": "Imposta patrimoniale (annua)",
+    "losses_carried": "Minusvalenze",
+    "losses_carried_value": (
+        "compensate e riportate per {n} anni; guadagni di questi fondi tassati per intero: {funds}"
+    ),
     "terminal_wealth": "Patrimonio finale",
     "percentile": "Percentile",
     "real": "Reale (moneta di oggi)",

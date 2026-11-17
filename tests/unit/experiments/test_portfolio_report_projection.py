@@ -369,3 +369,23 @@ def test_income_tax_keys_go_together(tmp_path: Path) -> None:
     half = DETERMINISTIC.replace("wealth_tax = 0.0\n", "wealth_tax = 0.0\nincome_tax_rate = 0.3\n")
     with pytest.raises(ValidationError, match="income_tax_rate and taxable_yield go together"):
         validate_experiment(_setup(tmp_path, projection=half), kinds=KINDS)
+
+
+def test_losses_take_the_funds_from_the_instruments_file(tmp_path: Path) -> None:
+    """Design note 11.5: the held ETFs and funds are the fund assets; the report names them."""
+    projection = DETERMINISTIC.replace(
+        "wealth_tax = 0.0\n", "wealth_tax = 0.0\nlosses = { carry_years = 4 }\n"
+    )
+    record, out = _run(_setup(tmp_path, projection=projection))
+    assert record["status"] == "success", record["error"]
+    html = (out / "report.html").read_text(encoding="utf-8")
+    assert f"netted and carried 4 years; gains of these funds taxed in full: Fund {FUND_A}" in html
+    _, plain_out = _run(_setup(tmp_path / "plain"))
+    terminal = pd.read_csv(out / "terminal.csv", index_col=0)
+    assert terminal.equals(pd.read_csv(plain_out / "terminal.csv", index_col=0))  # no sale
+    refused = DETERMINISTIC.replace(
+        "wealth_tax = 0.0\n",
+        f'wealth_tax = 0.0\nlosses = {{ carry_years = 4, fund_assets = ["{FUND_A}"] }}\n',
+    )
+    with pytest.raises(ValidationError, match="fund_assets"):
+        validate_experiment(_setup(tmp_path / "r", projection=refused), kinds=KINDS)

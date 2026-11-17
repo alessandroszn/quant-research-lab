@@ -13,8 +13,9 @@
 # below 0.005 % read as 0, and the weights sum to about 100 % give or take rounding. There is
 # no ISIN column, so holdings are keyed by name.
 #
-# Countries are Italian names. Those of this fund are listed below; a name not listed raises
-# with its line: add it with its ISO 3166-1 alpha-2 code.
+# Countries are Italian names, converted with the Italian names of Unicode CLDR 49.0.0
+# (country_format = "name_it", phase 11.5). A name CLDR does not know raises with its line: add
+# it below with its ISO 3166-1 alpha-2 code. The lines below win over the table.
 
 file_format = "csv"
 skip_rows = 2
@@ -26,7 +27,7 @@ value_affixes = []
 weight_unit = "percent"
 missing_tokens = ["", "-"]
 asset_class = "column"
-country_format = "name"
+country_format = "name_it"
 
 [columns]
 name = "Nome"
@@ -44,27 +45,4 @@ asset_class = "Asset Class"
 "Futures" = "other"
 
 [country_values]
-"Australia" = "AU"
-"Austria" = "AT"
-"Belgio" = "BE"
-"Canada" = "CA"
-"Danimarca" = "DK"
-"Finlandia" = "FI"
-"Francia" = "FR"
-"Germania" = "DE"
-"Giappone" = "JP"
-"Hong Kong" = "HK"
-"Irlanda" = "IE"
-"Israele" = "IL"
-"Italia" = "IT"
-"Norvegia" = "NO"
-"Nuova Zelanda" = "NZ"
-"Paesi Bassi" = "NL"
-"Portogallo" = "PT"
-"Regno unito" = "GB"
-"Singapore" = "SG"
-"Spagna" = "ES"
-"Stati Uniti" = "US"
-"Svezia" = "SE"
-"Svizzera" = "CH"
 "Unione Europea" = "unknown"   # a supranational line (e.g. a futures contract): no country

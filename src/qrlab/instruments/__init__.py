@@ -14,7 +14,14 @@ Modules:
 Layering: ``instruments`` may import ``core`` and ``data`` (documented exception).
 """
 
-from qrlab.instruments.countries import COUNTRY_ALIASES, COUNTRY_NAMES, country_code
+from qrlab.instruments.countries import (
+    COUNTRY_ALIASES,
+    COUNTRY_ALIASES_IT,
+    COUNTRY_NAMES,
+    COUNTRY_NAMES_IT,
+    country_code,
+    country_code_it,
+)
 from qrlab.instruments.holdings import (
     HOLDING_COLUMNS,
     HoldingsSnapshot,
@@ -53,7 +60,9 @@ from qrlab.instruments.master import (
 __all__ = [
     "COUNTRIES",
     "COUNTRY_ALIASES",
+    "COUNTRY_ALIASES_IT",
     "COUNTRY_NAMES",
+    "COUNTRY_NAMES_IT",
     "FUND_TYPES",
     "HOLDING_COLUMNS",
     "INSTRUMENT_FIELDS",
@@ -72,6 +81,7 @@ __all__ = [
     "Replication",
     "WeightUnit",
     "country_code",
+    "country_code_it",
     "holdings_issues",
     "instrument_fields",
     "instrument_from_fields",

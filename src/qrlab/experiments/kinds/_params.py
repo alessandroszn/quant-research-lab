@@ -16,6 +16,7 @@ __all__ = [
     "choice",
     "day",
     "local_provenance",
+    "loss_rules",
     "moment",
     "number",
     "table",
@@ -105,3 +106,26 @@ def local_provenance(path: Path, *, dataset: str) -> Provenance:
         size_bytes=stat.st_size,
         terms="user-supplied file; stays in the git-ignored data folder",
     )
+
+
+def loss_rules(
+    parent: Mapping[str, object], *, where: str, fund_assets: bool
+) -> tuple[int, frozenset[str]] | None:
+    """Read an optional ``losses`` table (design note 11.5), or ``None`` when absent.
+
+    It holds ``carry_years`` and, when ``fund_assets`` is true, the list of fund assets.
+    """
+    if "losses" not in parent:
+        return None
+    spec = parent["losses"]
+    if not isinstance(spec, dict):
+        raise ValidationError(f"{where} losses must be a table")
+    keys = {"carry_years", "fund_assets"} if fund_assets else {"carry_years"}
+    require_keys(spec, required=keys, optional=set(), where=f"{where} losses")
+    carry = whole(spec, "carry_years", minimum=0)
+    if not fund_assets:
+        return carry, frozenset()
+    names = spec["fund_assets"]
+    if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
+        raise ValidationError(f"{where} losses: fund_assets must be a list of asset names")
+    return carry, frozenset(names)
