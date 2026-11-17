@@ -1,4 +1,4 @@
-"""Reusable Qt pieces: tables, the results panel, the run worker, dialogs and the settings file."""
+"""Reusable Qt pieces: tables, the results panel, dialogs and the settings file."""
 
 from __future__ import annotations
 
@@ -11,13 +11,10 @@ import pandas as pd
 from PySide6.QtCore import (
     QAbstractTableModel,
     QModelIndex,
-    QObject,
     QPersistentModelIndex,
-    QRunnable,
     QSettings,
     Qt,
     QUrl,
-    Signal,
 )
 from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtWidgets import (
@@ -45,7 +42,6 @@ __all__ = [
     "FrameModel",
     "QtSettingsStore",
     "ResultsPanel",
-    "RunWorker",
     "default_dialogs",
     "fill_table",
 ]
@@ -172,30 +168,6 @@ class ResultsPanel(QWidget):
     def _open_folder(self) -> None:
         if self._view is not None:
             self._open_path(self._view.output_dir)
-
-
-class _WorkerSignals(QObject):
-    finished = Signal(object)
-    failed = Signal(str)
-
-
-class RunWorker(QRunnable):
-    """Run a job off the GUI thread; report the result or the exception through signals."""
-
-    def __init__(self, job: Callable[[], object]) -> None:
-        """Wrap ``job``."""
-        super().__init__()
-        self.job = job
-        self.signals = _WorkerSignals()
-
-    def run(self) -> None:
-        """Run the job (called by the thread pool)."""
-        try:
-            result = self.job()
-        except Exception as exc:  # reported to the user, never lost in a thread
-            self.signals.failed.emit(f"{type(exc).__name__}: {exc}")
-            return
-        self.signals.finished.emit(result)
 
 
 class QtSettingsStore:

@@ -2,22 +2,24 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QThreadPool
+from PySide6.QtCore import QByteArray, QTimer
 from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import QHBoxLayout, QListWidget, QMainWindow, QStackedWidget, QWidget
 
 from qrlab.experiments.registry import ExperimentKind
 from qrlab_app.portfolio import PortfolioViewModel
 from qrlab_app.portfolio_screen import PortfolioScreen
+from qrlab_app.runs import QueueEntry, RunQueue, RunStarter
 from qrlab_app.screens import (
     DataScreen,
     ExperimentScreen,
     HistoryScreen,
     HomeScreen,
+    QueueScreen,
     SettingsScreen,
 )
 from qrlab_app.strings import tr
@@ -30,7 +32,10 @@ from qrlab_app.viewmodels import (
 )
 from qrlab_app.widgets import Dialogs
 
-__all__ = ["ANALYSIS_SCREENS", "AppShell", "MainWindow"]
+__all__ = ["ANALYSIS_SCREENS", "QUEUE_TICK_MS", "AppShell", "MainWindow"]
+
+QUEUE_TICK_MS = 200
+"""How often the window checks the running run and starts the next one."""
 
 ANALYSIS_SCREENS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("nav.portfolio", ("portfolio_report",)),
@@ -65,8 +70,8 @@ class MainWindow(QMainWindow):
         Language, recent workspaces and window geometry.
     now
         Clock for the age of raw files (timezone-aware).
-    pool
-        Thread pool for runs.
+    starter
+        Starts each run (in its own process in the app, design note 12.2b).
     workspace
         The workspace shared with an earlier window (language change); a new one by default.
     settings_file
@@ -82,7 +87,7 @@ class MainWindow(QMainWindow):
         dialogs: Dialogs,
         settings: SettingsViewModel,
         now: Callable[[], datetime],
-        pool: QThreadPool,
+        starter: RunStarter,
         workspace: WorkspaceViewModel | None = None,
         settings_file: str = "",
         on_language: Callable[[str], None] | None = None,
@@ -94,12 +99,14 @@ class MainWindow(QMainWindow):
         self.settings = settings
         self.on_language = on_language
         self.workspace = workspace if workspace is not None else WorkspaceViewModel()
+        self.queue = RunQueue(starter)
+        self._shown_seconds = -1
         self.home = HomeScreen(
             self.workspace,
             settings,
             dialogs,
             language,
-            can_leave=lambda: self.confirm_leave("screen.busy"),
+            can_leave=lambda: self.confirm_leave(None),
             on_change=self.workspace_opened,
         )
         self.portfolios = PortfolioScreen(
@@ -113,11 +120,13 @@ class MainWindow(QMainWindow):
                 ExperimentViewModel(self.workspace, kinds=kinds, kind_names=names),
                 dialogs,
                 language,
-                pool,
+                self.queue,
+                self.tick,
             )
             for _, names in ANALYSIS_SCREENS
         ]
         self.data = DataScreen(DataViewModel(self.workspace, now=now), dialogs, language)
+        self.queue_screen = QueueScreen(self.queue, dialogs, language, self.tick)
         self.history = HistoryScreen(HistoryViewModel(self.workspace), dialogs, language)
         self.settings_screen = SettingsScreen(
             settings,
@@ -135,6 +144,7 @@ class MainWindow(QMainWindow):
         ]
         pages += [
             ("nav.data", self.data),
+            ("nav.queue", self.queue_screen),
             ("nav.history", self.history),
             ("nav.settings", self.settings_screen),
         ]
@@ -143,6 +153,7 @@ class MainWindow(QMainWindow):
             self.portfolios.refresh,
             *(screen.refresh for screen in self.analysis),
             self.data.refresh,
+            self.queue_screen.refresh,
             self.history.refresh,
             self.settings_screen.refresh,
         ]
@@ -165,6 +176,10 @@ class MainWindow(QMainWindow):
         if settings.geometry:
             self.restoreGeometry(QByteArray.fromHex(settings.geometry.encode("ascii")))
         self._title()
+        self.timer = QTimer(self)
+        self.timer.setInterval(QUEUE_TICK_MS)
+        self.timer.timeout.connect(self.tick)
+        self.timer.start()
 
     def screen_for(self, kind: str) -> ExperimentScreen:
         """Return the analysis screen that shows ``kind``."""
@@ -179,18 +194,43 @@ class MainWindow(QMainWindow):
         screen.open_config(path)
         self.navigation.setCurrentRow(self.stack.indexOf(screen))
 
-    def busy(self) -> bool:
-        """Whether a run is in progress on any screen."""
-        return any(screen.model.status == "running" for screen in self.analysis)
+    def tick(self, changed: Sequence[QueueEntry] = ()) -> None:
+        """Collect the running run's outcome, start the next one and show what changed.
 
-    def confirm_leave(self, busy_key: str) -> bool:
-        """Refuse during a run (telling the user why); otherwise settle every unsaved edit."""
-        if self.busy():
+        Called by the timer, and by a screen with the entries it added or cancelled.
+        """
+        changed = [*changed, *self.queue.step()]
+        for screen in self.analysis:
+            screen.queue_changed(changed)
+        running = next((e for e in self.queue.active() if e.started is not None), None)
+        seconds = -1 if running is None else self.queue.elapsed(running)
+        if changed or seconds != self._shown_seconds:
+            self._shown_seconds = seconds
+            self.queue_screen.refresh()
+        if self.workspace.root is not None and any(e.result is not None for e in changed):
+            self.history.refresh()
+
+    def confirm_leave(self, busy_key: str | None) -> bool:
+        """Settle runs and unsaved edits before leaving; ``False`` means stay.
+
+        With runs waiting or running, a ``busy_key`` refuses and says why; without one the
+        user is asked whether to cancel them, and they are cancelled only once every unsaved
+        edit is settled too.
+        """
+        active = self.queue.active()
+        if active and busy_key is not None:
             self.dialogs.inform(tr(busy_key, self.language))
             return False
-        return self.portfolios.confirm_discard() and all(
+        if active and not self.dialogs.confirm(tr("queue.leave", self.language, count=len(active))):
+            return False
+        if not self.portfolios.confirm_discard() or not all(
             screen.confirm_discard() for screen in self.analysis
-        )
+        ):
+            return False
+        if active:
+            self.queue.cancel_all()
+            self.tick(active)
+        return True
 
     def workspace_opened(self) -> None:
         """Reset every screen to the workspace just opened."""
@@ -221,10 +261,11 @@ class MainWindow(QMainWindow):
         self.settings.set_geometry(bytes(self.saveGeometry().toHex().data()).decode("ascii"))
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
-        """Refuse to close during a run; ask about unsaved edits; remember the geometry."""
-        if not self.confirm_leave("close.busy"):
+        """Ask about runs and unsaved edits before closing; remember the geometry."""
+        if not self.confirm_leave(None):
             event.ignore()
             return
+        self.timer.stop()
         self.save_geometry()
         event.accept()
 
@@ -241,13 +282,15 @@ class MainWindow(QMainWindow):
         page = self.stack.currentWidget()
         if self.workspace.root is not None and isinstance(page, (DataScreen, HistoryScreen)):
             page.refresh()
+        if isinstance(page, QueueScreen):
+            page.refresh()
 
 
 class AppShell:
     """Owns the current main window and rebuilds it when the language changes.
 
     The workspace survives the rebuild, so the new window shows the same folder on the same
-    screen; unsaved edits were settled and no run was in progress (``change_language``).
+    screen; unsaved edits were settled and no run was waiting or running (``change_language``).
     """
 
     def __init__(
@@ -257,7 +300,7 @@ class AppShell:
         dialogs: Dialogs,
         settings: SettingsViewModel,
         now: Callable[[], datetime],
-        pool: QThreadPool,
+        starter: RunStarter,
         settings_file: str,
     ) -> None:
         """Build the first window (not shown yet)."""
@@ -265,7 +308,7 @@ class AppShell:
         self._dialogs = dialogs
         self._settings = settings
         self._now = now
-        self._pool = pool
+        self._starter = starter
         self._settings_file = settings_file
         self.workspace = WorkspaceViewModel()
         self.window = self._build()
@@ -276,7 +319,7 @@ class AppShell:
             dialogs=self._dialogs,
             settings=self._settings,
             now=self._now,
-            pool=self._pool,
+            starter=self._starter,
             workspace=self.workspace,
             settings_file=self._settings_file,
             on_language=self.rebuild,

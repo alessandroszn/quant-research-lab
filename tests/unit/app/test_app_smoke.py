@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from PySide6.QtCore import QCoreApplication, QModelIndex, QSettings, Qt, QThreadPool
+from PySide6.QtCore import QCoreApplication, QModelIndex, QSettings, Qt
 from PySide6.QtWidgets import QApplication, QComboBox, QLineEdit, QTableWidget
 
 from qrlab.data.provenance import Provenance
@@ -25,9 +25,11 @@ from qrlab_app.app import main as app_main
 from qrlab_app.form import FormModel
 from qrlab_app.main_window import ANALYSIS_SCREENS, AppShell, MainWindow
 from qrlab_app.portfolio_screen import KIND_COLUMN
+from qrlab_app.runs import ACTIVE, RUNNING, Outcome, RunStarter
 from qrlab_app.screens import ExperimentScreen
 from qrlab_app.viewmodels import ResultView, SettingsViewModel, TableView, has_comments
-from qrlab_app.widgets import Dialogs, FrameModel, QtSettingsStore, ResultsPanel, RunWorker
+from qrlab_app.widgets import Dialogs, FrameModel, QtSettingsStore, ResultsPanel
+from run_helpers import InlineStarter
 
 ROOT = Path(__file__).parents[3]
 PROJECTION = ROOT / "configs" / "experiments" / "example_projection.toml"
@@ -114,31 +116,56 @@ def _settings(store: MemoryStore | None = None, system: str = "en_GB") -> Settin
 
 
 def _window(
-    user: FakeUser, pool: QThreadPool, settings: SettingsViewModel | None = None
+    user: FakeUser,
+    settings: SettingsViewModel | None = None,
+    starter: RunStarter | None = None,
 ) -> MainWindow:
+    """Return a window whose runs are done in this process (``run_helpers.InlineStarter``)."""
     return MainWindow(
         kinds=KINDS,
         dialogs=user.dialogs(),
         settings=settings if settings is not None else _settings(),
         now=lambda: datetime(2026, 11, 12, tzinfo=UTC),
-        pool=pool,
+        starter=InlineStarter(KINDS) if starter is None else starter,
     )
 
 
-def _wait(screen: ExperimentScreen, pool: QThreadPool) -> None:
-    assert pool.waitForDone(120_000)
-    deadline = time.monotonic() + 30
-    while screen.model.status == "running" and time.monotonic() < deadline:
+def _wait(screen: ExperimentScreen) -> None:
+    """Let the window's timer run the queue until the screen's run has ended."""
+    deadline = time.monotonic() + 120
+    while screen.model.status in ACTIVE and time.monotonic() < deadline:
         QCoreApplication.processEvents()
-    assert screen.model.status != "running"
+        time.sleep(0.01)
+    assert screen.model.status not in ACTIVE
+
+
+class HeldHandle:
+    """A run that goes on until the test ends it (``outcome``) or it is cancelled."""
+
+    def __init__(self) -> None:
+        self.outcome: Outcome | None = None
+
+    def poll(self) -> Outcome | None:
+        return self.outcome
+
+    def cancel(self) -> None:
+        self.outcome = self.outcome or Outcome(exit_code=-15)
+
+
+class HeldStarter:
+    def __init__(self) -> None:
+        self.handles: list[HeldHandle] = []
+
+    def __call__(self, config: Path) -> HeldHandle:
+        self.handles.append(HeldHandle())
+        return self.handles[-1]
 
 
 def test_window_screens_and_a_full_run(qapp: QApplication, tmp_path: Path) -> None:
     root = _workspace(tmp_path)
     user = FakeUser(root)
-    pool = QThreadPool()
-    window = _window(user, pool)
-    assert window.navigation.count() == 5 + len(ANALYSIS_SCREENS)  # Home, Portfolios, Data, …
+    window = _window(user)
+    assert window.navigation.count() == 6 + len(ANALYSIS_SCREENS)  # Home, Portfolios, Data, …
     # Before a workspace is open every screen says so.
     portfolio = window.screen_for("portfolio_report")
     projections = window.screen_for("projection")
@@ -167,8 +194,9 @@ def test_window_screens_and_a_full_run(qapp: QApplication, tmp_path: Path) -> No
     assert projections.message.text() == "Valid: example-savings-projection (projection)."
     projections.save_button.click()
     projections.run_button.click()
-    assert not projections.run_button.isEnabled()  # running
-    _wait(projections, pool)
+    assert not projections.run_button.isEnabled()  # in the queue
+    assert projections.cancel_button.isEnabled()
+    _wait(projections)
     assert projections.model.status == "done"
     assert projections.message.text() == "Finished: success."
     assert projections.results.tabs.count() >= 3  # tables, scalars, figures
@@ -183,7 +211,7 @@ def test_window_screens_and_a_full_run(qapp: QApplication, tmp_path: Path) -> No
     assert projections.model.status == "done"
     user.confirm_answer = True
     projections.run_button.click()
-    _wait(projections, pool)
+    _wait(projections)
     assert projections.model.status == "done"
 
     # History shows the run and opens its folder.
@@ -221,7 +249,7 @@ def test_window_screens_and_a_full_run(qapp: QApplication, tmp_path: Path) -> No
 
 def test_home_errors_and_cancel(qapp: QApplication, tmp_path: Path) -> None:
     user = FakeUser(tmp_path / "missing")
-    window = _window(user, QThreadPool())
+    window = _window(user)
     window.home.open_button.click()
     assert "is not a folder" in window.home.message.text()
     user.folder = None
@@ -233,44 +261,30 @@ def test_home_errors_and_cancel(qapp: QApplication, tmp_path: Path) -> None:
     window.close()
 
 
-def test_worker_reports_failures(qapp: QApplication) -> None:
-    errors: list[str] = []
-
-    def boom() -> object:
-        raise ValueError("boom")
-
-    worker = RunWorker(boom)
-    worker.signals.failed.connect(errors.append)
-    worker.run()
-    QCoreApplication.processEvents()
-    assert errors == ["ValueError: boom"]
-    results: list[object] = []
-    ok = RunWorker(lambda: 42)
-    ok.signals.finished.connect(results.append)
-    ok.run()
-    QCoreApplication.processEvents()
-    assert results == [42]
-    assert callable(app_main)
-
-
-def test_screen_handles_a_worker_failure(qapp: QApplication, tmp_path: Path) -> None:
+def test_the_screen_shows_how_a_queued_run_ended(qapp: QApplication, tmp_path: Path) -> None:
     root = _workspace(tmp_path)
     user = FakeUser(root)
-    window = _window(user, QThreadPool())
+    starter = HeldStarter()
+    window = _window(user, starter=starter)
     window.home.open_button.click()
     screen = window.screen_for("projection")
     screen.configs.itemClicked.emit(screen.configs.item(0))
-    screen.model.status = "running"
-    screen._failed("RuntimeError: lost")
+    screen.run_button.click()
+    assert screen.model.status == RUNNING
+    assert screen.message.text() == "Running… 0 s"
+    starter.handles[-1].outcome = Outcome(error="RuntimeError: lost")
+    window.tick()
     assert screen.model.status == "failed"
-    assert screen.message.text() == "Failed: RuntimeError: lost"
-    folder = root / "results" / "failed"
+    assert screen.message.text() == "Failed: Refused before running: RuntimeError: lost"
+    folder = root / "results" / "projection"
     folder.mkdir(parents=True)
     record = {"status": "failure", "error": "ValidationError: x", "outputs": {}, "scalars": {}}
     (folder / "record.json").write_text(json.dumps(record), encoding="utf-8")
-    screen.model.status = "running"
-    screen._finished(RunResult(folder, record))
+    screen.run_button.click()  # replaces the earlier (failed) outputs: asked, and yes
+    starter.handles[-1].outcome = Outcome(result=RunResult(folder, record))
+    window.tick()
     assert screen.message.text() == "Failed: ValidationError: x"
+    assert callable(app_main)
     window.close()
 
 
@@ -331,13 +345,13 @@ def _selected(screen: ExperimentScreen) -> Path | None:
     return screen.model.selected
 
 
-def _shell(user: FakeUser, store: MemoryStore, pool: QThreadPool) -> AppShell:
+def _shell(user: FakeUser, store: MemoryStore) -> AppShell:
     return AppShell(
         kinds=KINDS,
         dialogs=user.dialogs(),
         settings=_settings(store, system="it_IT"),
         now=lambda: datetime(2026, 11, 12, tzinfo=UTC),
-        pool=pool,
+        starter=InlineStarter(KINDS),
         settings_file="C:/settings/qrlab-app.ini",
     )
 
@@ -345,7 +359,7 @@ def _shell(user: FakeUser, store: MemoryStore, pool: QThreadPool) -> AppShell:
 def test_italian_window_and_language_switch(qapp: QApplication, tmp_path: Path) -> None:
     root = _workspace(tmp_path)
     user, store = FakeUser(root), MemoryStore()
-    shell = _shell(user, store, QThreadPool())
+    shell = _shell(user, store)
     first = shell.window
     assert first.language == "it"  # from the system locale
     assert first.navigation.item(0).text() == "Home"
@@ -358,14 +372,17 @@ def test_italian_window_and_language_switch(qapp: QApplication, tmp_path: Path) 
     assert first.settings_screen.about.text().startswith("Quant Research Lab ")
     first.navigation.setCurrentRow(last)
 
-    # During a run the language cannot change: the user is told and the choice is undone.
-    first.screen_for("projection").model.status = "running"
+    # With a run in the queue the language cannot change: the user is told, the choice undone.
+    first.queue.add(root / "configs" / "projection.toml")
     first.settings_screen.languages.setCurrentIndex(0)  # English
-    assert user.informed == ["Non si può cambiare lingua durante un'esecuzione."]
+    assert user.informed == [
+        "Non si può cambiare lingua mentre ci sono esecuzioni in attesa o in corso. Annullale "
+        "prima nella schermata Coda."
+    ]
     assert shell.window is first
     assert first.settings_screen.languages.currentData() == "it"
     assert store.entries.get("language") is None
-    first.screen_for("projection").model.status = "idle"
+    first.queue.cancel_all()
 
     # Otherwise the window is rebuilt in English, on the same screen and workspace.
     first.settings_screen.languages.setCurrentIndex(0)
@@ -381,7 +398,7 @@ def test_italian_window_and_language_switch(qapp: QApplication, tmp_path: Path) 
     second.close()
 
     # Before any workspace, with the window on screen: the new window is shown too.
-    other = _shell(FakeUser(None), MemoryStore(), QThreadPool())
+    other = _shell(FakeUser(None), MemoryStore())
     other.window.show()
     shown = other.window
     shown.settings_screen.languages.setCurrentIndex(0)
@@ -392,7 +409,7 @@ def test_italian_window_and_language_switch(qapp: QApplication, tmp_path: Path) 
 
     # A window on its own saves the choice; it applies at the next start.
     alone_store = MemoryStore()
-    alone = _window(FakeUser(None), QThreadPool(), _settings(alone_store))
+    alone = _window(FakeUser(None), _settings(alone_store))
     alone.screen_for("projection").save_shortcut.activated.emit()  # nothing selected: no-op
     alone.settings_screen.languages.setCurrentIndex(1)
     assert alone_store.entries["language"] == "it"
@@ -429,8 +446,7 @@ def test_results_in_italian(qapp: QApplication, tmp_path: Path) -> None:
 def test_data_and_history_in_italian(qapp: QApplication, tmp_path: Path) -> None:
     root = _workspace(tmp_path)
     user = FakeUser(root)
-    pool = QThreadPool()
-    window = _window(user, pool, _settings(MemoryStore({"language": "it"})))
+    window = _window(user, _settings(MemoryStore({"language": "it"})))
     window.home.open_button.click()
     window.data.refresh()
     assert _cell(window.data.table, 0, 2) == "10/11/2026"
@@ -439,7 +455,7 @@ def test_data_and_history_in_italian(qapp: QApplication, tmp_path: Path) -> None
     screen = window.screen_for("projection")
     screen.configs.itemClicked.emit(screen.configs.item(0))
     screen.run_button.click()
-    _wait(screen, pool)
+    _wait(screen)
     assert screen.message.text() == "Esecuzione terminata: riuscita."
     window.history.refresh()
     assert _cell(window.history.table, 0, 3) == "riuscita"
@@ -456,7 +472,7 @@ def test_unsaved_edits_are_never_lost_silently(qapp: QApplication, tmp_path: Pat
     original = first_path.read_text(encoding="utf-8")
     second_path.write_text(original, encoding="utf-8")
     user = FakeUser(root)
-    window = _window(user, QThreadPool())
+    window = _window(user)
     window.home.open_button.click()
     screen = window.screen_for("projection")
     assert screen.editor.isReadOnly()  # nothing selected yet
@@ -514,24 +530,37 @@ def test_unsaved_edits_are_never_lost_silently(qapp: QApplication, tmp_path: Pat
     window.close()
 
 
-def test_closing_during_a_run_is_refused(qapp: QApplication, tmp_path: Path) -> None:
+def test_closing_with_runs_queued_asks_first(qapp: QApplication, tmp_path: Path) -> None:
     store = MemoryStore()
-    user = FakeUser(_workspace(tmp_path))
-    window = _window(user, QThreadPool(), _settings(store))
+    root = _workspace(tmp_path)
+    user = FakeUser(root)
+    starter = HeldStarter()
+    window = _window(user, _settings(store), starter)
     window.home.open_button.click()
     window.show()
-    window.screen_for("projection").model.status = "running"
+    screen = window.screen_for("projection")
+    screen.configs.itemClicked.emit(screen.configs.item(0))
+    screen.run_button.click()  # running, and held
+    question = "Runs waiting or running: 1. Cancel them and go on?"
+    user.confirm_answer = False
     assert not window.close()
-    assert user.informed == [
-        "A run is in progress and cannot be stopped. Wait for it to finish, then close the app."
-    ]
-    window.home.create_button.click()  # changing workspace is refused too
-    assert user.informed[-1] == "Another run is in progress."
-    window.screen_for("projection").model.status = "idle"
+    other = tmp_path / "other"
+    user.folder = other
+    window.home.create_button.click()  # changing workspace asks too
+    assert user.confirmed == [question, question]
+    assert window.workspace.root == root
+    user.save_answer = None  # yes to cancelling, then Cancel at an unsaved edit: nothing happens
+    user.confirm_answer = True
+    screen.model.set_text(screen.model.text + "\n")
+    assert not window.close()
+    assert screen.model.status == RUNNING
+    screen.model.revert()
     window.resize(700, 500)
     assert window.close()
+    assert screen.model.status == "cancelled"
+    assert screen.message.text() == "Cancelled; there were no earlier results."
     assert store.entries["window_geometry"]
-    reopened = _window(user, QThreadPool(), _settings(store))  # the size comes back
+    reopened = _window(user, _settings(store))  # the size comes back
     assert reopened.height() == 500  # not the default 800 (offscreen, the width has a minimum)
     reopened.close()
 
@@ -544,7 +573,7 @@ def test_recent_workspaces_on_home_and_settings(qapp: QApplication, tmp_path: Pa
     settings.remember(gone)
     gone.rmdir()
     user = FakeUser(root)
-    window = _window(user, QThreadPool(), settings)
+    window = _window(user, settings)
     assert window.home.recent.count() == 1
     missing = window.home.recent.item(0)
     assert missing.text().endswith("(not found)")
@@ -553,7 +582,7 @@ def test_recent_workspaces_on_home_and_settings(qapp: QApplication, tmp_path: Pa
     window.home.open_button.click()
     assert [r.path for r in settings.recent()] == [root.resolve(), gone.resolve()]
 
-    reopened = _window(user, QThreadPool(), settings)
+    reopened = _window(user, settings)
     assert reopened.home.recent.item(0).text() == str(root.resolve())
     reopened.home.recent.itemClicked.emit(reopened.home.recent.item(0))
     assert reopened.workspace.root == root.resolve()
@@ -605,8 +634,7 @@ def test_the_full_portfolio_example_runs_in_the_app(qapp: QApplication, tmp_path
     text = text[:start] + 'directory = "../results/full"' + text[end + 1 :]
     (root / "configs" / "full.toml").write_text(text, encoding="utf-8")
     user = FakeUser(root)
-    pool = QThreadPool()
-    window = _window(user, pool)
+    window = _window(user)
     window.home.open_button.click()
     portfolio = window.screen_for("portfolio_report")
     portfolio.refresh()
@@ -615,7 +643,7 @@ def test_the_full_portfolio_example_runs_in_the_app(qapp: QApplication, tmp_path
     portfolio.validate_button.click()
     assert portfolio.message.text().startswith("Valid: example-portfolio-report-full")
     portfolio.run_button.click()
-    _wait(portfolio, pool)
+    _wait(portfolio)
     assert portfolio.message.text() == "Finished: success."
     tabs = [portfolio.results.tabs.tabText(i) for i in range(portfolio.results.tabs.count())]
     assert "exposures [descriptive]" in tabs
@@ -636,7 +664,7 @@ def test_a_portfolio_built_on_the_screen(qapp: QApplication, tmp_path: Path) -> 
     """The 8.8a starting position typed into the tables, saved, then a report config made."""
     root = _workspace(tmp_path)
     user = FakeUser(root)
-    window = _window(user, QThreadPool())
+    window = _window(user)
     window.home.open_button.click()
     screen = window.portfolios
     window.navigation.setCurrentRow(1)
@@ -725,7 +753,7 @@ def test_a_portfolio_built_on_the_screen(qapp: QApplication, tmp_path: Path) -> 
 def test_portfolio_screen_guards(qapp: QApplication, tmp_path: Path) -> None:
     root = _workspace(tmp_path)
     user = FakeUser(root)
-    window = _window(user, QThreadPool())
+    window = _window(user)
     screen = window.portfolios
     screen.refresh()
     assert screen.message.text() == "Open a workspace first (Home)."
@@ -782,7 +810,7 @@ def test_portfolio_screen_guards(qapp: QApplication, tmp_path: Path) -> None:
 def test_the_data_screen_imports_a_downloaded_file(qapp: QApplication, tmp_path: Path) -> None:
     root = _workspace(tmp_path)
     user = FakeUser(root)
-    window = _window(user, QThreadPool())
+    window = _window(user)
     window.home.open_button.click()
     download = tmp_path / "holdings.csv"
     download.write_bytes(b"Ticker,Name\nAAPL,APPLE\n")
@@ -822,7 +850,7 @@ def test_the_form_and_toml_tabs_edit_the_same_config(qapp: QApplication, tmp_pat
     broken = root / "configs" / "unknown_key.toml"
     broken.write_text(original.replace("[parameters]", "[parameters]\nnope = 1"), "utf-8")
     user = FakeUser(root)
-    window = _window(user, QThreadPool())
+    window = _window(user)
     window.home.open_button.click()
     screen = window.screen_for("projection")
     form_tab, toml_tab = ExperimentScreen.FORM_TAB, ExperimentScreen.TOML_TAB
@@ -887,4 +915,64 @@ def test_the_form_and_toml_tabs_edit_the_same_config(qapp: QApplication, tmp_pat
     screen.reset()
     screen.tabs.setCurrentIndex(form_tab)
     assert _form_model(screen) is None
+    window.close()
+
+
+def test_the_queue_screen_and_cancel(qapp: QApplication, tmp_path: Path) -> None:
+    root = _workspace(tmp_path)
+    second = root / "configs" / "second.toml"
+    text = (root / "configs" / "projection.toml").read_text(encoding="utf-8")
+    second.write_text(text.replace("results/projection", "results/second"), encoding="utf-8")
+    user = FakeUser(root)
+    starter = HeldStarter()
+    window = _window(user, starter=starter)
+    window.home.open_button.click()
+    screen = window.screen_for("projection")
+    screen.refresh()
+    screen.configs.itemClicked.emit(screen.configs.item(0))  # projection.toml
+    screen.run_button.click()
+    screen.configs.itemClicked.emit(screen.configs.item(1))  # second.toml
+    screen.run_button.click()
+    assert screen.message.text() == "Waiting: number 2 in line."
+    assert screen.editor.isReadOnly()  # a queued config is not edited
+    assert not screen.form.isEnabled()
+
+    # The Queue screen lists both; Cancel ends the selected one, the next one starts.
+    queue_row = window.stack.indexOf(window.queue_screen)
+    window.navigation.setCurrentRow(queue_row)
+    table = window.queue_screen.table
+    assert table.rowCount() == 2
+    assert [_cell(table, r, 3) for r in range(2)] == ["running", "waiting"]
+    window.queue_screen.cancel_button.click()  # nothing selected
+    table.setCurrentCell(0, 0)
+    window.queue_screen.cancel_button.click()
+    assert [_cell(table, r, 3) for r in range(2)] == ["cancelled", "running"]
+    assert _cell(table, 0, 5) == "Cancelled; there were no earlier results."
+    assert table.currentRow() == 0  # the selection stays
+    window.queue_screen.open_button.click()  # no output folder: nothing opens
+    assert user.opened == []
+    assert screen.message.text() == "Running… 0 s"  # second.toml, still selected
+
+    # Cancel on the analysis screen; then the earlier outputs folder can be opened.
+    screen.cancel_button.click()
+    assert screen.model.status == "cancelled"
+    assert screen.message.text() == "Cancelled; there were no earlier results."
+    (root / "results" / "second").mkdir(parents=True)
+    table.setCurrentCell(1, 0)
+    window.queue_screen.open_button.click()
+    assert user.opened == [root / "results" / "second"]
+    screen.cancel_button.clicked.emit()  # nothing active (the button is off): nothing
+    window.queue_screen.clear_button.click()
+    assert table.rowCount() == 0
+
+    # A run that ends refreshes History; the live seconds go on the Queue screen.
+    screen.run_button.click()
+    clock = window.queue.entries[-1]
+    assert clock.started is not None
+    clock.started -= 5
+    window.tick()
+    assert _cell(table, 0, 4) == "5"
+    starter.handles[-1].outcome = Outcome(exit_code=1)
+    window.tick()
+    assert screen.message.text().startswith("Failed: The run's process ended unexpectedly")
     window.close()

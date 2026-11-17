@@ -12,6 +12,7 @@ import pytest
 
 from qrlab.experiments.kinds import KINDS
 from qrlab_app.display import MISSING, cell_text, date_text, timestamp_text
+from qrlab_app.runs import RunQueue
 from qrlab_app.strings import LANGUAGES, STRINGS, tr, tr_value
 from qrlab_app.viewmodels import (
     MAX_RECENT,
@@ -91,9 +92,17 @@ def test_every_app_error_is_translated(tmp_path: Path) -> None:
     catch(lambda: screen.new_from_template("projection", "a/b"))
     screen.new_from_template("projection", "mine")
     catch(lambda: screen.new_from_template("projection", "mine"))
-    catch(screen.start_run)  # the template is not valid until filled in
-    screen.status = "running"
-    catch(screen.start_run)
+    catch(screen.prepare_run)  # the template is not valid until filled in
+    queue = RunQueue(lambda config: None)  # type: ignore[arg-type, return-value]
+    catch(lambda: queue.add(tmp_path / "absent.toml"))
+    template = tmp_path / "ws" / "configs" / "mine.toml"
+    template.write_text(
+        '[experiment]\nname = "m"\nkind = "projection"\nhypothesis = "h"\n[inputs]\n'
+        '[parameters]\n[output]\ndirectory = "../results/m"\n',
+        encoding="utf-8",
+    )
+    queue.add(template)
+    catch(lambda: queue.add(template))
     catch(lambda: SettingsViewModel(MemoryStore(), system_language="en").set_language("fr"))
 
     keys = [e.key for e in errors]
@@ -108,7 +117,8 @@ def test_every_app_error_is_translated(tmp_path: Path) -> None:
         "error.bad_name",
         "error.exists",
         "screen.invalid",
-        "screen.busy",
+        "queue.unreadable",
+        "queue.same_output",
         "error.language",
     ]
     for error in errors:

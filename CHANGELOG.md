@@ -33,6 +33,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
     read back as the same value) stays in the *TOML* tab, with the key's path.
   - The form writes TOML without comments. Saving, validating or running a config whose file
     has comments asks first, when the form wrote the text.
+- **A run queue in the app, with Cancel** (phase 12.2b).
+  - *Run* adds the config to a queue; runs go one at a time, in order, each in its own process
+    (`multiprocessing`, *spawn*). A running run is cancelled by ending its process, at once;
+    the runner's staging folder (12.2a) keeps the earlier results.
+  - A *Cancel* button on each analysis screen, and a new *Queue* screen with every run of the
+    session, its state, time and note.
+  - A config that changed after it was queued is not run; two runs that would write the same
+    output folder cannot wait together.
+  - Closing the app or opening another workspace with runs waiting or running asks whether to
+    cancel them (before, closing during a run was refused).
+  - The Windows program calls `multiprocessing.freeze_support()` first, so a run's child
+    process runs the run instead of opening a window; the self-test runs every config through
+    the queue and child processes.
 - New dependency **tomli-w** (MIT), in the `app` extra, and in the `dev` group for the app's
   tests. Reason: the form writes the config back as TOML, and escaping strings, dates and
   nested tables correctly is easy to get subtly wrong; `tomli-w` is the writing half of

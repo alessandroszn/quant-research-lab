@@ -1,4 +1,8 @@
-"""The app's ``--self-test`` mode (design note 6.2), off-screen."""
+"""The app's ``--self-test`` mode (design note 6.2), off-screen.
+
+The self-test runs every config through the queue, each in its own child process (design note
+12.2b): the tests that run configs are integration tests.
+"""
 
 from __future__ import annotations
 
@@ -9,6 +13,7 @@ from PySide6.QtWidgets import QApplication
 
 from qrlab_app import widgets
 from qrlab_app.app import USAGE, main
+from qrlab_app.runs import Outcome
 from qrlab_app.selftest import MemorySettingsStore, self_test
 
 ROOT = Path(__file__).parents[3]
@@ -39,6 +44,7 @@ def no_user_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(widgets.QtSettingsStore, "for_user", refuse)
 
 
+@pytest.mark.integration
 def test_self_test_runs_every_config(
     qapp: QApplication, tmp_path: Path, no_user_settings: None
 ) -> None:
@@ -50,6 +56,7 @@ def test_self_test_runs_every_config(
     assert main(["--self-test", str(root)]) == 0  # the same through the entry point
 
 
+@pytest.mark.integration
 def test_self_test_fails_on_an_invalid_config(
     qapp: QApplication, tmp_path: Path, no_user_settings: None
 ) -> None:
@@ -71,18 +78,25 @@ def test_self_test_fails_when_nothing_is_tested(
     assert lines[-1].startswith("self-test: cannot open")
 
 
+class BrokenRun:
+    """A run whose process reports an error."""
+
+    def poll(self) -> Outcome:
+        return Outcome(error="RuntimeError: the run broke")
+
+    def cancel(self) -> None:
+        raise AssertionError("nothing is cancelled")  # pragma: no cover
+
+
 def test_self_test_fails_when_a_run_fails(
-    qapp: QApplication, tmp_path: Path, no_user_settings: None, monkeypatch: pytest.MonkeyPatch
+    qapp: QApplication, tmp_path: Path, no_user_settings: None
 ) -> None:
-    from qrlab_app import viewmodels
-
-    def boom(*args: object, **kwargs: object) -> object:
-        raise RuntimeError("the run broke")
-
-    monkeypatch.setattr(viewmodels, "run_experiment", boom)
     lines: list[str] = []
-    assert self_test(_workspace(tmp_path), log=lines.append) == 1
-    assert "FAILED" in lines[1]  # lines[0] lists the portfolios
+    assert self_test(_workspace(tmp_path), log=lines.append, starter=lambda c: BrokenRun()) == 1
+    assert lines[1] == (
+        "self-test: projection.toml: FAILED Failed: Refused before running: "
+        "RuntimeError: the run broke"
+    )  # lines[0] lists the portfolios
 
 
 def test_command_line_usage(

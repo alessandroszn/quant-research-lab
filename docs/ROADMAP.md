@@ -466,7 +466,7 @@ note, approved before any code.
 - Parameter schemas in the kinds, the single source for validation, docs and the app's form;
   the TOML stays available and always agrees.
 
-### 12.2 Cancelling a run, and a queue (8–12 h)
+### 12.2 Cancelling a run, and a queue (8–12 h) — done
 - A cancellation hook in the runner; no partial results that look complete.
 
 ### 12.3 Interactive charts (8–12 h)
