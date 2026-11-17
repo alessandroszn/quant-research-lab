@@ -207,7 +207,7 @@ class ExperimentScreen(QWidget):
         self.save_shortcut.activated.connect(self._save)
         self.message = QLabel("")
         self.message.setWordWrap(True)
-        self.results = ResultsPanel(language, dialogs.open_path)
+        self.results = ResultsPanel(language, dialogs.open_path, dialogs.pick_save_file)
 
         left = QWidget()
         left_layout = QVBoxLayout(left)

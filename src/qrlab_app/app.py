@@ -8,10 +8,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from PySide6.QtCore import QLocale
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from qrlab.experiments.kinds import KINDS
-from qrlab_app.main_window import AppShell
+from qrlab_app.main_window import ICON, AppShell
 from qrlab_app.runs import ProcessStarter
 from qrlab_app.selftest import self_test
 from qrlab_app.viewmodels import SettingsViewModel
@@ -38,6 +39,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def _open_window() -> int:  # pragma: no cover - starts the event loop; the smoke test builds it
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(str(ICON)))  # the taskbar's icon
     store = QtSettingsStore.for_user()
     shell = AppShell(
         kinds=KINDS,

@@ -1,13 +1,17 @@
 """``--self-test``: run every config of a workspace through the real window, without a user.
 
 Used by the Windows build in CI to prove that the frozen program works end to end, including
-the run queue's child processes (design note 12.2b). The window is never shown; dialogs answer
-automatically and settings stay in memory, so the user's own settings file is never touched.
+the run queue's child processes (design note 12.2b), the interactive charts (12.3b) and the PDF
+export of every report (12.4), into a temporary folder deleted at the end. The window is never
+shown; dialogs answer automatically and settings stay in memory, so the user's own settings file
+is never touched.
 There is no financial logic here: the self-test clicks the same buttons a user would.
 """
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -45,7 +49,7 @@ class MemorySettingsStore:
         self.entries[key] = value
 
 
-def _automatic_dialogs(log: Callable[[str], None]) -> Dialogs:
+def _automatic_dialogs(log: Callable[[str], None], exports: Path) -> Dialogs:
     return Dialogs(
         pick_folder=lambda title: None,
         ask_text=lambda prompt: None,
@@ -55,10 +59,11 @@ def _automatic_dialogs(log: Callable[[str], None]) -> Dialogs:
         inform=log,
         open_path=lambda path: None,
         pick_file=lambda title: None,
+        pick_save_file=lambda title, name: exports / name,  # PDFs go to a temporary folder
     )
 
 
-def _run_one(screen: ExperimentScreen, path: Path) -> bool:
+def _run_one(screen: ExperimentScreen, path: Path, exports: Path) -> bool:
     for row in range(screen.configs.count()):
         item = screen.configs.item(row)
         if Path(str(item.data(256))) == path:
@@ -74,6 +79,10 @@ def _run_one(screen: ExperimentScreen, path: Path) -> bool:
         time.sleep(0.02)
     for chart in screen.results.charts:  # the frozen build must bundle the Qt backend (12.3b)
         chart.draw()
+    if screen.results.pdf_button.isEnabled():  # the export must work in the frozen build (12.4)
+        screen.results.pdf_button.click()
+        if not (exports / f"{screen.results.output_name()}.pdf").is_file():
+            return False
     return screen.model.status == "done"
 
 
@@ -88,27 +97,34 @@ def self_test(
     app = QApplication.instance()
     if app is None:  # pragma: no cover - the tests share one application
         app = QApplication([])
+    exports = Path(tempfile.mkdtemp(prefix="qrlab-self-test-"))
     window = MainWindow(
         kinds=KINDS,
-        dialogs=_automatic_dialogs(log),
+        dialogs=_automatic_dialogs(log, exports),
         settings=SettingsViewModel(MemorySettingsStore(), system_language="en"),
         now=lambda: datetime.now(UTC),
         starter=ProcessStarter() if starter is None else starter,
     )
-    window.home.open_folder(Path(root))
+    try:
+        return _run_all(window, Path(root), exports, log)
+    finally:
+        window.close()
+        shutil.rmtree(exports, ignore_errors=True)
+
+
+def _run_all(window: MainWindow, root: Path, exports: Path, log: Callable[[str], None]) -> int:
+    window.home.open_folder(root)
     if window.workspace.root is None:
         log(f"self-test: cannot open {root}: {window.home.message.text()}")
-        window.close()
         return 1
     log(f"self-test: portfolios: {window.portfolios.model.names}")
     ran = failed = 0
     for screen in window.analysis:
         for entry in list(screen.model.entries):
-            ok = _run_one(screen, entry.path)
+            ok = _run_one(screen, entry.path, exports)
             ran += 1
             failed += not ok
             log(f"self-test: {entry.path.name}: {'ok' if ok else 'FAILED'} {screen.message.text()}")
-    window.close()
     if ran == 0:
         log("self-test: the workspace has no configs")
         return 1

@@ -7,7 +7,7 @@ import json
 import time
 import tomllib
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -23,7 +23,7 @@ from qrlab.instruments import INSTRUMENT_FIELDS
 from qrlab.portfolio import NATIVE_COLUMNS
 from qrlab_app.app import main as app_main
 from qrlab_app.form import FormModel
-from qrlab_app.main_window import ANALYSIS_SCREENS, AppShell, MainWindow
+from qrlab_app.main_window import ANALYSIS_SCREENS, ICON, AppShell, MainWindow
 from qrlab_app.portfolio_screen import KIND_COLUMN
 from qrlab_app.runs import ACTIVE, RUNNING, Outcome, RunStarter
 from qrlab_app.screens import ExperimentScreen
@@ -71,6 +71,7 @@ class FakeUser:
             inform=self.informed.append,
             open_path=self.opened.append,
             pick_file=lambda title: self.file,
+            pick_save_file=lambda title, name: None if self.folder is None else self.folder / name,
         )
 
 
@@ -976,3 +977,59 @@ def test_the_queue_screen_and_cancel(qapp: QApplication, tmp_path: Path) -> None
     window.tick()
     assert screen.message.text().startswith("Failed: The run's process ended unexpectedly")
     window.close()
+
+
+def test_the_window_has_the_icon(qapp: QApplication) -> None:
+    assert ICON.is_file()
+    window = _window(FakeUser(None))
+    assert not window.windowIcon().isNull()
+    window.close()
+
+
+def test_exporting_a_report_as_pdf(qapp: QApplication, tmp_path: Path) -> None:
+    folder = tmp_path / "results" / "my-report"
+    folder.mkdir(parents=True)
+    report = folder / "report.html"
+    report.write_text("<html><body><h1>Report</h1><p>Body</p></body></html>", encoding="utf-8")
+    view = ResultView(
+        output_dir=folder,
+        status="success",
+        error=None,
+        tables=(),
+        scalars=(),
+        figures=(),
+        report=report,
+    )
+    chosen: list[Path | None] = [tmp_path / "exports" / "my-report.pdf"]
+    asked: list[tuple[str, str]] = []
+
+    def pick(title: str, name: str) -> Path | None:
+        asked.append((title, name))
+        return chosen[0]
+
+    panel = ResultsPanel("en", lambda path: None, pick, today=lambda: date(2026, 11, 17))
+    assert panel.output_name() == ""
+    panel.pdf_button.clicked.emit()  # nothing shown: nothing happens
+    assert asked == []
+    panel.show_result(view)
+    assert panel.output_name() == "my-report"
+    assert panel.pdf_button.isEnabled()
+    panel.pdf_button.click()
+    assert asked == [("Export PDF…", "my-report.pdf")]
+    assert (tmp_path / "exports" / "my-report.pdf").read_bytes().startswith(b"%PDF")
+    assert panel.export_message.text().startswith("PDF saved: ")
+    assert not (folder / "report.pdf").exists()  # never into the output folder
+    chosen[0] = None  # cancelled
+    panel.show_result(view)
+    panel.pdf_button.click()
+    assert panel.export_message.text() == ""
+    chosen[0] = tmp_path  # a folder: the PDF cannot be written there
+    panel.pdf_button.click()
+    assert panel.export_message.text().startswith("The PDF could not be written:")
+    report.unlink()
+    panel.pdf_button.click()
+    assert panel.export_message.text() == f"The report file is no longer there: {report}"
+    alone = ResultsPanel("it", lambda path: None)
+    alone.show_result(view)
+    assert not alone.pdf_button.isEnabled()  # no save dialog given
+    assert alone.pdf_button.text() == "Esporta PDF…"

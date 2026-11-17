@@ -21,6 +21,8 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher=Alessandro Zanichelli
+; The installer's own icon (design note 12.4); the programs carry it too.
+SetupIconFile=qrlab.ico
 ; With lowest privileges {autopf} is %LOCALAPPDATA%\Programs.
 PrivilegesRequired=lowest
 DefaultDirName={autopf}\{#AppName}

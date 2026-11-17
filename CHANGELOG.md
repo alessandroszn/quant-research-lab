@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **PDF export of a report, and an icon** (phase 12.4).
+  - *Export PDF…* next to *Open report* prints the run's `report.html` to an A4 PDF where
+    the user chooses (never into the output folder), with Qt's own text engine: no new
+    dependency. A print adapter changes only the layout: the report's browser style sheet is
+    replaced by one Qt reads, figures fit the page, tables get a cell padding, and a report
+    with a table wider than 6 columns prints in landscape. The first line says it is a print
+    of that run's report and when it was exported. A test checks that every table cell of
+    the example reports is in the printed document.
+  - An original icon, drawn by `packaging/make_icon.py` with Pillow (already installed with
+    Matplotlib): on the window and the taskbar, on both programs and on the installer.
+  - The self-test exports a PDF of every report, into a temporary folder it deletes, so the
+    Windows build's CI check covers the export in the frozen program.
 - **Interactive charts in the app** (phase 12.3b): every output table indexed by ISO dates
   gets a Chart view next to its Table view, on Matplotlib's Qt canvas.
   - Matplotlib's toolbar (zoom, pan, back and forward, reset, save); a line that follows the

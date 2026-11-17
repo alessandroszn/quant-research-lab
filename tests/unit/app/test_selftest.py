@@ -116,3 +116,38 @@ def test_memory_settings_store() -> None:
     assert store.get("language") is None
     store.set("language", "it")
     assert store.get("language") == "it"
+
+
+def _report_workspace(tmp: Path) -> Path:
+    """Return a workspace with the example portfolio report, its inputs as absolute paths."""
+    root = tmp / "ws"
+    (root / "configs").mkdir(parents=True)
+    text = (ROOT / "configs/experiments/example_portfolio_report.toml").read_text(encoding="utf-8")
+    text = text.replace('"../../', f'"{ROOT.as_posix()}/').replace(
+        '"../', f'"{(ROOT / "configs").as_posix()}/'
+    )
+    start = text.index('directory = "')
+    end = text.index('"', start + len('directory = "'))
+    text = text[:start] + 'directory = "../results/report"' + text[end + 1 :]
+    (root / "configs" / "report.toml").write_text(text, encoding="utf-8")
+    return root
+
+
+def test_self_test_exports_each_report_as_pdf(
+    qapp: QApplication, tmp_path: Path, no_user_settings: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from qrlab_app import widgets
+    from run_helpers import InlineStarter
+
+    root = _report_workspace(tmp_path)
+    lines: list[str] = []
+    assert self_test(root, log=lines.append, starter=InlineStarter()) == 0
+    assert lines[-1] == "self-test: 1 of 1 runs succeeded"
+    assert not list((root / "results" / "report").glob("*.pdf"))  # never into the outputs
+
+    def broken(*args: object, **kwargs: object) -> object:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(widgets, "export_pdf", broken)
+    assert self_test(root, log=lines.append, starter=InlineStarter()) == 1
+    assert lines[-1] == "self-test: 0 of 1 runs succeeded"

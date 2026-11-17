@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +36,8 @@ from PySide6.QtWidgets import (
 
 from qrlab_app.chart_widgets import ChartView
 from qrlab_app.charts import ChartModel
-from qrlab_app.display import cell_text
+from qrlab_app.display import cell_text, date_text
+from qrlab_app.pdf import export_pdf
 from qrlab_app.strings import tr, tr_value
 from qrlab_app.viewmodels import ResultView
 
@@ -109,11 +111,19 @@ class ResultsPanel(QWidget):
     of the result shown are in :attr:`charts`.
     """
 
-    def __init__(self, language: str, open_path: Callable[[Path], None]) -> None:
-        """Build an empty panel."""
+    def __init__(
+        self,
+        language: str,
+        open_path: Callable[[Path], None],
+        pick_save_file: Callable[[str, str], Path | None] | None = None,
+        today: Callable[[], date] = date.today,
+    ) -> None:
+        """Build an empty panel; without ``pick_save_file`` a report cannot be exported."""
         super().__init__()
         self._language = language
         self._open_path = open_path
+        self._pick_save_file = pick_save_file
+        self._today = today
         self._view: ResultView | None = None
         self.charts: list[ChartView] = []
         self.title = QLabel("")
@@ -122,16 +132,22 @@ class ResultsPanel(QWidget):
         self.tabs = QTabWidget()
         self.report_button = QPushButton(tr("screen.open_report", language))
         self.folder_button = QPushButton(tr("screen.open_folder", language))
+        self.pdf_button = QPushButton(tr("results.export_pdf", language))
         self.report_button.clicked.connect(self._open_report)
         self.folder_button.clicked.connect(self._open_folder)
+        self.pdf_button.clicked.connect(self._export_pdf)
+        self.export_message = QLabel("")
+        self.export_message.setWordWrap(True)
         buttons = QHBoxLayout()
         buttons.addWidget(self.report_button)
+        buttons.addWidget(self.pdf_button)
         buttons.addWidget(self.folder_button)
         layout = QVBoxLayout(self)
         layout.addWidget(self.title)
         layout.addWidget(self.notice)
         layout.addWidget(self.tabs)
         layout.addLayout(buttons)
+        layout.addWidget(self.export_message)
         self.show_result(None)
 
     def show_result(self, view: ResultView | None) -> None:
@@ -139,7 +155,10 @@ class ResultsPanel(QWidget):
         self._view = view
         self.tabs.clear()
         self.charts = []
-        self.report_button.setEnabled(view is not None and view.report is not None)
+        has_report = view is not None and view.report is not None
+        self.report_button.setEnabled(has_report)
+        self.pdf_button.setEnabled(has_report and self._pick_save_file is not None)
+        self.export_message.setText("")
         self.folder_button.setEnabled(view is not None)
         self.notice.setText("" if view is None or not view.notice else view.notice)
         if view is None:
@@ -178,6 +197,10 @@ class ResultsPanel(QWidget):
             scroll.setWidget(box)
             self.tabs.addTab(scroll, tr("results.figures", language))
 
+    def output_name(self) -> str:
+        """Return the name of the shown result's output folder (empty when none is shown)."""
+        return "" if self._view is None else self._view.output_dir.name
+
     def _open_report(self) -> None:
         if self._view is not None and self._view.report is not None:
             self._open_path(self._view.report)
@@ -185,6 +208,26 @@ class ResultsPanel(QWidget):
     def _open_folder(self) -> None:
         if self._view is not None:
             self._open_path(self._view.output_dir)
+
+    def _export_pdf(self) -> None:
+        """Ask where to save, then print the report to a PDF there (design note 12.4)."""
+        view, language = self._view, self._language
+        if view is None or view.report is None or self._pick_save_file is None:
+            return
+        if not view.report.is_file():
+            self.export_message.setText(tr("pdf.missing", language, path=view.report))
+            return
+        folder = view.output_dir.name
+        target = self._pick_save_file(tr("results.export_pdf", language), f"{folder}.pdf")
+        if target is None:
+            return
+        header = tr("pdf.header", language, folder=folder, day=date_text(self._today(), language))
+        try:
+            export_pdf(view.report, target, header=header, title=folder)
+        except OSError as exc:
+            self.export_message.setText(tr("pdf.failed", language, error=exc))
+            return
+        self.export_message.setText(tr("pdf.saved", language, path=target))
 
 
 class QtSettingsStore:
@@ -239,6 +282,7 @@ class Dialogs:
     inform: Callable[[str], None]
     open_path: Callable[[Path], None]
     pick_file: Callable[[str], Path | None]
+    pick_save_file: Callable[[str, str], Path | None]  # title, suggested file name
 
 
 def default_dialogs(parent: QWidget | None) -> Dialogs:  # pragma: no cover - needs a user
@@ -277,6 +321,18 @@ def default_dialogs(parent: QWidget | None) -> Dialogs:  # pragma: no cover - ne
         file, _ = QFileDialog.getOpenFileName(parent, title)
         return Path(file) if file else None
 
+    def pick_save_file(title: str, name: str) -> Path | None:
+        file, _ = QFileDialog.getSaveFileName(parent, title, name, "PDF (*.pdf)")
+        return Path(file) if file else None
+
     return Dialogs(
-        pick_folder, ask_text, ask_choice, confirm, ask_save, inform, open_path, pick_file
+        pick_folder,
+        ask_text,
+        ask_choice,
+        confirm,
+        ask_save,
+        inform,
+        open_path,
+        pick_file,
+        pick_save_file,
     )
