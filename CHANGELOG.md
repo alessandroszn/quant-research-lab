@@ -8,6 +8,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **A VaR backtest and factor proxies in the portfolio report** (phase 11.4), both optional in
+  `[parameters.risk]`.
+  - **The backtest** (`[parameters.risk.backtest]`, `window` and `model`): the VaR model on
+    today's weights over the common history, one-step forecasts from earlier returns only,
+    with the Kupiec, independence and conditional-coverage tests. Outputs:
+    `var_backtest.csv` and the scalars named as in `risk_report`, tagged `out_of_sample`, and
+    a table in the risk section. It says when fewer than 5 exceedances are expected, and that
+    today's weights carry hindsight.
+  - **The proxies** (`[parameters.risk.proxies]`, ISIN = factor = beta, with the `factors`
+    input of total-return factor levels): a position without its own returns over a
+    historical scenario's window, or under a hypothetical factor shock, is mapped to the
+    factors and labelled as a proxy. The betas are listed in the risk section.
+- `qrlab.scenarios.RiskSummary` gains the optional `backtest`, `backtest_window`,
+  `backtest_model` and `proxies`.
+
 - **Italian stamp duty and IVAFE** (phase 11.3): an optional `custody` key in the Italian
   `[parameters.tax]` says where each account is held.
   - **Italy** (`where = "italy"`, with its `statements` periods): the *imposta di bollo* at 2

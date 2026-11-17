@@ -27,6 +27,10 @@ Out-of-scope ideas, triaged at each milestone. Nothing here is planned until it 
 | The foreign wealth-tax credit in the IVAFE | 11.3 | A wealth tax paid abroad on the same products is deducted up to the IVAFE; it needs a per-year input. |
 | Stamp duty and IVAFE from 2027 | 11.3 | The testo unico D.Lgs. 123/2025 applies from 1 January 2027 (D.L. 200/2025); its articles must be checked before those years are computed. |
 | The Agenzia's monthly average rates for the IVAFE | 11.3 | The return converts foreign values at the provvedimento's monthly averages; the report uses the ECB rate of the day. |
+| Betas estimated for the stress-test proxies | 11.4 | The report takes the owner's betas. Estimating them from the overlap of a position's returns and the factors, with standard errors and R², is a modelling choice of its own. |
+| Proxies to extend the VaR backtest history | 11.4 | The backtest uses the common history of the held positions; proxied returns could reach further back, with the proxy's understatement of own risk. |
+| Expected-shortfall backtests | 11.4 | For example Acerbi–Székely; the report backtests the VaR only. |
+| Undefined Cornish-Fisher forecasts in a VaR backtest | 11.4 | A window whose expansion is not a quantile stops the run (as in `risk_report`); the forecast could instead be skipped and counted. |
 | Percentage contribution linking (Carino, GRAP) | 2.1 `portfolio` | Planned with attribution (4.4); money contribution by position exists. |
 | Automatic block length (Politis-White 2004) | 2.2 `stats` | The stationary bootstrap takes an explicit mean block length today. |
 | Severity per finding in the app | 2.4 `checks` | Let the user acknowledge or snooze a finding; needs persistent state (phase 6). |

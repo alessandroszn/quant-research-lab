@@ -89,6 +89,7 @@ from qrlab.tax.regime import (
 __all__ = ["BenchmarkSummary", "ReturnSource", "RiskFreeSummary", "build_portfolio_report"]
 
 ONE_YEAR_DAYS = 365
+BACKTEST_MIN_EXPECTED = 5.0  # fewer expected exceedances: the tests have little power
 TOP_BUCKETS = 10
 
 
@@ -817,6 +818,8 @@ class _Builder:
                     (self.t("var_note"),),
                 )
             )
+        if risk.backtest is not None:
+            tables.append(self._backtest_table(risk))
         if self.return_sources:
             tables.append(
                 Table(
@@ -904,7 +907,49 @@ class _Builder:
                     (),
                 )
             )
+        if risk.proxies:
+            tables.append(
+                Table(
+                    self.t("proxies"),
+                    (self.t("holding"), self.t("factor"), self.t("beta")),
+                    tuple(
+                        (self._name_of(code), factor, self._number(beta))
+                        for code, betas in sorted(risk.proxies.items())
+                        for factor, beta in sorted(betas.items())
+                    ),
+                    ("left", "left", "right"),
+                    (self.t("proxies_note"),),
+                )
+            )
         return Section(self.t("risk_stress"), paragraphs, tuple(tables), ())
+
+    def _backtest_table(self, risk: RiskSummary) -> Table:
+        test = risk.backtest
+        assert test is not None
+        number = self._number
+        rows = [
+            (self.t("backtest_forecasts"), str(test.n)),
+            (self.t("backtest_exceedances"), str(test.exceedances)),
+            (self.t("backtest_expected"), number(test.expected)),
+            (self.t("backtest_hit_rate"), self.pct(test.hit_rate)),
+            (self.t("kupiec_pvalue"), number(test.kupiec_pvalue)),
+            (self.t("independence_pvalue"), number(test.independence_pvalue)),
+            (self.t("conditional_coverage_pvalue"), number(test.conditional_coverage_pvalue)),
+        ]
+        notes = [
+            self.t(
+                "backtest_note",
+                window=str(risk.backtest_window),
+                model=self.t(f"backtest_model_{risk.backtest_model}"),
+                confidence=self.pct(risk.confidence),
+            )
+        ]
+        if test.expected < BACKTEST_MIN_EXPECTED:
+            notes.append(self.t("backtest_low_power"))
+        notes += [translate(note, self.language) for note in test.notes]
+        return Table(
+            self.t("backtest"), ("", self.t("value")), tuple(rows), ("left", "right"), tuple(notes)
+        )
 
     def _projection(self) -> Section:
         if self.projection is None:

@@ -503,7 +503,9 @@ qrlab.scenarios.MarketData  class(positions: 'Mapping[Isin, PositionSeries]', fa
 qrlab.scenarios.PositionResult  class(holding: 'str', weight: 'float', method: 'str', local_return: 'float | None', fx_return: 'float | None', base_return: 'float | None') -> None
 qrlab.scenarios.PositionResult.contribution  property
 qrlab.scenarios.PositionSeries  class(returns: 'pd.Series', currency: 'Currency') -> None
-qrlab.scenarios.RiskSummary  class(as_of: 'date', frequency: 'str', window_start: 'date', window_end: 'date', n_obs: 'int', confidence: 'float', volatility: 'RiskContributions', var_es: 'Mapping[str, tuple[float, float]]', scenarios: 'tuple[ScenarioResult, ...]') -> None
+qrlab.scenarios.RiskSummary  class(as_of: 'date', frequency: 'str', window_start: 'date', window_end: 'date', n_obs: 'int', confidence: 'float', volatility: 'RiskContributions', var_es: 'Mapping[str, tuple[float, float]]', scenarios: 'tuple[ScenarioResult, ...]', backtest: 'VarBacktest | None' = None, backtest_window: 'int' = 0, backtest_model: 'str' = '', proxies: 'Mapping[str, Mapping[str, float]] | None' = None) -> None
+qrlab.scenarios.RiskSummary.backtest_model  attribute str = ''
+qrlab.scenarios.RiskSummary.backtest_window  attribute int = 0
 qrlab.scenarios.Scenario  constant UnionType
 qrlab.scenarios.ScenarioResult  class(scenario: 'Scenario', portfolio_return: 'float', pnl: 'Money', not_covered_weight: 'float', first_date: 'date | None', last_date: 'date | None', rows: 'tuple[PositionResult, ...]', notes: 'tuple[str, ...]') -> None
 qrlab.scenarios.StressPortfolio  class(as_of: 'date', value: 'Money', position_weights: 'Mapping[Isin, float]', cash_weights: 'Mapping[Currency, float]', exposure_currencies: 'Mapping[Isin, Currency]') -> None
