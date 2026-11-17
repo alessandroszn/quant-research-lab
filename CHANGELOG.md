@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-17
+
+Milestone M12, *a usable app* (phases 12.1 to 12.4): a form for each analysis from parameter
+schemas, a run queue with Cancel and interruption-safe outputs, interactive charts, and PDF
+export with an icon. Every change to the public API is an addition (docs/compatibility.md):
+the schemas, `staging_dir`, the CLI's exit code 130 and two more portfolio-report tables.
+Released on GitHub only, like 1.0.0 and 1.1.0.
+
 ### Added
 
 - **PDF export of a report, and an icon** (phase 12.4).
@@ -1123,7 +1131,8 @@ Milestones M1 (Analytics core) and M2 (Portfolio X-ray): phases 1.1 to 2.5.
 - GitHub Actions CI on Linux and Windows for Python 3.11 and 3.13.
 - Project documentation: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
 
-[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/alessandroszn/quant-research-lab/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/alessandroszn/quant-research-lab/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/alessandroszn/quant-research-lab/compare/v1.0.0rc1...v1.0.0
 [1.0.0rc1]: https://github.com/alessandroszn/quant-research-lab/compare/v0.4.0...v1.0.0rc1
