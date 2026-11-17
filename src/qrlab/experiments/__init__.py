@@ -16,10 +16,12 @@ from qrlab.experiments.registry import (
 )
 from qrlab.experiments.runner import (
     RECORD_FORMAT,
+    STAGING_SUFFIX,
     RunResult,
     configurations_tried,
     count_trials,
     run_experiment,
+    staging_dir,
     validate_experiment,
 )
 from qrlab.experiments.schema import (
@@ -33,6 +35,7 @@ from qrlab.experiments.schema import (
 
 __all__ = [
     "RECORD_FORMAT",
+    "STAGING_SUFFIX",
     "TAGS",
     "ExperimentConfig",
     "ExperimentKind",
@@ -53,5 +56,6 @@ __all__ = [
     "load_config",
     "require_keys",
     "run_experiment",
+    "staging_dir",
     "validate_experiment",
 ]

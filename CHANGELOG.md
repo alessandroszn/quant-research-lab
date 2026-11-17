@@ -38,6 +38,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   nested tables correctly is easy to get subtly wrong; `tomli-w` is the writing half of
   `tomllib` (the same author's `tomli`), small and pure Python.
 
+### Changed
+
+- **Interruption-safe outputs** (phase 12.2a): a run writes into the staging folder
+  `.<name>.partial` and replaces the output folder with it only once its record is written.
+  - Before, a re-run deleted the earlier outputs first, so an interrupted run left a folder
+    without a record and no earlier results. Now an interrupted run (Ctrl+C, its process
+    ended) leaves the earlier outputs unchanged and is not counted as a configuration tried.
+  - The trial ledger gets its line after the outputs are in place; the count in the record is
+    the same as before.
+  - A failed run is still recorded and replaces the earlier outputs, as before.
+  - `qrlab.experiments.staging_dir` and `STAGING_SUFFIX` name the staging folder; the
+    workspace's run listing skips folders whose name starts with a dot.
+  - `qrlab run` exits with code 130 on Ctrl+C, saying that the earlier outputs are unchanged.
+  - The outputs are byte-identical to before.
+
 ### Fixed
 
 - **`backtest` declares its optional `losses`** (phase 12.1a): `parse` accepted it since 11.5,

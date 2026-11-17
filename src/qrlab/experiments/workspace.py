@@ -115,10 +115,14 @@ def list_runs(root: Path) -> list[RunEntry]:
     """Every ``record.json`` under ``results/``, newest finished first.
 
     Unreadable records are skipped: a folder without a valid record is an incomplete run.
+    Folders whose name starts with a dot are skipped too: they are a run's staging folder or
+    the earlier outputs it is replacing (design note 12.2).
     """
     folder = Path(root) / "results"
     runs = []
     for record_path in folder.rglob(RECORD) if folder.is_dir() else []:
+        if any(part.startswith(".") for part in record_path.relative_to(folder).parts[:-1]):
+            continue
         try:
             record = json.loads(record_path.read_text(encoding="utf-8"))
             runs.append(

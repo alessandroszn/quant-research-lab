@@ -22,6 +22,7 @@ from qrlab.experiments import (
     load_config,
     require_keys,
     run_experiment,
+    staging_dir,
     validate_experiment,
 )
 
@@ -367,3 +368,106 @@ def test_a_notice_must_be_text(tmp_path: Path) -> None:
     assert not result.succeeded
     assert "notice" in result.record["error"]
     assert result.record["notice"] is None
+
+
+# --------------------------------------------------------------- interruption-safe outputs (12.2)
+def _interrupting(error: type[BaseException]) -> dict[str, ExperimentKind]:
+    def run(context: RunContext) -> ExperimentOutput:
+        raise error()
+
+    return {"scale": ExperimentKind("scale", "", ("data",), False, ("scale",), _parse, run)}
+
+
+def _snapshot(folder: Path) -> dict[str, bytes]:
+    return {p.name: p.read_bytes() for p in sorted(folder.iterdir())}
+
+
+def _ledger_lines(folder: Path) -> int:
+    return len((folder / "trials.jsonl").read_text(encoding="utf-8").splitlines())
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, SystemExit])
+def test_an_interrupted_run_keeps_the_earlier_outputs(
+    tmp_path: Path, error: type[BaseException]
+) -> None:
+    config = _write(tmp_path)
+    first = run_experiment(config, kinds=KINDS, overwrite=False)
+    before = _snapshot(first.output_dir)
+    with pytest.raises(error):
+        run_experiment(config, kinds=_interrupting(error), overwrite=True)
+    assert _snapshot(first.output_dir) == before
+    assert not staging_dir(first.output_dir).exists()
+    assert sorted(p.name for p in first.output_dir.parent.iterdir()) == ["demo", "trials.jsonl"]
+    assert _ledger_lines(first.output_dir.parent) == 1  # an interrupted run is not a trial
+
+
+def test_an_interrupted_first_run_leaves_nothing(tmp_path: Path) -> None:
+    config = _write(tmp_path)
+    with pytest.raises(KeyboardInterrupt):
+        run_experiment(config, kinds=_interrupting(KeyboardInterrupt), overwrite=False)
+    assert list((tmp_path / "results").iterdir()) == []
+    assert count_trials(tmp_path / "results", "demo") == 0
+
+
+def test_a_staging_folder_left_by_an_ended_process_is_replaced(tmp_path: Path) -> None:
+    config = _write(tmp_path)
+    out = tmp_path / "results" / "demo"
+    staging = staging_dir(out)
+    assert staging == tmp_path / "results" / ".demo.partial"
+    staging.mkdir(parents=True)
+    (staging / "record.json").write_text("{}", encoding="utf-8")
+    (staging / "stale.csv").write_text("x\n", encoding="utf-8")
+    old = tmp_path / "results" / ".demo.old"
+    old.mkdir()
+    result = run_experiment(config, kinds=KINDS, overwrite=False)
+    assert result.succeeded
+    assert not staging.exists()
+    assert not old.exists()
+    assert not (out / "stale.csv").exists()
+    assert json.loads((out / "record.json").read_text(encoding="utf-8"))["status"] == "success"
+
+
+def test_a_failed_run_replaces_the_earlier_outputs_and_is_a_trial(tmp_path: Path) -> None:
+    run_experiment(_write(tmp_path), kinds=KINDS, overwrite=False)
+    failed = run_experiment(_write(tmp_path, extra="fail = true"), kinds=KINDS, overwrite=True)
+    assert not failed.succeeded
+    assert sorted(p.name for p in failed.output_dir.iterdir()) == ["record.json"]
+    assert _ledger_lines(failed.output_dir.parent) == 2
+    assert failed.record["configurations_tried"] == 2  # two configs: with and without fail
+
+
+@pytest.mark.parametrize("earlier", [True, False])
+def test_outputs_that_cannot_be_moved_into_place(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, earlier: bool
+) -> None:
+    config = _write(tmp_path)
+    out = tmp_path / "results" / "demo"
+    if earlier:
+        run_experiment(config, kinds=KINDS, overwrite=False)
+        before = _snapshot(out)
+    rename = Path.rename
+
+    def locked(self: Path, target: Path) -> Path:
+        if self.name == ".demo.partial":
+            raise OSError("a file is open")
+        return rename(self, target)
+
+    monkeypatch.setattr(Path, "rename", locked)
+    with pytest.raises(ValidationError, match=r"cannot replace .*demo: a file is open; this run"):
+        run_experiment(config, kinds=KINDS, overwrite=True)
+    staging = staging_dir(out)
+    assert (staging / "record.json").exists()  # this run's outputs are kept, and named
+    if earlier:
+        assert _snapshot(out) == before  # the earlier outputs are back in place
+        assert _ledger_lines(out.parent) == 1
+    else:
+        assert not out.exists()
+        assert not (out.parent / "trials.jsonl").exists()
+
+
+def test_the_cli_reports_a_cancelled_run(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config = _write(tmp_path)
+    assert main(["run", str(config)], kinds=_interrupting(KeyboardInterrupt)) == 130
+    assert capsys.readouterr().err == "cancelled: the earlier outputs are unchanged\n"

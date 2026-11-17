@@ -215,6 +215,7 @@ qrlab.experiments.RunContext  class(config: 'ExperimentConfig', parameters: 'obj
 qrlab.experiments.RunContext.group  method(name: 'str') -> 'dict[str, Path]'
 qrlab.experiments.RunResult  class(output_dir: 'Path', record: 'Mapping[str, Any]') -> None
 qrlab.experiments.RunResult.succeeded  property
+qrlab.experiments.STAGING_SUFFIX  constant str = '.partial'
 qrlab.experiments.TAGS  constant frozenset = ['descriptive', 'in_sample', 'out_of_sample']
 qrlab.experiments.Tagged  class(value: 'pd.DataFrame | float | str', tag: 'str') -> None
 qrlab.experiments.check_parameters  function(schema: 'KindSchema', parameters: 'Mapping[str, object]') -> 'None'
@@ -225,6 +226,7 @@ qrlab.experiments.file_sha256  function(path: 'Path') -> 'str'
 qrlab.experiments.load_config  function(path: 'Path') -> 'ExperimentConfig'
 qrlab.experiments.require_keys  function(table: 'Mapping[str, object]', *, required: 'set[str]', optional: 'set[str]', where: 'str') -> 'None'
 qrlab.experiments.run_experiment  function(config_path: 'Path', *, kinds: 'Mapping[str, ExperimentKind]', overwrite: 'bool') -> 'RunResult'
+qrlab.experiments.staging_dir  function(output_dir: 'Path') -> 'Path'
 qrlab.experiments.validate_experiment  function(config_path: 'Path', *, kinds: 'Mapping[str, ExperimentKind]') -> 'tuple[ExperimentConfig, ExperimentKind, object]'
 qrlab.experiments.kinds.KINDS  constant mappingproxy
 qrlab.experiments.workspace.ConfigEntry  class(path: 'Path', name: 'str | None', kind: 'str | None', valid: 'bool', error: 'str | None') -> None
