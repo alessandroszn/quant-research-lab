@@ -63,6 +63,9 @@ _EN = {
     "screen.waiting": "Waiting: number {position} in line.",
     "results.scalars": "Scalars",
     "results.figures": "Figures",
+    "results.table": "Table",
+    "results.chart": "Chart",
+    "results.lines": "Lines shown:",
     "results.scalar_columns": "Name|Value|Sample",
     "data.columns": "Source|Dataset|Retrieved|Age (days)|Latest|Bytes|SHA-256|Terms",
     "data.latest": "yes",
@@ -244,6 +247,9 @@ _IT = {
     "screen.waiting": "In attesa: numero {position} in coda.",
     "results.scalars": "Valori",
     "results.figures": "Grafici",
+    "results.table": "Tabella",
+    "results.chart": "Grafico",
+    "results.lines": "Linee mostrate:",
     "results.scalar_columns": "Nome|Valore|Campione",
     "data.columns": (
         "Fonte|Dataset|Scaricato il|Età (giorni)|Più recente|Byte|SHA-256|Condizioni d'uso"

@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **Interactive charts in the app** (phase 12.3b): every output table indexed by ISO dates
+  gets a Chart view next to its Table view, on Matplotlib's Qt canvas.
+  - Matplotlib's toolbar (zoom, pan, back and forward, reset, save); a line that follows the
+    cursor, with the nearest date's values in the app's language; tick boxes to show or hide
+    the lines, eight shown at first.
+  - Nothing is computed: each numeric column is drawn as written. Row numbers, times,
+    unsorted or duplicated dates are never taken for a time series.
+  - The chart is drawn when first shown. The self-test draws every chart, so the Windows
+    build's CI check proves that Matplotlib's Qt backend, no longer excluded from the build,
+    is bundled.
+  - No new dependency: Matplotlib is the library's own. The app may now import it, and the
+    chart widget is the one module where mypy allows calls to its untyped functions.
 - **The portfolio report writes the data behind its figures** (phase 12.3a): `value.csv`
   (the value in the base currency on each valuation date, column `value_<currency>`) and
   `twr.csv` (`cumulative_twr` and `drawdown` per period), the series its "value over time",

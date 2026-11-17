@@ -10,7 +10,9 @@ import qrlab_app
 
 APP_ROOT = Path(qrlab_app.__file__).parent
 ALLOWED_QRLAB = {"experiments", "reporting"}
-ALLOWED_THIRD_PARTY = {"PySide6", "pandas", "tomli_w"}  # tomli_w: the form writes TOML (12.1b)
+# tomli_w: the form writes TOML (12.1b); matplotlib: the interactive charts (12.3b), already a
+# dependency of the library.
+ALLOWED_THIRD_PARTY = {"PySide6", "pandas", "tomli_w", "matplotlib"}
 
 
 def _imports(path: Path) -> set[str]:

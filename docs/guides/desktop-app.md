@@ -55,6 +55,12 @@ Each analysis screen has three columns:
     form changed it, *Save* (and *Validate* or *Run*, which save first) asks before writing.
 - **Right:** the results.
   - Each table carries its sample tag (in-sample, out-of-sample or descriptive).
+  - **A dated table also has a Chart view** next to its Table view: a backtest's values and
+    weights, a projection's fan, the risk report's VaR backtest, the portfolio report's value
+    and TWR. Matplotlib's toolbar zooms, pans and saves an image; a line follows the cursor
+    and the values of the nearest date show below, in the app's language; tick boxes show or
+    hide the lines (eight at first). The chart draws the values as written: nothing is
+    computed.
   - The scalars and figures are shown below the tables.
   - *Open report* and *Open folder* open them in the system's browser and file manager.
 
