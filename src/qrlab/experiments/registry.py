@@ -16,6 +16,7 @@ import pandas as pd
 
 from qrlab.core.errors import ValidationError
 from qrlab.experiments.config import ExperimentConfig
+from qrlab.experiments.schema import KindSchema
 
 __all__ = ["TAGS", "ExperimentKind", "ExperimentOutput", "RunContext", "Tagged"]
 
@@ -79,3 +80,6 @@ class ExperimentKind:
     check_inputs: Callable[[object, frozenset[str]], None] | None = None
     """Called at validation with the parsed parameters and the names of the given inputs, for
     rules that tie the two together (e.g. a parameter required only with an optional input)."""
+    schema: KindSchema | None = None
+    """What the kind accepts, as data (design note 12.1): checked at validation after
+    ``parse``, and the source of the guide and the app's form."""

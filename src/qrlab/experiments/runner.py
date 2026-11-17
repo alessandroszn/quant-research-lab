@@ -34,6 +34,7 @@ import qrlab
 from qrlab.core.errors import ValidationError
 from qrlab.experiments.config import ExperimentConfig, file_sha256, load_config
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext
+from qrlab.experiments.schema import check_parameters
 
 __all__ = [
     "RECORD_FORMAT",
@@ -93,6 +94,8 @@ def validate_experiment(
     parameters = kind.parse(config.parameters)
     if kind.check_inputs is not None:
         kind.check_inputs(parameters, frozenset(config.inputs))
+    if kind.schema is not None:  # after parse, whose messages stay the first (design 12.1)
+        check_parameters(kind.schema, config.parameters)
     return config, kind, parameters
 
 

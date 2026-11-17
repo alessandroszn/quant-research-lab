@@ -27,10 +27,18 @@ from qrlab.data.open_asset_pricing import (
     parse_signal_doc,
 )
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as s
 from qrlab.experiments.kinds._params import day, number, whole
-from qrlab.experiments.kinds._studies import describe, names, raw_provenance
+from qrlab.experiments.kinds._studies import (
+    HAC_LAGS,
+    SIGNIFICANCE,
+    describe,
+    names,
+    raw_provenance,
+)
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.experiments.runner import configurations_tried
+from qrlab.experiments.schema import KindSchema
 from qrlab.reporting.html import render_html
 from qrlab.studies.factor_zoo import (
     MAX_GAP_SHARE,
@@ -43,7 +51,7 @@ from qrlab.studies.factor_zoo import (
 )
 from qrlab.studies.factor_zoo_report import build_factor_zoo_report
 
-__all__ = ["INPUTS", "KIND"]
+__all__ = ["INPUTS", "KIND", "SCHEMA"]
 
 INPUTS: Mapping[str, str] = {"ls_returns": "long_short_returns", "signal_doc": "signal_doc"}
 """Input name -> OSAP dataset."""
@@ -55,6 +63,55 @@ _PARAMETERS = (
     "min_months",
     "hlz_threshold",
     "significance",
+)
+
+SCHEMA = KindSchema(
+    inputs=(
+        s.file(
+            "ls_returns",
+            "Open Source Asset Pricing long-short returns of every predictor "
+            "(PredictorLSretWide.parquet), as downloaded.",
+            "Rendimenti long-short di ogni predittore di Open Source Asset Pricing "
+            "(PredictorLSretWide.parquet), così come scaricati.",
+        ),
+        s.file(
+            "signal_doc",
+            "Open Source Asset Pricing documentation of the signals (SignalDoc.csv), as "
+            "downloaded.",
+            "Documentazione dei segnali di Open Source Asset Pricing (SignalDoc.csv), così come "
+            "scaricata.",
+        ),
+    ),
+    parameters=(
+        s.listing(
+            "categories",
+            "Values of 'Predictability in OP' whose predictors are studied, e.g. 1_clear.",
+            "Valori di 'Predictability in OP' dei predittori da studiare, ad esempio 1_clear.",
+            s.text("category", "A category.", "Una categoria."),
+        ),
+        s.day(
+            "end",
+            "Last day of the sample; returns after its month are not used.",
+            "Ultimo giorno del campione; i rendimenti dopo il suo mese non sono usati.",
+        ),
+        HAC_LAGS,
+        s.integer(
+            "min_months",
+            "Fewest months a predictor needs in a phase to be tested in it.",
+            "Numero minimo di mesi che un predittore deve avere in una fase per esservi testato.",
+            minimum=3,
+            unit="months",
+        ),
+        s.number(
+            "hlz_threshold",
+            "t-statistic a predictor must exceed under the Harvey-Liu-Zhu rule (e.g. 3).",
+            "Statistica t che un predittore deve superare secondo la regola di Harvey, Liu e Zhu "
+            "(ad esempio 3).",
+            minimum=0.0,
+            open_minimum=True,
+        ),
+        SIGNIFICANCE,
+    ),
 )
 
 
@@ -202,4 +259,5 @@ KIND = ExperimentKind(
     parameters=_PARAMETERS,
     parse=_parse,
     run=_run,
+    schema=SCHEMA,
 )

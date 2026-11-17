@@ -33,6 +33,7 @@ from qrlab.core.returns import ReturnKind
 from qrlab.core.series import NanPolicy
 from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as f
 from qrlab.experiments.kinds._frames import (
     covariance_spec,
     estimate_covariance,
@@ -44,6 +45,7 @@ from qrlab.experiments.kinds._frames import (
 )
 from qrlab.experiments.kinds._params import choice, number, table, whole
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
+from qrlab.experiments.schema import FieldKind, KindSchema
 from qrlab.metrics.errors import UndefinedMetricError
 from qrlab.metrics.risk import historical_es, historical_var, parametric_es, parametric_var
 from qrlab.risk.decomposition import (
@@ -59,7 +61,7 @@ from qrlab.risk.var_methods import cornish_fisher, filtered_historical
 # what the numbers are and that they are not advice.
 CAVEATS = "Risk estimates from past returns under the stated model. Future losses can be larger."
 
-__all__ = ["BACKTEST_MODELS", "KIND"]
+__all__ = ["BACKTEST_MODELS", "KIND", "SCHEMA"]
 
 BACKTEST_MODELS = ("historical", "normal", "cornish_fisher")
 
@@ -204,6 +206,79 @@ def _run(context: RunContext) -> ExperimentOutput:
     )
 
 
+SCHEMA = KindSchema(
+    inputs=(
+        f.file(
+            "returns",
+            "CSV of simple returns, one column per asset, read with returns_format.",
+            "CSV di rendimenti semplici, una colonna per attivo, letto con returns_format.",
+        ),
+    ),
+    parameters=(
+        f.RETURNS_FORMAT,
+        f.RETURNS_PRICE_TYPE,
+        f.mapping(
+            "weights",
+            "Fixed weight of each asset, by asset name; every column of the file is listed.",
+            "Peso fisso di ogni attivo, per nome; ogni colonna del file è elencata.",
+            FieldKind.TEXT,
+            f.number("weight", "Weight of the asset.", "Peso dell'attivo.", unit="fraction"),
+        ),
+        f.COVARIANCE,
+        f.number(
+            "confidence",
+            "Confidence level of VaR and ES, e.g. 0.99.",
+            "Livello di confidenza di VaR ed ES, ad esempio 0,99.",
+            minimum=0.5,
+            maximum=1.0,
+            open_minimum=True,
+            open_maximum=True,
+            unit="fraction",
+        ),
+        f.PERIODS_PER_YEAR,
+        f.table(
+            "filtered",
+            "The EWMA filter of filtered historical simulation.",
+            "Il filtro EWMA della simulazione storica filtrata.",
+            (
+                f.number(
+                    "decay",
+                    "Weight of each older squared return, between 0 and 1 (e.g. 0.94).",
+                    "Peso di ogni rendimento al quadrato più vecchio, tra 0 e 1 (ad esempio 0,94).",
+                ),
+                f.integer(
+                    "warmup",
+                    "Periods used to start the variance filter.",
+                    "Periodi usati per avviare il filtro della varianza.",
+                    minimum=1,
+                    unit="periods",
+                ),
+            ),
+        ),
+        f.table(
+            "backtest",
+            "The VaR backtest: one-step forecasts from a rolling window.",
+            "Il backtest del VaR: previsioni a un passo da una finestra mobile.",
+            (
+                f.integer(
+                    "window",
+                    "Returns before each date used for its forecast.",
+                    "Rendimenti precedenti a ogni data usati per la sua previsione.",
+                    minimum=2,
+                    unit="periods",
+                ),
+                f.choice(
+                    "model",
+                    "The VaR model of the forecasts.",
+                    "Il modello di VaR delle previsioni.",
+                    BACKTEST_MODELS,
+                ),
+            ),
+        ),
+    ),
+)
+"""What ``risk_report`` accepts (design note 12.1)."""
+
 KIND = ExperimentKind(
     name="risk_report",
     description="Portfolio risk: covariance, contributions, VaR/ES and a VaR backtest",
@@ -212,4 +287,5 @@ KIND = ExperimentKind(
     parameters=_PARAMETERS,
     parse=_parse,
     run=_run,
+    schema=SCHEMA,
 )

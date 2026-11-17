@@ -177,6 +177,7 @@ from qrlab.experiments.kinds._portfolio_projection import (
     project_portfolio,
 )
 from qrlab.experiments.kinds._portfolio_risk import RiskSpec, compute_risk, parse_risk
+from qrlab.experiments.kinds._portfolio_schema import SCHEMA
 from qrlab.experiments.kinds._return_sources import (
     Payment,
     excluded_note,
@@ -972,4 +973,5 @@ KIND = ExperimentKind(
     input_groups=_GROUPS,
     optional_parameters=_OPTIONAL_PARAMETERS,
     check_inputs=_check_inputs,
+    schema=SCHEMA,
 )

@@ -33,6 +33,7 @@ from qrlab.core.errors import ValidationError
 from qrlab.core.money import Currency, Money
 from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as f
 from qrlab.experiments.kinds._frames import (
     price_type,
     read_returns,
@@ -41,11 +42,12 @@ from qrlab.experiments.kinds._frames import (
 )
 from qrlab.experiments.kinds._params import day, number, text
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
+from qrlab.experiments.schema import KindSchema
 from qrlab.instruments.identifiers import Isin
 from qrlab.scenarios.definitions import HistoricalScenario, load_scenarios
 from qrlab.scenarios.engine import MarketData, PositionSeries, StressPortfolio, run_scenario
 
-__all__ = ["CAVEATS", "KIND"]
+__all__ = ["CAVEATS", "KIND", "SCHEMA"]
 
 CAVEATS = "What-if stress tests on today's weights. Not forecasts or probabilities of loss."
 
@@ -204,6 +206,97 @@ def _run(context: RunContext) -> ExperimentOutput:
     )
 
 
+SCHEMA = KindSchema(
+    inputs=(
+        f.file(
+            "holdings",
+            "CSV of today's holdings: columns holding, type (position or cash), weight and "
+            "currency; the weights sum to 1.",
+            "CSV delle posizioni di oggi: colonne holding, type (position o cash), weight e "
+            "currency; i pesi sommano a 1.",
+        ),
+        f.file(
+            "scenarios",
+            "TOML file of the historical and hypothetical scenarios to run.",
+            "File TOML degli scenari storici e ipotetici da eseguire.",
+        ),
+        f.file(
+            "position_returns",
+            "CSV of dated returns, one column per position ISIN, in position_returns_currency. "
+            "Absent: no position uses its own history.",
+            "CSV di rendimenti datati, una colonna per ISIN di posizione, in "
+            "position_returns_currency. Assente: nessuna posizione usa la propria storia.",
+            required=False,
+        ),
+        f.file(
+            "factors",
+            "CSV of dated factor returns, one column per factor. Absent: no factor proxies.",
+            "CSV di rendimenti datati dei fattori, una colonna per fattore. Assente: nessuna "
+            "approssimazione con fattori.",
+            required=False,
+        ),
+        f.file(
+            "betas",
+            "CSV with a holding column (ISIN) and one beta column per factor. Absent: no "
+            "factor proxies.",
+            "CSV con una colonna holding (ISIN) e una colonna di beta per fattore. Assente: "
+            "nessuna approssimazione con fattori.",
+            required=False,
+        ),
+        f.file(
+            "fx",
+            "CSV of dated returns of one unit of each foreign currency in the base currency. "
+            "Absent: no historical exchange-rate returns.",
+            "CSV di rendimenti datati di un'unità di ogni valuta estera nella valuta di base. "
+            "Assente: nessun rendimento storico dei cambi.",
+            required=False,
+        ),
+    ),
+    parameters=(
+        f.day(
+            "as_of",
+            "Date of the holdings.",
+            "Data delle posizioni.",
+        ),
+        f.number(
+            "value",
+            "Value of the portfolio on as_of.",
+            "Valore del portafoglio alla data as_of.",
+            minimum=0.0,
+            open_minimum=True,
+            unit="currency units",
+        ),
+        f.currency(
+            "currency",
+            "Base currency of the portfolio's value.",
+            "Valuta di base del valore del portafoglio.",
+        ),
+        f.table(
+            "csv_format",
+            "How the CSV inputs are written: date column and format, delimiter and decimal "
+            "separator.",
+            "Come sono scritti i CSV in ingresso: colonna e formato delle date, separatore di "
+            "campo e separatore decimale.",
+            f.RETURNS_FORMAT.fields,
+        ),
+        f.currency(
+            "position_returns_currency",
+            "Currency in which the position returns are measured (required even without the file).",
+            "Valuta in cui sono misurati i rendimenti delle posizioni (richiesta anche senza il "
+            "file).",
+        ),
+        f.choice(
+            "position_returns_price_type",
+            "Whether the position returns include dividends: total_return, or price (dividends "
+            "excluded); required even without the file.",
+            "Se i rendimenti delle posizioni includono i dividendi: total_return, oppure price "
+            "(dividendi esclusi); richiesto anche senza il file.",
+            f.RETURNS_PRICE_TYPE.choices,
+        ),
+    ),
+)
+"""What ``scenario_analysis`` accepts (design note 12.1)."""
+
 KIND = ExperimentKind(
     name="scenario_analysis",
     description="Historical and hypothetical stress tests of today's holdings (descriptive)",
@@ -213,4 +306,5 @@ KIND = ExperimentKind(
     parse=_parse,
     run=_run,
     optional_inputs=_OPTIONAL_INPUTS,
+    schema=SCHEMA,
 )

@@ -23,10 +23,12 @@ from qrlab.data.ecb import SOURCE as ECB_SOURCE
 from qrlab.data.ecb import TERMS as ECB_TERMS
 from qrlab.data.ken_french import parse_ken_french
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as s
 from qrlab.experiments.kinds._params import day, number, table, text, whole
 from qrlab.experiments.kinds._studies import describe, ken_french_provenance, names, raw_provenance
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.experiments.runner import configurations_tried
+from qrlab.experiments.schema import FieldKind, KindSchema
 from qrlab.optimization.rebalancing import CostModel
 from qrlab.reporting.html import render_html
 from qrlab.studies.rebalancing import (
@@ -42,7 +44,7 @@ from qrlab.studies.rebalancing import (
 )
 from qrlab.studies.rebalancing_report import build_rebalancing_report
 
-__all__ = ["INPUTS", "KIND"]
+__all__ = ["INPUTS", "KIND", "SCHEMA"]
 
 INPUTS: Mapping[str, str] = {
     "kf_developed": "Developed_3_Factors",
@@ -66,6 +68,144 @@ _PARAMETERS = (
     "n_paths",
     "mean_block_length",
     "support_share",
+)
+
+_POLICY_HELP = (
+    "A rebalancing rule: buy_and_hold, calendar_* (monthly, quarterly, annual) or band_* "
+    "(5 or 10 points, back to the target or to the band's edge).",
+    "Una regola di ribilanciamento: buy_and_hold, calendar_* (mensile, trimestrale, annuale) o "
+    "band_* (5 o 10 punti, fino al peso obiettivo o al bordo della banda).",
+)
+
+SCHEMA = KindSchema(
+    inputs=(
+        s.file(
+            "kf_developed",
+            "Ken French Developed-markets three-factor file, monthly, the zip file as downloaded.",
+            "Ken French file dei tre fattori dei mercati sviluppati, mensile, il file zip così "
+            "come scaricato.",
+        ),
+        s.file(
+            "ecb_fx",
+            "ECB euro reference exchange rates, full history (eurofxref-hist.zip), as downloaded.",
+            "Tassi di cambio di riferimento dell'euro della BCE, storico completo "
+            "(eurofxref-hist.zip), così come scaricato.",
+        ),
+        s.file(
+            "yc_6y",
+            "ECB AAA euro-area yield curve, 6-year spot rate (Data Portal CSV), as downloaded.",
+            "Curva dei rendimenti AAA dell'area euro della BCE, tasso spot a 6 anni (CSV del "
+            "Data Portal), così come scaricato.",
+        ),
+        s.file(
+            "yc_7y",
+            "ECB AAA euro-area yield curve, 7-year spot rate (Data Portal CSV), as downloaded.",
+            "Curva dei rendimenti AAA dell'area euro della BCE, tasso spot a 7 anni (CSV del "
+            "Data Portal), così come scaricato.",
+        ),
+    ),
+    parameters=(
+        s.number(
+            "equity_weight",
+            "Target weight of equities, strictly between 0 and 1; bonds hold the rest.",
+            "Peso obiettivo delle azioni, strettamente tra 0 e 1; le obbligazioni hanno il resto.",
+            minimum=0.0,
+            maximum=1.0,
+            open_minimum=True,
+            open_maximum=True,
+            unit="fraction",
+        ),
+        s.listing(
+            "policies",
+            "Rebalancing rules to compare, without repeats.",
+            "Regole di ribilanciamento da confrontare, senza ripetizioni.",
+            s.choice("policy", *_POLICY_HELP, tuple(POLICIES)),
+        ),
+        s.choice(
+            "reference",
+            "The policy the others are compared with; it must be one of policies.",
+            "La regola con cui si confrontano le altre; deve essere tra le policies.",
+            tuple(POLICIES),
+        ),
+        s.mapping(
+            "cost_scenarios",
+            "Cost scenarios by name, each with a proportional and a fixed cost.",
+            "Scenari di costo per nome, ognuno con un costo proporzionale e uno fisso.",
+            FieldKind.TEXT,
+            s.table(
+                "scenario",
+                "The costs of one scenario.",
+                "I costi di uno scenario.",
+                (
+                    s.number(
+                        "proportional",
+                        "Cost per unit of the amount traded, at least 0.",
+                        "Costo per unità dell'importo scambiato, non negativo.",
+                        minimum=0.0,
+                        unit="fraction",
+                    ),
+                    s.number(
+                        "fixed",
+                        "Fixed fee in EUR per asset traded, at least 0.",
+                        "Commissione fissa in EUR per ogni attività scambiata, non negativa.",
+                        minimum=0.0,
+                        unit="currency units",
+                    ),
+                ),
+            ),
+        ),
+        s.number(
+            "tax_rate",
+            "Tax rate on realised gains, from 0 up to but excluding 1.",
+            "Aliquota sulle plusvalenze realizzate, da 0 incluso a 1 escluso.",
+            minimum=0.0,
+            maximum=1.0,
+            open_maximum=True,
+            unit="fraction",
+        ),
+        s.number(
+            "initial_value",
+            "Starting value of the portfolio in EUR, positive.",
+            "Valore iniziale del portafoglio in EUR, positivo.",
+            minimum=0.0,
+            open_minimum=True,
+            unit="currency units",
+        ),
+        s.day(
+            "end",
+            "Last day of the history; returns after its month are not used.",
+            "Ultimo giorno della storia; i rendimenti dopo il suo mese non sono usati.",
+        ),
+        s.integer(
+            "horizon_months",
+            "Length of each resampled path.",
+            "Lunghezza di ogni percorso ricampionato.",
+            minimum=12,
+            unit="months",
+        ),
+        s.integer(
+            "n_paths",
+            "Number of resampled paths.",
+            "Numero di percorsi ricampionati.",
+            minimum=1,
+        ),
+        s.number(
+            "mean_block_length",
+            "Average block length of the stationary bootstrap that resamples the history.",
+            "Lunghezza media dei blocchi del bootstrap stazionario che ricampiona la storia.",
+            unit="months",
+        ),
+        s.number(
+            "support_share",
+            "Share of paths on which a hypothesis must hold to be supported, above 0.5 up to 1.",
+            "Quota di percorsi su cui un'ipotesi deve valere per essere confermata, oltre 0,5 e "
+            "fino a 1.",
+            minimum=0.5,
+            maximum=1.0,
+            open_minimum=True,
+            unit="fraction",
+        ),
+    ),
 )
 
 
@@ -255,4 +395,5 @@ KIND = ExperimentKind(
     parameters=_PARAMETERS,
     parse=_parse,
     run=_run,
+    schema=SCHEMA,
 )

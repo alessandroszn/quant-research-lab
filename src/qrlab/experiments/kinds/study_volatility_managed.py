@@ -24,8 +24,12 @@ from qrlab.core.calendar import Frequency
 from qrlab.core.errors import ValidationError
 from qrlab.data.ken_french import parse_ken_french
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as s
 from qrlab.experiments.kinds._params import boolean, day, number, whole
 from qrlab.experiments.kinds._studies import (
+    BOOTSTRAP,
+    HAC_LAGS,
+    SIGNIFICANCE,
     bootstrap_settings,
     describe,
     ken_french_provenance,
@@ -34,6 +38,7 @@ from qrlab.experiments.kinds._studies import (
 )
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.experiments.runner import configurations_tried
+from qrlab.experiments.schema import InputSpec, KindSchema
 from qrlab.reporting.html import render_html
 from qrlab.studies.volatility_managed import (
     BootstrapSettings,
@@ -49,7 +54,7 @@ from qrlab.studies.volatility_managed import (
 )
 from qrlab.studies.volatility_managed_report import build_volatility_managed_report
 
-__all__ = ["FACTORS", "INPUTS", "KIND"]
+__all__ = ["FACTORS", "INPUTS", "KIND", "SCHEMA"]
 
 PERIODS_PER_YEAR = 12  # monthly factor files
 SIGNAL_LAG = 1  # months (design note 5.3, study 1)
@@ -85,6 +90,95 @@ _PARAMETERS = (
     "costs_bp",
     "significance",
     "bootstrap",
+)
+
+
+def _kf_file(name: str, en: str, it: str) -> InputSpec:
+    return s.file(
+        name,
+        f"Ken French {en}, the zip file as downloaded.",
+        f"Ken French {it}, il file zip così come scaricato.",
+    )
+
+
+SCHEMA = KindSchema(
+    inputs=(
+        _kf_file("ff3_daily", "three-factor file, daily", "file dei tre fattori, giornaliero"),
+        _kf_file("ff3_monthly", "three-factor file, monthly", "file dei tre fattori, mensile"),
+        _kf_file(
+            "ff5_daily",
+            "five-factor file (2x3), daily",
+            "file dei cinque fattori (2x3), giornaliero",
+        ),
+        _kf_file(
+            "ff5_monthly",
+            "five-factor file (2x3), monthly",
+            "file dei cinque fattori (2x3), mensile",
+        ),
+        _kf_file(
+            "mom_daily", "momentum factor file, daily", "file del fattore momentum, giornaliero"
+        ),
+        _kf_file(
+            "mom_monthly", "momentum factor file, monthly", "file del fattore momentum, mensile"
+        ),
+    ),
+    parameters=(
+        s.listing(
+            "factors",
+            "Factors to manage, without repeats.",
+            "Fattori da gestire, senza ripetizioni.",
+            s.choice("factor", "A factor.", "Un fattore.", tuple(FACTORS)),
+        ),
+        s.day("start", "First day of the sample.", "Primo giorno del campione."),
+        s.day(
+            "end",
+            "Last day of the sample, after start.",
+            "Ultimo giorno del campione, dopo l'inizio.",
+        ),
+        s.boolean(
+            "demean_daily",
+            "Whether daily returns are demeaned before the monthly realised variance.",
+            "Se ai rendimenti giornalieri si toglie la media prima della varianza realizzata "
+            "mensile.",
+        ),
+        HAC_LAGS,
+        s.integer(
+            "burn_in_months",
+            "Months used only to start the real-time scaling, before the first managed return.",
+            "Mesi usati solo per avviare la scalatura in tempo reale, prima del primo rendimento "
+            "gestito.",
+            minimum=2,
+            unit="months",
+        ),
+        s.listing(
+            "leverage_caps",
+            "Caps on the managed factor's weight to try, without repeats; inf means no cap.",
+            "Limiti al peso del fattore gestito da provare, senza ripetizioni; inf significa "
+            "nessun limite.",
+            s.number(
+                "cap",
+                "A positive cap, or inf for none.",
+                "Un limite positivo, o inf per nessun limite.",
+                minimum=0.0,
+                open_minimum=True,
+                allow_inf=True,
+            ),
+        ),
+        s.listing(
+            "costs_bp",
+            "Transaction costs to try, per unit traded, without repeats.",
+            "Costi di transazione da provare, per unità scambiata, senza ripetizioni.",
+            s.number(
+                "cost",
+                "A cost of at least 0.",
+                "Un costo non negativo.",
+                minimum=0.0,
+                unit="basis points",
+            ),
+        ),
+        SIGNIFICANCE,
+        BOOTSTRAP,
+    ),
 )
 
 
@@ -252,4 +346,5 @@ KIND = ExperimentKind(
     parameters=_PARAMETERS,
     parse=_parse,
     run=_run,
+    schema=SCHEMA,
 )

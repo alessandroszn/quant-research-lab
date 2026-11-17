@@ -12,10 +12,15 @@ from qrlab.data.errors import IntegrityError
 from qrlab.data.ken_french import SOURCE, TERMS
 from qrlab.data.provenance import Provenance
 from qrlab.experiments.config import file_sha256
+from qrlab.experiments.kinds import _fields as s
 from qrlab.experiments.kinds._params import number, table, whole
+from qrlab.stats.bootstrap import MIN_RESAMPLES
 from qrlab.studies.volatility_managed import BootstrapSettings
 
 __all__ = [
+    "BOOTSTRAP",
+    "HAC_LAGS",
+    "SIGNIFICANCE",
     "bootstrap_settings",
     "describe",
     "ken_french_provenance",
@@ -111,3 +116,54 @@ def describe(provenance: Provenance) -> str:
         f"{provenance.dataset}: {provenance.url}, retrieved "
         f"{provenance.retrieved_at.date().isoformat()}, SHA-256 {provenance.sha256[:12]}"
     )
+
+
+# --------------------------------------------------------------------------- shared schema fields
+BOOTSTRAP = s.table(
+    "bootstrap",
+    "Stationary-bootstrap settings for the test on the difference of Sharpe ratios.",
+    "Impostazioni del bootstrap stazionario per il test sulla differenza degli indici di Sharpe.",
+    (
+        s.number(
+            "mean_block_length",
+            "Average length of the resampled blocks.",
+            "Lunghezza media dei blocchi ricampionati.",
+            minimum=1.0,
+            unit="months",
+        ),
+        s.integer(
+            "n_resamples",
+            "Number of bootstrap resamples.",
+            "Numero di ricampionamenti bootstrap.",
+            minimum=MIN_RESAMPLES,
+        ),
+        s.number(
+            "confidence",
+            "Confidence level of the bootstrap intervals, between 0 and 1 (e.g. 0.95).",
+            "Livello di confidenza degli intervalli bootstrap, tra 0 e 1 (ad esempio 0,95).",
+            minimum=0.0,
+            maximum=1.0,
+            open_minimum=True,
+            open_maximum=True,
+            unit="fraction",
+        ),
+    ),
+)
+HAC_LAGS = s.integer(
+    "hac_lags",
+    "Lags of the Newey-West (HAC) standard errors; 0 means no autocorrelation correction.",
+    "Ritardi degli errori standard di Newey-West (HAC); 0 significa nessuna correzione per "
+    "l'autocorrelazione.",
+    minimum=0,
+    unit="months",
+)
+SIGNIFICANCE = s.number(
+    "significance",
+    "Significance level of the tests, between 0 and 1 (e.g. 0.05).",
+    "Livello di significatività dei test, tra 0 e 1 (ad esempio 0,05).",
+    minimum=0.0,
+    maximum=1.0,
+    open_minimum=True,
+    open_maximum=True,
+    unit="fraction",
+)

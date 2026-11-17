@@ -22,6 +22,14 @@ from qrlab.experiments.runner import (
     run_experiment,
     validate_experiment,
 )
+from qrlab.experiments.schema import (
+    Field,
+    FieldKind,
+    Help,
+    InputSpec,
+    KindSchema,
+    check_parameters,
+)
 
 __all__ = [
     "RECORD_FORMAT",
@@ -29,9 +37,15 @@ __all__ = [
     "ExperimentConfig",
     "ExperimentKind",
     "ExperimentOutput",
+    "Field",
+    "FieldKind",
+    "Help",
+    "InputSpec",
+    "KindSchema",
     "RunContext",
     "RunResult",
     "Tagged",
+    "check_parameters",
     "config_hash",
     "configurations_tried",
     "count_trials",

@@ -42,9 +42,11 @@ from qrlab.core.returns import ReturnKind
 from qrlab.core.series import NanPolicy
 from qrlab.data.user_csv import PriceType
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as f
 from qrlab.experiments.kinds._frames import price_type, read_returns, returns_notice
 from qrlab.experiments.kinds._params import choice, loss_rules, number, table, text, whole
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
+from qrlab.experiments.schema import FieldKind, KindSchema
 from qrlab.optimization.constraints import Constraints
 from qrlab.optimization.mean_variance import OptimizationResult, equal_weights, minimum_variance
 from qrlab.optimization.rebalancing import CalendarPolicy, CostModel, ThresholdPolicy
@@ -57,7 +59,7 @@ from qrlab.risk.covariance import CovarianceEstimate, ledoit_wolf_covariance
 from qrlab.simulation.losses import LossRules
 from qrlab.simulation.plan import TaxModel
 
-__all__ = ["CAVEATS", "KIND", "read_returns"]
+__all__ = ["CAVEATS", "KIND", "SCHEMA", "read_returns"]
 
 CAVEATS = (
     "One historical path, with the stated costs, lag and taxes. Past results are not a forecast."
@@ -282,6 +284,210 @@ def _known(names: set[str], assets: list[str]) -> None:
         raise ValidationError(f"strategy names assets not in the returns file: {unknown}")
 
 
+_LOOKBACK = f.integer(
+    "lookback",
+    "Number of past periods in the trailing return.",
+    "Numero di periodi passati nel rendimento cumulato.",
+    minimum=1,
+    unit="periods",
+)
+_ASSET = f.text(
+    "asset",
+    "An asset name, a column of the returns file.",
+    "Il nome di un attivo, una colonna del file dei rendimenti.",
+)
+SCHEMA = KindSchema(
+    inputs=(
+        f.file(
+            "returns",
+            "CSV of simple returns, one column per asset, read with returns_format.",
+            "CSV di rendimenti semplici, una colonna per attivo, letto con returns_format.",
+        ),
+    ),
+    parameters=(
+        f.RETURNS_FORMAT,
+        f.RETURNS_PRICE_TYPE,
+        f.variant(
+            "strategy",
+            "The strategy that decides the target weights, chosen by name.",
+            "La strategia che decide i pesi obiettivo, scelta per nome.",
+            "name",
+            {
+                "buy_and_hold": (),
+                "trend": (
+                    f.text(
+                        "asset",
+                        "Asset held while its trailing return is positive.",
+                        "Attivo detenuto finché il suo rendimento cumulato è positivo.",
+                    ),
+                    f.text(
+                        "cash",
+                        "Asset held otherwise, e.g. a cash column.",
+                        "Attivo detenuto altrimenti, ad esempio una colonna di liquidità.",
+                    ),
+                    _LOOKBACK,
+                ),
+                "momentum": (
+                    f.listing(
+                        "assets",
+                        "Assets among which the one with the best trailing return is held.",
+                        "Attivi tra cui si detiene quello con il miglior rendimento cumulato.",
+                        _ASSET,
+                        allow_empty=True,
+                    ),
+                    _LOOKBACK,
+                ),
+                "walk_forward": (
+                    f.choice(
+                        "method",
+                        "Construction method applied at each re-estimation.",
+                        "Metodo di costruzione applicato a ogni nuova stima.",
+                        tuple(sorted(_METHODS)),
+                    ),
+                    f.integer(
+                        "min_train",
+                        "Periods of returns before the first decision.",
+                        "Periodi di rendimenti prima della prima decisione.",
+                        minimum=2,
+                        unit="periods",
+                    ),
+                    f.integer(
+                        "step",
+                        "Periods between two re-estimations.",
+                        "Periodi tra due nuove stime.",
+                        minimum=1,
+                        unit="periods",
+                    ),
+                    f.number(
+                        "max_weight",
+                        "Largest weight of one asset (long-only).",
+                        "Peso massimo di un singolo attivo (solo posizioni lunghe).",
+                        minimum=0.0,
+                        maximum=1.0,
+                        open_minimum=True,
+                        unit="fraction",
+                    ),
+                ),
+            },
+        ),
+        f.integer(
+            "execution_lag",
+            "Periods between a decision and its trade.",
+            "Periodi tra una decisione e la sua esecuzione.",
+            minimum=1,
+            unit="periods",
+        ),
+        f.variant(
+            "policy",
+            "When the portfolio trades towards the strategy's weights, chosen by type.",
+            "Quando il portafoglio si sposta verso i pesi della strategia, scelto per tipo.",
+            "type",
+            {
+                "trade_on_signal": (),
+                "calendar": (
+                    f.integer(
+                        "every",
+                        "Periods between two rebalancings.",
+                        "Periodi tra due ribilanciamenti.",
+                        minimum=1,
+                        unit="periods",
+                    ),
+                ),
+                "threshold": (
+                    f.number(
+                        "band",
+                        "Drift of a weight from its target that triggers a trade.",
+                        "Scostamento di un peso dal suo obiettivo che fa scattare un'operazione.",
+                        minimum=0.0,
+                        open_minimum=True,
+                        unit="fraction",
+                    ),
+                    f.choice(
+                        "to",
+                        "Where a trade goes: back to the target, or to the edge of the band.",
+                        "Dove porta un'operazione: di nuovo all'obiettivo o al bordo della banda.",
+                        ("target", "band"),
+                    ),
+                ),
+            },
+        ),
+        f.table(
+            "costs",
+            "Transaction costs of each trade.",
+            "Costi di transazione di ogni operazione.",
+            (
+                f.number(
+                    "proportional",
+                    "Cost as a fraction of the traded value.",
+                    "Costo come frazione del controvalore scambiato.",
+                    minimum=0.0,
+                    unit="fraction",
+                ),
+                f.number(
+                    "fixed",
+                    "Fixed cost of each trade.",
+                    "Costo fisso di ogni operazione.",
+                    minimum=0.0,
+                    unit="currency units",
+                ),
+            ),
+        ),
+        f.number(
+            "capital_gains_tax",
+            "Tax rate on realised gains; 0 means no tax.",
+            "Aliquota sulle plusvalenze realizzate; 0 significa nessuna imposta.",
+            minimum=0.0,
+            maximum=1.0,
+            open_maximum=True,
+            unit="fraction",
+        ),
+        f.mapping(
+            "initial_weights",
+            "Starting weight of each asset, by asset name.",
+            "Peso iniziale di ogni attivo, per nome dell'attivo.",
+            FieldKind.TEXT,
+            f.number("weight", "Weight of the asset.", "Peso dell'attivo.", unit="fraction"),
+        ),
+        f.number(
+            "initial_value",
+            "Starting value of the portfolio.",
+            "Valore iniziale del portafoglio.",
+            unit="currency units",
+        ),
+        f.currency(
+            "currency",
+            "Currency of the portfolio's value.",
+            "Valuta del valore del portafoglio.",
+        ),
+        f.PERIODS_PER_YEAR,
+        f.table(
+            "losses",
+            "Italian loss rules for the capital-gains tax. Absent: no loss rules.",
+            "Regole italiane sulle minusvalenze per l'imposta sulle plusvalenze. Assente: "
+            "nessuna regola sulle minusvalenze.",
+            (
+                f.integer(
+                    "carry_years",
+                    "Years in which a realised loss can offset later gains.",
+                    "Anni in cui una minusvalenza realizzata può compensare plusvalenze "
+                    "successive.",
+                    minimum=0,
+                    unit="years",
+                ),
+                f.listing(
+                    "fund_assets",
+                    "Assets that are funds, whose gains cannot absorb losses.",
+                    "Attivi che sono fondi, le cui plusvalenze non assorbono minusvalenze.",
+                    _ASSET,
+                    allow_empty=True,
+                ),
+            ),
+            required=False,
+        ),
+    ),
+)
+"""What ``backtest`` accepts (design note 12.1)."""
+
 KIND = ExperimentKind(
     name="backtest",
     description="Backtest a named strategy with lag, costs and taxes (gross and net)",
@@ -290,4 +496,6 @@ KIND = ExperimentKind(
     parameters=_PARAMETERS,
     parse=_parse,
     run=_run,
+    optional_parameters=("losses",),
+    schema=SCHEMA,
 )

@@ -30,8 +30,12 @@ from qrlab.data.ken_french import (
     parse_ken_french_table,
 )
 from qrlab.experiments.config import require_keys
+from qrlab.experiments.kinds import _fields as s
 from qrlab.experiments.kinds._params import day, number, whole
 from qrlab.experiments.kinds._studies import (
+    BOOTSTRAP,
+    HAC_LAGS,
+    SIGNIFICANCE,
     bootstrap_settings,
     describe,
     ken_french_provenance,
@@ -40,6 +44,7 @@ from qrlab.experiments.kinds._studies import (
 )
 from qrlab.experiments.registry import ExperimentKind, ExperimentOutput, RunContext, Tagged
 from qrlab.experiments.runner import configurations_tried
+from qrlab.experiments.schema import KindSchema
 from qrlab.reporting.html import render_html
 from qrlab.studies.one_over_n import (
     STRATEGIES,
@@ -60,7 +65,7 @@ from qrlab.studies.one_over_n import (
 from qrlab.studies.one_over_n_report import build_one_over_n_report
 from qrlab.studies.volatility_managed import BootstrapSettings
 
-__all__ = ["DATASETS", "INPUTS", "KIND", "PAIRS", "SIZE_SECTIONS"]
+__all__ = ["DATASETS", "INPUTS", "KIND", "PAIRS", "SCHEMA", "SIZE_SECTIONS"]
 
 INPUTS: Mapping[str, str] = {
     "ind10_daily": "10_Industry_Portfolios_daily",
@@ -98,6 +103,104 @@ _PARAMETERS = (
     "hac_lags",
     "significance",
     "bootstrap",
+)
+
+
+SCHEMA = KindSchema(
+    inputs=(
+        s.file(
+            "ind10_daily",
+            "Ken French 10 industry portfolios, daily, the zip file as downloaded.",
+            "Ken French 10 portafogli settoriali, giornaliero, il file zip così come scaricato.",
+        ),
+        s.file(
+            "ind10_monthly",
+            "Ken French 10 industry portfolios, monthly, the zip file as downloaded.",
+            "Ken French 10 portafogli settoriali, mensile, il file zip così come scaricato.",
+        ),
+        s.file(
+            "p25_daily",
+            "Ken French 25 size and book-to-market portfolios, daily, the zip file as downloaded.",
+            "Ken French 25 portafogli per dimensione e book-to-market, giornaliero, il file zip "
+            "così come scaricato.",
+        ),
+        s.file(
+            "p25_monthly",
+            "Ken French 25 size and book-to-market portfolios, monthly, the zip file as "
+            "downloaded.",
+            "Ken French 25 portafogli per dimensione e book-to-market, mensile, il file zip così "
+            "come scaricato.",
+        ),
+        s.file(
+            "ff3_monthly",
+            "Ken French three-factor file, monthly, for the risk-free rate; the zip as downloaded.",
+            "Ken French file dei tre fattori, mensile, per il tasso privo di rischio; lo zip così "
+            "come scaricato.",
+        ),
+    ),
+    parameters=(
+        s.listing(
+            "datasets",
+            "Portfolio universes to study, without repeats.",
+            "Universi di portafogli da studiare, senza ripetizioni.",
+            s.choice("dataset", "A universe.", "Un universo.", tuple(DATASETS)),
+        ),
+        s.day("start", "First day of the sample.", "Primo giorno del campione."),
+        s.day(
+            "end",
+            "Last day of the sample, after start.",
+            "Ultimo giorno del campione, dopo l'inizio.",
+        ),
+        s.listing(
+            "windows",
+            "Rolling estimation windows to try, whole months, without repeats.",
+            "Finestre mobili di stima da provare, in mesi interi, senza ripetizioni.",
+            s.number(
+                "window",
+                "A window of at least 2.",
+                "Una finestra di almeno 2.",
+                minimum=2.0,
+                unit="months",
+            ),
+        ),
+        s.listing(
+            "strategies",
+            "Strategies to compare, without repeats; must include the 1/N benchmark ew and one "
+            "other.",
+            "Strategie da confrontare, senza ripetizioni; deve includere il riferimento 1/N ew e "
+            "almeno un'altra.",
+            s.choice("strategy", "A strategy.", "Una strategia.", tuple(STRATEGIES)),
+        ),
+        s.listing(
+            "costs_bp",
+            "Transaction costs to try, per unit traded, without repeats.",
+            "Costi di transazione da provare, per unità scambiata, senza ripetizioni.",
+            s.number(
+                "cost",
+                "A cost of at least 0.",
+                "Un costo non negativo.",
+                minimum=0.0,
+                unit="basis points",
+            ),
+        ),
+        s.number(
+            "bl_risk_aversion",
+            "Risk aversion of the Black-Litterman equilibrium returns.",
+            "Avversione al rischio dei rendimenti di equilibrio di Black-Litterman.",
+            minimum=0.0,
+            open_minimum=True,
+        ),
+        s.number(
+            "ceq_risk_aversion",
+            "Risk aversion of the certainty-equivalent return.",
+            "Avversione al rischio del rendimento certo equivalente.",
+            minimum=0.0,
+            open_minimum=True,
+        ),
+        HAC_LAGS,
+        SIGNIFICANCE,
+        BOOTSTRAP,
+    ),
 )
 
 
@@ -358,4 +461,5 @@ KIND = ExperimentKind(
     parameters=_PARAMETERS,
     parse=_parse,
     run=_run,
+    schema=SCHEMA,
 )
